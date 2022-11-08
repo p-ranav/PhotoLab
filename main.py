@@ -11,6 +11,9 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QPixmap
 import sys
 import qdarkstyle
+import cv2
+import numpy as np
+from PIL import Image, ImageEnhance
 
 class Gui(QtCore.QObject):
     def __init__(self, MainWindow):
@@ -46,12 +49,13 @@ class Gui(QtCore.QObject):
         # Tone sliders
         tone_label = QLabel("Tone")
         lay.addWidget(tone_label)
-        tone_sliders = ["Exposure", "Contrast", "Highlights", "Shadows", "Whites", "Blacks"]
-        for j in range(6):
-            slider = QSlider(QtCore.Qt.Horizontal)
-            lay.addRow(tone_sliders[j], slider)
 
-        self.MainWindow.show()
+        # Brightness
+        self.CurrentBrightness = 0
+        self.AddBrightnessSlider(lay)
+        self.AddContrastSlider(lay)
+
+        self.MainWindow.showMaximized()
 
     def set_label_image(self, label, image_filename):
         '''
@@ -68,6 +72,66 @@ class Gui(QtCore.QObject):
         pixmap = pixmap.scaled(QtCore.QSize(w, h), QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
         label.setPixmap(pixmap)
         return pixmap
+
+    def QPixmapToNumpy(self, pixmap):
+        channels_count = 4
+        width = pixmap.width()
+        height = pixmap.height()
+        image = pixmap.toImage()
+        s = image.bits().asstring(width * height * channels_count)
+        arr = np.frombuffer(s, dtype=np.uint8).reshape((height, width, channels_count)) 
+        return arr
+
+    def NumpyToQPixmap(self, arr):
+        height, width, channel = arr.shape
+        bytesPerLine = channel * width
+        qImg = QtGui.QImage(arr.data, width, height, bytesPerLine, QtGui.QImage.Format_RGB888)
+        return QPixmap(qImg)
+
+    def AddBrightnessSlider(self, layout):
+        self.BrightnessSlider = QSlider(QtCore.Qt.Horizontal)
+        self.BrightnessSlider.setRange(0, 100)
+        layout.addRow("Brightness", self.BrightnessSlider)
+        self.BrightnessSlider.valueChanged.connect(self.OnBrightnessChanged)
+
+    def ChangeBrightness(self, img, value=30):
+        hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+        h, s, v = cv2.split(hsv)
+
+        lim = 255 - value
+        v[v > lim] = 255
+        v[v <= lim] += value
+
+        final_hsv = cv2.merge((h, s, v))
+        img = cv2.cvtColor(final_hsv, cv2.COLOR_HSV2RGB)
+        return img
+
+    def OnBrightnessChanged(self, val):
+        CurrentImage = self.QPixmapToNumpy(self.welcome_pixmap)
+        CurrentImage = self.ChangeBrightness(CurrentImage, val)
+        CurrentImageAsPixMap = self.NumpyToQPixmap(CurrentImage)
+        self.logo_label.setPixmap(CurrentImageAsPixMap)
+
+    def AddContrastSlider(self, layout):
+        self.ContrastSlider = QSlider(QtCore.Qt.Horizontal)
+        self.ContrastSlider.setRange(0, 100)
+        layout.addRow("Contrast", self.ContrastSlider)
+        self.ContrastSlider.valueChanged.connect(self.OnContrastChanged)
+
+    def ChangeContrast(self, img, Contrast):
+        print(img.shape, Contrast)
+        Contrast = int((Contrast - 0) * (127 - (-127)) / (254 - 0) + (-127))
+        Alpha = float(131 * (Contrast + 127)) / (127 * (131 - Contrast))
+        Gamma = 127 * (1 - Alpha)
+        img = cv2.addWeighted(img, Alpha, img, 0, Gamma).reshape(img.shape)
+        print(img.shape)
+        return img
+
+    def OnContrastChanged(self, val):
+        CurrentImage = self.QPixmapToNumpy(self.welcome_pixmap)
+        CurrentImage = self.ChangeContrast(CurrentImage, val)
+        CurrentImageAsPixMap = self.NumpyToQPixmap(CurrentImage)
+        self.logo_label.setPixmap(CurrentImageAsPixMap)
 
 def main():
     app = QApplication(sys.argv)

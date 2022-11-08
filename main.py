@@ -5,6 +5,8 @@ from PyQt5.QtWidgets import (
     QLabel,
     QGroupBox,
     QVBoxLayout,
+    QFormLayout,
+    QSlider,
 )
 from PyQt5.QtGui import QPixmap
 import sys
@@ -32,7 +34,8 @@ class Gui(QtCore.QObject):
         # to take up all the space in the window by default.
         self.MainWindow.setCentralWidget(self.form)
 
-        dock = QtWidgets.QDockWidget("Collapsible Demo")
+        dock = QtWidgets.QDockWidget("")
+        dock.setMinimumSize(200, self.logo_label.height())
         MainWindow.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock)
 
         scroll = QtWidgets.QScrollArea()
@@ -45,16 +48,11 @@ class Gui(QtCore.QObject):
         # Tone
         tone_box = CollapsibleBox("Tone")
         vlay.addWidget(tone_box)
-        lay = QtWidgets.QVBoxLayout()
+        lay = QtWidgets.QFormLayout()
         tone_sliders = ["Exposure", "Contrast", "Highlights", "Shadows", "Whites", "Blacks"]
         for j in range(6):
-            label = QtWidgets.QLabel("{}".format(tone_sliders[j]))
-            color = QtGui.QColor(*[random.randint(0, 255) for _ in range(3)])
-            label.setStyleSheet(
-                "background-color: {}; color : white;".format(color.name())
-            )
-            label.setAlignment(QtCore.Qt.AlignCenter)
-            lay.addWidget(label)
+            slider = QSlider(QtCore.Qt.Horizontal)
+            lay.addRow(tone_sliders[j], slider)
         tone_box.setContentLayout(lay)
         tone_box.resize(tone_box.width() + 100, tone_box.height())
 

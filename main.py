@@ -10,8 +10,6 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QPixmap
 import sys
-from collapsible_box import CollapsibleBox
-import random
 import qdarkstyle
 
 class Gui(QtCore.QObject):
@@ -43,20 +41,15 @@ class Gui(QtCore.QObject):
         content = QtWidgets.QWidget()
         scroll.setWidget(content)
         scroll.setWidgetResizable(True)
-        vlay = QtWidgets.QVBoxLayout(content)
+        lay = QtWidgets.QFormLayout(content)
 
-        # Tone
-        tone_box = CollapsibleBox("Tone")
-        vlay.addWidget(tone_box)
-        lay = QtWidgets.QFormLayout()
+        # Tone sliders
+        tone_label = QLabel("Tone")
+        lay.addWidget(tone_label)
         tone_sliders = ["Exposure", "Contrast", "Highlights", "Shadows", "Whites", "Blacks"]
         for j in range(6):
             slider = QSlider(QtCore.Qt.Horizontal)
             lay.addRow(tone_sliders[j], slider)
-        tone_box.setContentLayout(lay)
-        tone_box.resize(tone_box.width() + 100, tone_box.height())
-
-        vlay.addStretch()
 
         self.MainWindow.show()
 

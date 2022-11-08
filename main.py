@@ -84,6 +84,7 @@ class Gui(QtCore.QObject):
 
     def NumpyToQPixmap(self, arr):
         height, width, channel = arr.shape
+        print(height, width, channel)
         bytesPerLine = channel * width
         qImg = QtGui.QImage(arr.data, width, height, bytesPerLine, QtGui.QImage.Format_RGB888)
         return QPixmap(qImg)
@@ -95,6 +96,8 @@ class Gui(QtCore.QObject):
         self.BrightnessSlider.valueChanged.connect(self.OnBrightnessChanged)
 
     def ChangeBrightness(self, img, value=30):
+        shape = img.shape
+        alpha = img[...,3]
         hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
         h, s, v = cv2.split(hsv)
 
@@ -104,6 +107,7 @@ class Gui(QtCore.QObject):
 
         final_hsv = cv2.merge((h, s, v))
         img = cv2.cvtColor(final_hsv, cv2.COLOR_HSV2RGB)
+
         return img
 
     def OnBrightnessChanged(self, val):
@@ -114,17 +118,17 @@ class Gui(QtCore.QObject):
 
     def AddContrastSlider(self, layout):
         self.ContrastSlider = QSlider(QtCore.Qt.Horizontal)
-        self.ContrastSlider.setRange(0, 100)
+        self.ContrastSlider.setRange(-200, 200)
         layout.addRow("Contrast", self.ContrastSlider)
         self.ContrastSlider.valueChanged.connect(self.OnContrastChanged)
 
     def ChangeContrast(self, img, Contrast):
-        print(img.shape, Contrast)
+        print(Contrast)
+        img = cv2.cvtColor(img, cv2.COLOR_RGBA2BGR)
         Contrast = int((Contrast - 0) * (127 - (-127)) / (254 - 0) + (-127))
         Alpha = float(131 * (Contrast + 127)) / (127 * (131 - Contrast))
         Gamma = 127 * (1 - Alpha)
-        img = cv2.addWeighted(img, Alpha, img, 0, Gamma).reshape(img.shape)
-        print(img.shape)
+        img = cv2.addWeighted(img, Alpha, img, 0, Gamma)
         return img
 
     def OnContrastChanged(self, val):

@@ -1,4 +1,4 @@
-from PyQt6 import QtWidgets, QtCore
+from PyQt6 import QtWidgets, QtCore, QtGui
 from PyQt6.QtCore import pyqtSlot
 from PyQt6.QtWidgets import (
     QApplication,
@@ -24,9 +24,10 @@ class Gui(QtCore.QObject):
         self.form_layout = QVBoxLayout()
 
         self.logo_label = QLabel()
-        self.welcome_pixmap = self.set_label_image(self.logo_label, 'welcome.jpg')
-        self.logo_label.installEventFilter(self)
-        self.form_layout.addWidget(self.logo_label, alignment=QtCore.Qt.AlignCenter)
+        self.logo_label.setScaledContents(True)
+        self.welcome_pixmap = QPixmap('welcome.webp')
+        self.logo_label.setPixmap(self.welcome_pixmap)
+        self.form_layout.addWidget(self.logo_label, alignment=QtCore.Qt.AlignmentFlag.AlignCenter)
 
         self.form.setLayout(self.form_layout)
 
@@ -36,7 +37,7 @@ class Gui(QtCore.QObject):
 
         dock = QtWidgets.QDockWidget("")
         dock.setMinimumSize(200, self.logo_label.height())
-        MainWindow.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock)
+        MainWindow.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, dock)
 
         scroll = QtWidgets.QScrollArea()
         dock.setWidget(scroll)
@@ -64,23 +65,6 @@ class Gui(QtCore.QObject):
 
         self.MainWindow.showMaximized()
 
-    def set_label_image(self, label, image_filename):
-        '''
-        Fill a QLabel widget with an image file, respecting the widget's maximum sizes,
-        while scaling the image down if needed (but not up), and keeping the aspect ratio
-        Returns false if image loading failed
-        '''
-        pixmap = QPixmap(image_filename)
-        if pixmap.isNull():
-            return None
-        
-        # w = min(pixmap.width(), label.width())
-        # h = min(pixmap.height(), label.height())
-        pixmap = pixmap.scaledToWidth(label.width())
-        # pixmap = pixmap.scaled(QtCore.QSize(w, h), QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
-        label.setPixmap(pixmap)
-        return pixmap
-
     def QPixmapToImage(self, pixmap):
         width = pixmap.width()
         height = pixmap.height()
@@ -99,7 +83,7 @@ class Gui(QtCore.QObject):
         return self.ImageToQPixmap(AdjustedImage)
 
     def AddColorSlider(self, layout):
-        self.ColorSlider = QSlider(QtCore.Qt.Horizontal)
+        self.ColorSlider = QSlider(QtCore.Qt.Orientation.Horizontal)
         self.ColorSlider.setRange(0, 200) # 1 is original image, 0 is black image
         layout.addRow("Saturation", self.ColorSlider)
 
@@ -113,7 +97,7 @@ class Gui(QtCore.QObject):
         self.UpdateImage()
 
     def AddBrightnessSlider(self, layout):
-        self.BrightnessSlider = QSlider(QtCore.Qt.Horizontal)
+        self.BrightnessSlider = QSlider(QtCore.Qt.Orientation.Horizontal)
         self.BrightnessSlider.setRange(0, 200) # 1 is original image, 0 is black image
         layout.addRow("Brightness", self.BrightnessSlider)
 
@@ -127,7 +111,7 @@ class Gui(QtCore.QObject):
         self.UpdateImage()
 
     def AddContrastSlider(self, layout):
-        self.ContrastSlider = QSlider(QtCore.Qt.Horizontal)
+        self.ContrastSlider = QSlider(QtCore.Qt.Orientation.Horizontal)
         self.ContrastSlider.setRange(0, 200) # 1 is original image, 0 is a solid grey image
         layout.addRow("Contrast", self.ContrastSlider)
 
@@ -141,7 +125,7 @@ class Gui(QtCore.QObject):
         self.UpdateImage()
 
     def AddSharpnessSlider(self, layout):
-        self.SharpnessSlider = QSlider(QtCore.Qt.Horizontal)
+        self.SharpnessSlider = QSlider(QtCore.Qt.Orientation.Horizontal)
         self.SharpnessSlider.setRange(0, 200) # 1 is original image, 0 is black image
         layout.addRow("Sharpness", self.SharpnessSlider)
 
@@ -165,15 +149,14 @@ class Gui(QtCore.QObject):
 def main():
     app = QApplication(sys.argv)
 
-    # setup stylesheet
-    # the default system in qdarkstyle uses qtpy environment variable
+    ## setup stylesheet
+    ## the default system in qdarkstyle uses qtpy environment variable
     app.setStyleSheet(qdarkstyle.load_stylesheet())
 
     MainWindow = QtWidgets.QMainWindow()
     MainWindow.setWindowTitle('Photo Editor')
-    MainWindow.resize(480, 320)
     gui = Gui(MainWindow)
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
 
 if __name__ == '__main__':
     main()

@@ -89,20 +89,21 @@ class Gui(QtCore.QObject):
         self.Contrast = 100
         self.Sharpness = 100
 
-        self.timer_id = -1
+        self.SliderTimerId = -1
 
         self.MainWindow.showMaximized()
 
     def timerEvent(self, event):
-        self.killTimer(self.timer_id)
-        self.timer_id = -1
+        self.killTimer(self.SliderTimerId)
+        self.SliderTimerId = -1
         self.UpdateImage()
 
     def UpdateImageWithDelay(self):
-        if self.timer_id != -1:
-            self.killTimer(self.timer_id)
-
-        self.timer_id = self.startTimer(250)
+        if self.SliderTimerId != -1:
+            self.killTimer(self.SliderTimerId)
+            
+        # https://stackoverflow.com/questions/43152489/pyqt5-qslider-valuechanged-event-with-delay
+        self.SliderTimerId = self.startTimer(250)
 
     def QPixmapToImage(self, pixmap):
         width = pixmap.width()

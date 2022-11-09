@@ -22,8 +22,6 @@ class Gui(QtCore.QObject):
         self.MainWindow = MainWindow
 
         self.image_viewer = QtImageViewer()
-        self.image_viewer.open('welcome.jpg')
-        self.OriginalImage = self.image_viewer.pixmap()
 
         # Set viewer's aspect ratio mode.
         # !!! ONLY applies to full image view.
@@ -58,6 +56,7 @@ class Gui(QtCore.QObject):
         
         # Load an image file to be displayed (will popup a file dialog).
         self.image_viewer.open()
+        self.OriginalImage = self.image_viewer.pixmap()
 
         # Set the central widget of the Window. Widget will expand
         # to take up all the space in the window by default.
@@ -90,7 +89,20 @@ class Gui(QtCore.QObject):
         self.Contrast = 100
         self.Sharpness = 100
 
+        self.timer_id = -1
+
         self.MainWindow.showMaximized()
+
+    def timerEvent(self, event):
+        self.killTimer(self.timer_id)
+        self.timer_id = -1
+        self.UpdateImage()
+
+    def UpdateImageWithDelay(self):
+        if self.timer_id != -1:
+            self.killTimer(self.timer_id)
+
+        self.timer_id = self.startTimer(250)
 
     def QPixmapToImage(self, pixmap):
         width = pixmap.width()
@@ -121,7 +133,7 @@ class Gui(QtCore.QObject):
 
     def OnColorChanged(self, value):
         self.Color = value
-        self.UpdateImage()
+        self.UpdateImageWithDelay()
 
     def AddBrightnessSlider(self, layout):
         self.BrightnessSlider = QSlider(QtCore.Qt.Orientation.Horizontal)
@@ -135,7 +147,7 @@ class Gui(QtCore.QObject):
 
     def OnBrightnessChanged(self, value):
         self.Brightness = value
-        self.UpdateImage()
+        self.UpdateImageWithDelay()
 
     def AddContrastSlider(self, layout):
         self.ContrastSlider = QSlider(QtCore.Qt.Orientation.Horizontal)
@@ -149,7 +161,7 @@ class Gui(QtCore.QObject):
 
     def OnContrastChanged(self, value):
         self.Contrast = value
-        self.UpdateImage()
+        self.UpdateImageWithDelay()
 
     def AddSharpnessSlider(self, layout):
         self.SharpnessSlider = QSlider(QtCore.Qt.Orientation.Horizontal)
@@ -163,7 +175,7 @@ class Gui(QtCore.QObject):
 
     def OnSharpnessChanged(self, value):
         self.Sharpness = value
-        self.UpdateImage()
+        self.UpdateImageWithDelay()
 
     def UpdateImage(self):
         Pixmap = self.OriginalImage

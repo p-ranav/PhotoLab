@@ -11,7 +11,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QPixmap
 import sys
 import qdarkstyle
-from PIL import Image, ImageEnhance
+from PIL import Image, ImageEnhance, ImageFilter
 from PIL.ImageQt import ImageQt
 from functools import partial
 from QImageViewer import QtImageViewer
@@ -82,12 +82,20 @@ class Gui(QtCore.QObject):
         self.AddContrastSlider(lay)
         self.AddSharpnessSlider(lay)
 
-        # List of QPixmaps after each change
-        # Most recent is the last one
+        # State of enhance sliders
         self.Color = 100
         self.Brightness = 100
         self.Contrast = 100
         self.Sharpness = 100
+
+        # Filter sliders
+        filter_label = QLabel("Filter")
+        lay.addWidget(filter_label)
+
+        self.AddGaussianBlurSlider(lay)
+
+        # State of filter sliders
+        self.GaussianBlurRadius = 100
 
         self.SliderTimerId = -1
 
@@ -120,6 +128,11 @@ class Gui(QtCore.QObject):
     def EnhanceImage(self, Pixmap, Property, value):
         CurrentImage = self.QPixmapToImage(Pixmap)
         AdjustedImage = Property(CurrentImage).enhance(float(value) / 100)
+        return self.ImageToQPixmap(AdjustedImage)
+
+    def ApplyGaussianBlur(self, Pixmap, value):
+        CurrentImage = self.QPixmapToImage(Pixmap)
+        AdjustedImage = CurrentImage.filter(ImageFilter.GaussianBlur(radius=float(self.GaussianBlurRadius / 100)))
         return self.ImageToQPixmap(AdjustedImage)
 
     def AddColorSlider(self, layout):
@@ -178,12 +191,31 @@ class Gui(QtCore.QObject):
         self.Sharpness = value
         self.UpdateImageWithDelay()
 
+    def AddGaussianBlurSlider(self, layout):
+        self.GaussianBlurSlider = QSlider(QtCore.Qt.Orientation.Horizontal)
+        self.GaussianBlurSlider.setRange(0, 2000)
+        layout.addRow("Gaussian Blur", self.GaussianBlurSlider)
+
+        # Default value of the Sharpness slider
+        self.GaussianBlurSlider.setValue(20) 
+
+        self.GaussianBlurSlider.valueChanged.connect(self.OnGaussianBlurChanged)
+
+    def OnGaussianBlurChanged(self, value):
+        self.GaussianBlurRadius = value
+        self.UpdateImageWithDelay()
+
+    def OnSharpnessChanged(self, value):
+        self.Sharpness = value
+        self.UpdateImageWithDelay()
+
     def UpdateImage(self):
         Pixmap = self.OriginalImage
         Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Color, self.Color)
         Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Brightness, self.Brightness)
         Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Contrast, self.Contrast)
         Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Sharpness, self.Sharpness)
+        Pixmap = self.ApplyGaussianBlur(Pixmap, float(self.GaussianBlurRadius / 100))
         self.image_viewer.setImage(Pixmap)
 
 def main():

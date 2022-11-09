@@ -7,6 +7,8 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QFormLayout,
     QSlider,
+    QToolBar,
+    QToolButton
 )
 from PyQt6.QtGui import QPixmap
 import sys
@@ -58,7 +60,6 @@ class Gui(QtCore.QObject):
         # Load an image file to be displayed (will popup a file dialog).
         self.image_viewer.open()
         self.OriginalImage = self.image_viewer.pixmap()
-        cropItem = QCropItem(self.image_viewer._image)
 
         # Set the central widget of the Window. Widget will expand
         # to take up all the space in the window by default.
@@ -100,6 +101,17 @@ class Gui(QtCore.QObject):
         self.GaussianBlurRadius = 100
 
         self.SliderTimerId = -1
+
+        # Using a QToolBar object and a toolbar area
+        ImageToolBar = QToolBar("Toolbar", self.MainWindow)
+        self.MainWindow.addToolBar(Qt.LeftToolBarArea, ImageToolBar)
+
+        self.CropToolButton = QToolButton(self.MainWindow)
+        self.CropToolButton.setText("&Crop")
+        self.CropToolButton.setIcon(QtGui.QIcon("crop.svg"))
+        self.CropToolButton.setCheckable(True)
+        self.CropToolButton.toggled.connect(self.OnCropToolButton)
+        ImageToolBar.addWidget(self.CropToolButton)
 
         self.MainWindow.showMaximized()
 
@@ -219,6 +231,13 @@ class Gui(QtCore.QObject):
         Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Sharpness, self.Sharpness)
         Pixmap = self.ApplyGaussianBlur(Pixmap, float(self.GaussianBlurRadius / 100))
         self.image_viewer.setImage(Pixmap)
+
+    def OnCropToolButton(self, checked):
+        if checked:
+            self.cropItem = QCropItem(self.image_viewer._image)
+        else:
+            # Remove the crop path item
+            self.image_viewer.scene.removeItem(self.cropItem)
 
 def main():
     app = QApplication(sys.argv)

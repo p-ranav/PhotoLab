@@ -15,6 +15,7 @@ from PIL import Image, ImageEnhance, ImageFilter
 from PIL.ImageQt import ImageQt
 from functools import partial
 from QImageViewer import QtImageViewer
+from QCropItem import QCropItem
 
 class Gui(QtCore.QObject):
     def __init__(self, MainWindow):
@@ -57,6 +58,7 @@ class Gui(QtCore.QObject):
         # Load an image file to be displayed (will popup a file dialog).
         self.image_viewer.open()
         self.OriginalImage = self.image_viewer.pixmap()
+        cropItem = QCropItem(self.image_viewer._image)
 
         # Set the central widget of the Window. Widget will expand
         # to take up all the space in the window by default.

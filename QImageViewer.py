@@ -135,6 +135,10 @@ class QtImageViewer(QGraphicsView):
         # Flags for active zooming/panning.
         self._isZooming = False
         self._isPanning = False
+        
+        # Flags for active cropping
+        # Set to true when using the crop tool with toolbar
+        self._isCropping = False
 
         # Store temporary position in screen pixels or scene units.
         self._pixelPosition = QPoint()
@@ -280,22 +284,27 @@ class QtImageViewer(QGraphicsView):
         #         # Click to add points to polygon. Double-click to close polygon.
         #         pass
 
-        # Start dragging a region zoom box?
-        if (self.regionZoomButton is not None) and (event.button() == self.regionZoomButton):
-            self._pixelPosition = event.pos()  # store pixel position
-            self.setDragMode(QGraphicsView.DragMode.RubberBandDrag)
-            QGraphicsView.mousePressEvent(self, event)
-            event.accept()
-            self._isZooming = True
-            return
+        if not self._isCropping:
 
-        if (self.zoomOutButton is not None) and (event.button() == self.zoomOutButton):
-            if len(self.zoomStack):
-                self.zoomStack.pop()
-                self.updateViewer()
-                self.viewChanged.emit()
-            event.accept()
-            return
+            # Start dragging a region zoom box?
+            if (self.regionZoomButton is not None) and (event.button() == self.regionZoomButton):
+                self._pixelPosition = event.pos()  # store pixel position
+                self.setDragMode(QGraphicsView.DragMode.RubberBandDrag)
+                QGraphicsView.mousePressEvent(self, event)
+                event.accept()
+                self._isZooming = True
+                return
+
+            if (self.zoomOutButton is not None) and (event.button() == self.zoomOutButton):
+                if len(self.zoomStack):
+                    self.zoomStack.pop()
+                    self.updateViewer()
+                    self.viewChanged.emit()
+                event.accept()
+                return
+        else:
+            # TODO: Support moving the crop rectangle with left click instead of using the
+            # crop rect corners
 
         # Start dragging to pan?
         if (self.panButton is not None) and (event.button() == self.panButton):

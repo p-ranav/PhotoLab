@@ -1,3 +1,4 @@
+from tkinter import CURRENT
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import pyqtSlot
 from PyQt5.QtWidgets import (
@@ -11,9 +12,9 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QPixmap
 import sys
 import qdarkstyle
-import cv2
-import numpy as np
 from PIL import Image, ImageEnhance
+from PIL.ImageQt import ImageQt
+from functools import partial
 
 class Gui(QtCore.QObject):
     def __init__(self, MainWindow):
@@ -50,10 +51,14 @@ class Gui(QtCore.QObject):
         tone_label = QLabel("Tone")
         lay.addWidget(tone_label)
 
-        # Brightness
-        self.CurrentBrightness = 0
         self.AddBrightnessSlider(lay)
         self.AddContrastSlider(lay)
+
+        # List of QPixmaps after each change
+        # Most recent is the last one
+        self.CurrentLayer = self.welcome_pixmap
+        self.Brightness = 100
+        self.Contrast = 100
 
         self.MainWindow.showMaximized()
 
@@ -73,69 +78,55 @@ class Gui(QtCore.QObject):
         label.setPixmap(pixmap)
         return pixmap
 
-    def QPixmapToNumpy(self, pixmap):
-        channels_count = 4
+    def QPixmapToImage(self, pixmap):
         width = pixmap.width()
         height = pixmap.height()
         image = pixmap.toImage()
-        s = image.bits().asstring(width * height * channels_count)
-        arr = np.frombuffer(s, dtype=np.uint8).reshape((height, width, channels_count)) 
-        return arr
 
-    def NumpyToQPixmap(self, arr):
-        height, width, channel = arr.shape
-        print(height, width, channel)
-        bytesPerLine = channel * width
-        qImg = QtGui.QImage(arr.data, width, height, bytesPerLine, QtGui.QImage.Format_RGB888)
-        return QPixmap(qImg)
+        data = image.constBits().asstring(image.byteCount())
+        return Image.frombuffer('RGBA', (width, height), data, 'raw', 'BGRA', 0, 1)
+
+    def ImageToQPixmap(self, image):
+        return QPixmap.fromImage(ImageQt(image))
+
+    def EnhanceImage(self, Pixmap, Property, value):
+        CurrentImage = self.QPixmapToImage(Pixmap)
+        AdjustedImage = Property(CurrentImage).enhance(float(value) / 100)
+        return self.ImageToQPixmap(AdjustedImage)
 
     def AddBrightnessSlider(self, layout):
         self.BrightnessSlider = QSlider(QtCore.Qt.Horizontal)
-        self.BrightnessSlider.setRange(0, 100)
+        self.BrightnessSlider.setRange(0, 200) # 1 is original image, 0 is black image
         layout.addRow("Brightness", self.BrightnessSlider)
+
+        # Default value of the brightness slider
+        self.BrightnessSlider.setValue(100) 
+
         self.BrightnessSlider.valueChanged.connect(self.OnBrightnessChanged)
 
-    def ChangeBrightness(self, img, value=30):
-        shape = img.shape
-        alpha = img[...,3]
-        hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-        h, s, v = cv2.split(hsv)
-
-        lim = 255 - value
-        v[v > lim] = 255
-        v[v <= lim] += value
-
-        final_hsv = cv2.merge((h, s, v))
-        img = cv2.cvtColor(final_hsv, cv2.COLOR_HSV2RGB)
-
-        return img
-
-    def OnBrightnessChanged(self, val):
-        CurrentImage = self.QPixmapToNumpy(self.welcome_pixmap)
-        CurrentImage = self.ChangeBrightness(CurrentImage, val)
-        CurrentImageAsPixMap = self.NumpyToQPixmap(CurrentImage)
-        self.logo_label.setPixmap(CurrentImageAsPixMap)
+    def OnBrightnessChanged(self, value):
+        self.Brightness = value
+        self.UpdateImage()
 
     def AddContrastSlider(self, layout):
         self.ContrastSlider = QSlider(QtCore.Qt.Horizontal)
-        self.ContrastSlider.setRange(-200, 200)
+        self.ContrastSlider.setRange(0, 200) # 1 is original image, 0 is a solid grey image
         layout.addRow("Contrast", self.ContrastSlider)
+
+        # Default value of the brightness slider
+        self.ContrastSlider.setValue(100) 
+
         self.ContrastSlider.valueChanged.connect(self.OnContrastChanged)
 
-    def ChangeContrast(self, img, Contrast):
-        print(Contrast)
-        img = cv2.cvtColor(img, cv2.COLOR_RGBA2BGR)
-        Contrast = int((Contrast - 0) * (127 - (-127)) / (254 - 0) + (-127))
-        Alpha = float(131 * (Contrast + 127)) / (127 * (131 - Contrast))
-        Gamma = 127 * (1 - Alpha)
-        img = cv2.addWeighted(img, Alpha, img, 0, Gamma)
-        return img
+    def OnContrastChanged(self, value):
+        self.Contrast = value
+        self.UpdateImage()
 
-    def OnContrastChanged(self, val):
-        CurrentImage = self.QPixmapToNumpy(self.welcome_pixmap)
-        CurrentImage = self.ChangeContrast(CurrentImage, val)
-        CurrentImageAsPixMap = self.NumpyToQPixmap(CurrentImage)
-        self.logo_label.setPixmap(CurrentImageAsPixMap)
+    def UpdateImage(self):
+        Pixmap = self.welcome_pixmap
+        Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Brightness, self.Brightness)
+        Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Contrast, self.Contrast)
+        self.logo_label.setPixmap(Pixmap)
 
 def main():
     app = QApplication(sys.argv)

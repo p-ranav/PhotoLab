@@ -1,7 +1,6 @@
-from tkinter import CURRENT
-from PyQt5 import QtWidgets, QtCore, QtGui
-from PyQt5.QtCore import pyqtSlot
-from PyQt5.QtWidgets import (
+from PyQt6 import QtWidgets, QtCore
+from PyQt6.QtCore import pyqtSlot
+from PyQt6.QtWidgets import (
     QApplication,
     QLabel,
     QGroupBox,
@@ -9,7 +8,7 @@ from PyQt5.QtWidgets import (
     QFormLayout,
     QSlider,
 )
-from PyQt5.QtGui import QPixmap
+from PyQt6.QtGui import QPixmap
 import sys
 import qdarkstyle
 from PIL import Image, ImageEnhance
@@ -26,7 +25,6 @@ class Gui(QtCore.QObject):
 
         self.logo_label = QLabel()
         self.welcome_pixmap = self.set_label_image(self.logo_label, 'welcome.jpg')
-        self.welcome_pixmap_original_aspect_ratio = self.welcome_pixmap.width() / self.welcome_pixmap.height()
         self.logo_label.installEventFilter(self)
         self.form_layout.addWidget(self.logo_label, alignment=QtCore.Qt.AlignCenter)
 
@@ -47,18 +45,22 @@ class Gui(QtCore.QObject):
         scroll.setWidgetResizable(True)
         lay = QtWidgets.QFormLayout(content)
 
-        # Tone sliders
-        tone_label = QLabel("Tone")
-        lay.addWidget(tone_label)
+        # Enhance sliders
+        enhance_label = QLabel("Enhance")
+        lay.addWidget(enhance_label)
 
+        self.AddColorSlider(lay)
         self.AddBrightnessSlider(lay)
         self.AddContrastSlider(lay)
+        self.AddSharpnessSlider(lay)
 
         # List of QPixmaps after each change
         # Most recent is the last one
         self.CurrentLayer = self.welcome_pixmap
+        self.Color = 100
         self.Brightness = 100
         self.Contrast = 100
+        self.Sharpness = 100
 
         self.MainWindow.showMaximized()
 
@@ -72,9 +74,10 @@ class Gui(QtCore.QObject):
         if pixmap.isNull():
             return None
         
-        w = min(pixmap.width(), label.maximumWidth())
-        h = min(pixmap.height(), label.maximumHeight())
-        pixmap = pixmap.scaled(QtCore.QSize(w, h), QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
+        # w = min(pixmap.width(), label.width())
+        # h = min(pixmap.height(), label.height())
+        pixmap = pixmap.scaledToWidth(label.width())
+        # pixmap = pixmap.scaled(QtCore.QSize(w, h), QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
         label.setPixmap(pixmap)
         return pixmap
 
@@ -83,7 +86,8 @@ class Gui(QtCore.QObject):
         height = pixmap.height()
         image = pixmap.toImage()
 
-        data = image.constBits().asstring(image.byteCount())
+        byteCount = image.bytesPerLine() * height
+        data = image.constBits().asstring(byteCount)
         return Image.frombuffer('RGBA', (width, height), data, 'raw', 'BGRA', 0, 1)
 
     def ImageToQPixmap(self, image):
@@ -93,6 +97,20 @@ class Gui(QtCore.QObject):
         CurrentImage = self.QPixmapToImage(Pixmap)
         AdjustedImage = Property(CurrentImage).enhance(float(value) / 100)
         return self.ImageToQPixmap(AdjustedImage)
+
+    def AddColorSlider(self, layout):
+        self.ColorSlider = QSlider(QtCore.Qt.Horizontal)
+        self.ColorSlider.setRange(0, 200) # 1 is original image, 0 is black image
+        layout.addRow("Saturation", self.ColorSlider)
+
+        # Default value of the Color slider
+        self.ColorSlider.setValue(100) 
+
+        self.ColorSlider.valueChanged.connect(self.OnColorChanged)
+
+    def OnColorChanged(self, value):
+        self.Color = value
+        self.UpdateImage()
 
     def AddBrightnessSlider(self, layout):
         self.BrightnessSlider = QSlider(QtCore.Qt.Horizontal)
@@ -122,10 +140,26 @@ class Gui(QtCore.QObject):
         self.Contrast = value
         self.UpdateImage()
 
+    def AddSharpnessSlider(self, layout):
+        self.SharpnessSlider = QSlider(QtCore.Qt.Horizontal)
+        self.SharpnessSlider.setRange(0, 200) # 1 is original image, 0 is black image
+        layout.addRow("Sharpness", self.SharpnessSlider)
+
+        # Default value of the Sharpness slider
+        self.SharpnessSlider.setValue(100) 
+
+        self.SharpnessSlider.valueChanged.connect(self.OnSharpnessChanged)
+
+    def OnSharpnessChanged(self, value):
+        self.Sharpness = value
+        self.UpdateImage()
+
     def UpdateImage(self):
         Pixmap = self.welcome_pixmap
+        Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Color, self.Color)
         Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Brightness, self.Brightness)
         Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Contrast, self.Contrast)
+        Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Sharpness, self.Sharpness)
         self.logo_label.setPixmap(Pixmap)
 
 def main():

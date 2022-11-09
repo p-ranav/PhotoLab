@@ -82,14 +82,19 @@ class Gui(QtCore.QObject):
         # Compute image histogram
         img = self.QPixmapToImage(self.OriginalImage)
         r, g, b, a = img.split()
-        histogram = r.histogram()
+        r_histogram = r.histogram()
+        g_histogram = g.histogram()
+        b_histogram = b.histogram()
 
         # Create histogram plot
         self.ImageHistogramPlot = pg.plot()
-        y1 = histogram
-        x = list(range(len(histogram)))
-        self.ImageHistogramGraph = pg.BarGraphItem(x = x, height = y1, width = 1.0, brush ='w')
-        self.ImageHistogramPlot.addItem(self.ImageHistogramGraph)
+        x = list(range(len(r_histogram)))
+        self.ImageHistogramGraphRed = pg.PlotCurveItem(x = x, y = r_histogram, fillLevel=2, width = 1.0, brush=(255,0,0,80))
+        self.ImageHistogramGraphGreen = pg.PlotCurveItem(x = x, y = g_histogram, fillLevel=2, width = 1.0, brush=(0,255,0,80))
+        self.ImageHistogramGraphBlue = pg.PlotCurveItem(x = x, y = b_histogram, fillLevel=2, width = 1.0, brush=(0,0,255,80))
+        self.ImageHistogramPlot.addItem(self.ImageHistogramGraphRed)
+        self.ImageHistogramPlot.addItem(self.ImageHistogramGraphGreen)
+        self.ImageHistogramPlot.addItem(self.ImageHistogramGraphBlue)
 
         # Create histogram dock
         HistogramDock = QtWidgets.QDockWidget("Histogram")
@@ -109,7 +114,7 @@ class Gui(QtCore.QObject):
         # to take up all the space in the window by default.
         self.MainWindow.setCentralWidget(self.image_viewer)
 
-        dock = QtWidgets.QDockWidget("")
+        dock = QtWidgets.QDockWidget("Adjust")
         dock.setMinimumSize(200, self.image_viewer.height())
         MainWindow.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, dock)
 
@@ -121,9 +126,6 @@ class Gui(QtCore.QObject):
         lay = QtWidgets.QFormLayout(content)
         
         # Enhance sliders
-        enhance_label = QLabel("Enhance")
-        lay.addWidget(enhance_label)
-
         self.AddColorSlider(lay)
         self.AddBrightnessSlider(lay)
         self.AddContrastSlider(lay)
@@ -275,6 +277,7 @@ class Gui(QtCore.QObject):
         Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Sharpness, self.Sharpness)
         Pixmap = self.ApplyGaussianBlur(Pixmap, float(self.GaussianBlurRadius / 100))
         self.image_viewer.setImage(Pixmap)
+        self.UpdateHistogramPlot()
 
     def OnCropToolButton(self, checked):
         if checked:
@@ -284,6 +287,19 @@ class Gui(QtCore.QObject):
             # Remove the crop path item
             self.image_viewer.scene.removeItem(self.image_viewer._cropItem)
             self.image_viewer._isCropping = False
+
+    def UpdateHistogramPlot(self):
+        # Compute image histogram
+        img = self.QPixmapToImage(self.image_viewer.pixmap())
+        r, g, b, a = img.split()
+        r_histogram = r.histogram()
+        g_histogram = g.histogram()
+        b_histogram = b.histogram()
+
+        # Update histogram plot
+        self.ImageHistogramGraphRed.setData(y=r_histogram)
+        self.ImageHistogramGraphGreen.setData(y=g_histogram)
+        self.ImageHistogramGraphBlue.setData(y=b_histogram)
 
 def main():
     app = QApplication(sys.argv)

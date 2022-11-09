@@ -18,6 +18,7 @@ from PIL.ImageQt import ImageQt
 from functools import partial
 from QImageViewer import QtImageViewer
 from QCropItem import QCropItem
+from PyQt6.QtGui import QKeySequence
 
 class Gui(QtCore.QObject):
     def __init__(self, MainWindow):

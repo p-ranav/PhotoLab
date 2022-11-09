@@ -538,13 +538,21 @@ class QtImageViewer(QGraphicsView):
             self.ROIs.append(spot)
 
     def keyPressEvent(self, event):
-        if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
-            # If cropping
-            # crop the image
-            cropQPixmap = self.pixmap().copy(self._cropItem.intern_rect.toAlignedRect())
-            self.setImage(cropQPixmap)
-            self._isCropping = False
-            self.parent.CropToolButton.setChecked(False)
+        if self._isCropping:
+            if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
+                # If cropping
+                # crop the image
+                cropQPixmap = self.pixmap().copy(self._cropItem.intern_rect.toAlignedRect())
+                self.setImage(cropQPixmap)
+                self._isCropping = False
+                self.parent.CropToolButton.setChecked(False)
+                del self._cropItem
+            elif event.key() == Qt.Key_Escape:
+                # If cropping
+                # Leave crop mode
+                self._isCropping = False
+                self.parent.CropToolButton.setChecked(False)
+                del self._cropItem
         event.accept()
 
 

@@ -4,13 +4,13 @@
 import os.path
 
 try:
-    from PyQt6.QtCore import Qt, QRectF, QPoint, QPointF, pyqtSignal, QEvent, QSize
+    from PyQt6.QtCore import Qt, QRect, QRectF, QPoint, QPointF, pyqtSignal, QEvent, QSize
     from PyQt6.QtGui import QImage, QPixmap, QPainterPath, QMouseEvent, QPainter, QPen
     from PyQt6.QtWidgets import QGraphicsView, QGraphicsScene, QFileDialog, QSizePolicy, \
         QGraphicsItem, QGraphicsEllipseItem, QGraphicsRectItem, QGraphicsLineItem, QGraphicsPolygonItem
 except ImportError:
     try:
-        from PyQt5.QtCore import Qt, QRectF, QPoint, QPointF, pyqtSignal, QEvent, QSize
+        from PyQt5.QtCore import Qt, QRect, QRectF, QPoint, QPointF, pyqtSignal, QEvent, QSize
         from PyQt5.QtGui import QImage, QPixmap, QPainterPath, QMouseEvent, QPainter, QPen
         from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QFileDialog, QSizePolicy, \
             QGraphicsItem, QGraphicsEllipseItem, QGraphicsRectItem, QGraphicsLineItem, QGraphicsPolygonItem
@@ -94,8 +94,10 @@ class QtImageViewer(QGraphicsView):
     # Emit index of selected ROI
     roiSelected = pyqtSignal(int)
 
-    def __init__(self):
+    def __init__(self, parent):
         QGraphicsView.__init__(self)
+        
+        self.parent = parent
 
         # Image is displayed as a QPixmap in a QGraphicsScene attached to this QGraphicsView.
         self.scene = QGraphicsScene()
@@ -139,6 +141,7 @@ class QtImageViewer(QGraphicsView):
         # Flags for active cropping
         # Set to true when using the crop tool with toolbar
         self._isCropping = False
+        self._cropItem = None
 
         # Store temporary position in screen pixels or scene units.
         self._pixelPosition = QPoint()
@@ -533,6 +536,16 @@ class QtImageViewer(QGraphicsView):
             spot.setRect(x - radius, y - radius, 2 * radius, 2 * radius)
             self.scene.addItem(spot)
             self.ROIs.append(spot)
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
+            # If cropping
+            # crop the image
+            cropQPixmap = self.pixmap().copy(self._cropItem.intern_rect.toAlignedRect())
+            self.setImage(cropQPixmap)
+            self._isCropping = False
+            self.parent.CropToolButton.setChecked(False)
+        event.accept()
 
 
 class EllipseROI(QGraphicsEllipseItem):

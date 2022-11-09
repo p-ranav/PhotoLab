@@ -1,5 +1,5 @@
 from PyQt6 import QtWidgets, QtCore, QtGui
-from PyQt6.QtCore import pyqtSlot
+from PyQt6.QtCore import Qt, pyqtSlot
 from PyQt6.QtWidgets import (
     QApplication,
     QLabel,
@@ -14,29 +14,57 @@ import qdarkstyle
 from PIL import Image, ImageEnhance
 from PIL.ImageQt import ImageQt
 from functools import partial
+from QImageViewer import QtImageViewer
 
 class Gui(QtCore.QObject):
     def __init__(self, MainWindow):
         super().__init__()
         self.MainWindow = MainWindow
 
-        self.form = QGroupBox()
-        self.form_layout = QVBoxLayout()
+        self.image_viewer = QtImageViewer()
+        self.image_viewer.open('welcome.jpg')
+        self.OriginalImage = self.image_viewer.pixmap()
 
-        self.logo_label = QLabel()
-        self.logo_label.setScaledContents(True)
-        self.welcome_pixmap = QPixmap('welcome.webp')
-        self.logo_label.setPixmap(self.welcome_pixmap)
-        self.form_layout.addWidget(self.logo_label, alignment=QtCore.Qt.AlignmentFlag.AlignCenter)
-
-        self.form.setLayout(self.form_layout)
+        # Set viewer's aspect ratio mode.
+        # !!! ONLY applies to full image view.
+        # !!! Aspect ratio always ignored when zoomed.
+        #   Qt.AspectRatioMode.IgnoreAspectRatio: Fit to viewport.
+        #   Qt.AspectRatioMode.KeepAspectRatio: Fit in viewport using aspect ratio.
+        #   Qt.AspectRatioMode.KeepAspectRatioByExpanding: Fill viewport using aspect ratio.
+        self.image_viewer.aspectRatioMode = Qt.AspectRatioMode.KeepAspectRatio
+    
+        # Set the viewer's scroll bar behaviour.
+        #   Qt.ScrollBarPolicy.ScrollBarAlwaysOff: Never show scroll bar.
+        #   Qt.ScrollBarPolicy.ScrollBarAlwaysOn: Always show scroll bar.
+        #   Qt.ScrollBarPolicy.ScrollBarAsNeeded: Show scroll bar only when zoomed.
+        self.image_viewer.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.image_viewer.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+    
+        # Allow zooming by draggin a zoom box with the left mouse button.
+        # !!! This will still emit a leftMouseButtonReleased signal if no dragging occured,
+        #     so you can still handle left mouse button clicks in this way.
+        #     If you absolutely need to handle a left click upon press, then
+        #     either disable region zooming or set it to the middle or right button.
+        self.image_viewer.regionZoomButton = Qt.MouseButton.LeftButton  # set to None to disable
+    
+        # Pop end of zoom stack (double click clears zoom stack).
+        self.image_viewer.zoomOutButton = Qt.MouseButton.RightButton  # set to None to disable
+    
+        # Mouse wheel zooming.
+        self.image_viewer.wheelZoomFactor = 1.25  # Set to None or 1 to disable
+    
+        # Allow panning with the middle mouse button.
+        self.image_viewer.panButton = Qt.MouseButton.MiddleButton  # set to None to disable
+        
+        # Load an image file to be displayed (will popup a file dialog).
+        self.image_viewer.open()
 
         # Set the central widget of the Window. Widget will expand
         # to take up all the space in the window by default.
-        self.MainWindow.setCentralWidget(self.form)
+        self.MainWindow.setCentralWidget(self.image_viewer)
 
         dock = QtWidgets.QDockWidget("")
-        dock.setMinimumSize(200, self.logo_label.height())
+        dock.setMinimumSize(200, self.image_viewer.height())
         MainWindow.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, dock)
 
         scroll = QtWidgets.QScrollArea()
@@ -57,7 +85,6 @@ class Gui(QtCore.QObject):
 
         # List of QPixmaps after each change
         # Most recent is the last one
-        self.CurrentLayer = self.welcome_pixmap
         self.Color = 100
         self.Brightness = 100
         self.Contrast = 100
@@ -139,12 +166,12 @@ class Gui(QtCore.QObject):
         self.UpdateImage()
 
     def UpdateImage(self):
-        Pixmap = self.welcome_pixmap
+        Pixmap = self.OriginalImage
         Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Color, self.Color)
         Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Brightness, self.Brightness)
         Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Contrast, self.Contrast)
         Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Sharpness, self.Sharpness)
-        self.logo_label.setPixmap(Pixmap)
+        self.image_viewer.setImage(Pixmap)
 
 def main():
     app = QApplication(sys.argv)

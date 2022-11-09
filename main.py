@@ -19,6 +19,23 @@ from functools import partial
 from QImageViewer import QtImageViewer
 from QCropItem import QCropItem
 from PyQt6.QtGui import QKeySequence
+import pyqtgraph as pg
+import cv2
+from matplotlib import pyplot as plt
+import numpy as np
+
+def QImageToCvMat(incomingImage):
+    '''  Converts a QImage into an opencv MAT format  '''
+
+    incomingImage = incomingImage.convertToFormat(QtGui.QImage.Format.Format_RGBA8888)
+
+    width = incomingImage.width()
+    height = incomingImage.height()
+
+    ptr = incomingImage.bits()
+    ptr.setsize(height * width * 4)
+    arr = np.frombuffer(ptr, np.uint8).reshape((height, width, 4))
+    return arr
 
 class Gui(QtCore.QObject):
     def __init__(self, MainWindow):
@@ -62,6 +79,32 @@ class Gui(QtCore.QObject):
         self.image_viewer.open()
         self.OriginalImage = self.image_viewer.pixmap()
 
+        # Compute image histogram
+        img = self.QPixmapToImage(self.OriginalImage)
+        r, g, b, a = img.split()
+        histogram = r.histogram()
+
+        # Create histogram plot
+        self.ImageHistogramPlot = pg.plot()
+        y1 = histogram
+        x = list(range(len(histogram)))
+        self.ImageHistogramGraph = pg.BarGraphItem(x = x, height = y1, width = 1.0, brush ='w')
+        self.ImageHistogramPlot.addItem(self.ImageHistogramGraph)
+
+        # Create histogram dock
+        HistogramDock = QtWidgets.QDockWidget("Histogram")
+        HistogramDock.setMinimumWidth(200)
+        MainWindow.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, HistogramDock)
+
+        scroll = QtWidgets.QScrollArea()
+        HistogramDock.setWidget(scroll)
+        content = QtWidgets.QWidget()
+        scroll.setWidget(content)
+        scroll.setWidgetResizable(True)
+        HistogramLayout = QtWidgets.QVBoxLayout(content)
+
+        HistogramLayout.addWidget(self.ImageHistogramPlot)
+
         # Set the central widget of the Window. Widget will expand
         # to take up all the space in the window by default.
         self.MainWindow.setCentralWidget(self.image_viewer)
@@ -76,7 +119,7 @@ class Gui(QtCore.QObject):
         scroll.setWidget(content)
         scroll.setWidgetResizable(True)
         lay = QtWidgets.QFormLayout(content)
-
+        
         # Enhance sliders
         enhance_label = QLabel("Enhance")
         lay.addWidget(enhance_label)

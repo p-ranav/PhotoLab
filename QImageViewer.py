@@ -305,6 +305,7 @@ class QtImageViewer(QGraphicsView):
         else:
             # TODO: Support moving the crop rectangle with left click instead of using the
             # crop rect corners
+            pass
 
         # Start dragging to pan?
         if (self.panButton is not None) and (event.button() == self.panButton):

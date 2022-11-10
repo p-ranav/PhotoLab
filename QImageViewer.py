@@ -157,6 +157,7 @@ class QtImageViewer(QGraphicsView):
         self.path = None
         self.selectPixmap = None
         self.selectPainterPaths = []
+        self._shiftPressedWhileSelecting = False
 
         # Store temporary position in screen pixels or scene units.
         self._pixelPosition = QPoint()
@@ -546,6 +547,10 @@ class QtImageViewer(QGraphicsView):
                 self.zoomStack[-1] = self.zoomStack[-1].intersected(self.sceneRect())
                 self.updateViewer()
                 self.viewChanged.emit()
+        elif self._isSelecting:
+            if self._shiftPressedWhileSelecting:
+                self.selectPoints.append(QPointF(self.mapToScene(event.pos())))
+                self.buildPath()
 
         scenePos = self.mapToScene(event.pos())
         if self.sceneRect().contains(scenePos):
@@ -637,6 +642,11 @@ class QtImageViewer(QGraphicsView):
                 self._cropItem = None
 
         elif self._isSelecting:
+            self._shiftPressedWhileSelecting = False
+
+            if event.key() == Qt.Key_Shift:
+                self._shiftPressedWhileSelecting = True
+
             if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
 
                 # if len(self.selectPoints) > 1:

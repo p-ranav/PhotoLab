@@ -173,6 +173,9 @@ class Gui(QtCore.QObject):
         self.CropToolShortcut = QtGui.QShortcut(QKeySequence("Ctrl+Shift+Alt+K"), self.MainWindow)
         self.CropToolShortcut.activated.connect(lambda: self.CropToolButton.toggle())
 
+        self.SaveShortcut = QtGui.QShortcut(QKeySequence("Ctrl+S"), self.MainWindow)
+        self.SaveShortcut.activated.connect(self.OnSave)
+
         self.SelectToolButton = QToolButton(self.MainWindow)
         self.SelectToolButton.setText("&Select")
         self.SelectToolButton.setIcon(QtGui.QIcon("select.svg"))
@@ -331,6 +334,9 @@ class Gui(QtCore.QObject):
         self.ImageHistogramGraphGreen.setData(y=g_histogram)
         self.ImageHistogramGraphBlue.setData(y=b_histogram)
         self.ImageHistogramGraphLuma.setData(y=luma_histogram)
+
+    def OnSave(self):
+        self.image_viewer.save()
 
 def main():
     app = QApplication(sys.argv)

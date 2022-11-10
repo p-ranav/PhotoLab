@@ -111,6 +111,7 @@ class QtImageViewer(QGraphicsView):
         # self.setRenderHints(QPainter.Antialiasing | QPainter.SmoothPixmapTransform)
 
         # Displayed image pixmap in the QGraphicsScene.
+        self._current_filename = None
         self._image = None
 
         # Image aspect ratio mode.
@@ -253,8 +254,16 @@ class QtImageViewer(QGraphicsView):
         if filepath is None:
             filepath, dummy = QFileDialog.getOpenFileName(self, "Open image file.")
         if len(filepath) and os.path.isfile(filepath):
+            self._current_filename = filepath
             image = QImage(filepath)
             self.setImage(image)
+
+    def save(self, filepath=None):
+        path = self._current_filename
+        if filepath:
+            path = filepath
+
+        self.pixmap().toImage().save(path)
 
     def updateViewer(self):
         """ Show current zoom (if showing entire image, apply current aspect ratio mode).

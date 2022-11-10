@@ -77,10 +77,10 @@ class Gui(QtCore.QObject):
         
         # Load an image file to be displayed (will popup a file dialog).
         self.image_viewer.open()
-        self.OriginalImage = self.image_viewer.pixmap()
+        self.image_viewer.OriginalImage = self.image_viewer.pixmap()
 
         # Compute image histogram
-        img = self.QPixmapToImage(self.OriginalImage)
+        img = self.QPixmapToImage(self.image_viewer.OriginalImage)
         r, g, b, a = img.split()
         r_histogram = r.histogram()
         g_histogram = g.histogram()
@@ -278,7 +278,7 @@ class Gui(QtCore.QObject):
         self.UpdateImageWithDelay()
 
     def UpdateImage(self):
-        Pixmap = self.OriginalImage
+        Pixmap = self.image_viewer.OriginalImage
         Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Color, self.Color)
         Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Brightness, self.Brightness)
         Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Contrast, self.Contrast)

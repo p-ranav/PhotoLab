@@ -158,6 +158,8 @@ class QtImageViewer(QGraphicsView):
 
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
+        self.OriginalImage = None
+
     def sizeHint(self):
         return QSize(900, 600)
 
@@ -543,6 +545,10 @@ class QtImageViewer(QGraphicsView):
                 # If cropping
                 # crop the image
                 cropQPixmap = self.pixmap().copy(self._cropItem.intern_rect.toAlignedRect())
+
+                # Crop the original image as well
+                self.OriginalImage = self.OriginalImage.copy(self._cropItem.intern_rect.toAlignedRect())
+
                 self.setImage(cropQPixmap)
                 self._isCropping = False
                 self.parent.CropToolButton.setChecked(False)

@@ -593,8 +593,11 @@ class QtImageViewer(QGraphicsView):
             elif event.key() == Qt.Key_Escape:
                 # If cropping
                 # Leave crop mode
-                self._isCropping = False
-                self.parent.CropToolButton.setChecked(False)
+                if self._cropItem:
+                    if self._cropItem in self.scene.items():
+                        self.scene.removeItem(self._cropItem)
+                del self._cropItem
+                self._cropItem = None
         event.accept()
 
 

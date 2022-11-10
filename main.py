@@ -169,6 +169,10 @@ class Gui(QtCore.QObject):
         self.CropToolButton.setIcon(QtGui.QIcon("crop.svg"))
         self.CropToolButton.setCheckable(True)
         self.CropToolButton.toggled.connect(self.OnCropToolButton)
+
+        self.CropToolShortcut = QtGui.QShortcut(QKeySequence("Ctrl+Shift+Alt+K"), self.MainWindow)
+        self.CropToolShortcut.activated.connect(lambda: self.CropToolButton.toggle())
+
         ImageToolBar.addWidget(self.CropToolButton)
 
         self.MainWindow.showMaximized()

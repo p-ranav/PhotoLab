@@ -85,6 +85,11 @@ class Gui(QtCore.QObject):
         r_histogram = r.histogram()
         g_histogram = g.histogram()
         b_histogram = b.histogram()
+        
+        # ITU-R 601-2 luma transform:
+        luma_histogram = [sum(x) for x in zip([item * float(299/1000) for item in r_histogram],
+                                              [item * float(587/1000) for item in g_histogram],
+                                              [item * float(114/1000) for item in b_histogram])]
 
         # Create histogram plot
         self.ImageHistogramPlot = pg.plot()
@@ -92,13 +97,16 @@ class Gui(QtCore.QObject):
         self.ImageHistogramGraphRed = pg.PlotCurveItem(x = x, y = r_histogram, fillLevel=2, width = 1.0, brush=(255,0,0,80))
         self.ImageHistogramGraphGreen = pg.PlotCurveItem(x = x, y = g_histogram, fillLevel=2, width = 1.0, brush=(0,255,0,80))
         self.ImageHistogramGraphBlue = pg.PlotCurveItem(x = x, y = b_histogram, fillLevel=2, width = 1.0, brush=(0,0,255,80))
+        self.ImageHistogramGraphLuma = pg.PlotCurveItem(x = x, y = luma_histogram, fillLevel=2, width = 1.0, brush=(255,255,255,80))
         self.ImageHistogramPlot.addItem(self.ImageHistogramGraphRed)
         self.ImageHistogramPlot.addItem(self.ImageHistogramGraphGreen)
         self.ImageHistogramPlot.addItem(self.ImageHistogramGraphBlue)
+        self.ImageHistogramPlot.addItem(self.ImageHistogramGraphLuma)
 
         # Create histogram dock
         HistogramDock = QtWidgets.QDockWidget("Histogram")
         HistogramDock.setMinimumWidth(200)
+        HistogramDock.setMinimumHeight(300)
         MainWindow.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, HistogramDock)
 
         scroll = QtWidgets.QScrollArea()
@@ -144,7 +152,7 @@ class Gui(QtCore.QObject):
         self.AddGaussianBlurSlider(lay)
 
         # State of filter sliders
-        self.GaussianBlurRadius = 100
+        self.GaussianBlurRadius = 0
 
         self.SliderTimerId = -1
 
@@ -255,10 +263,6 @@ class Gui(QtCore.QObject):
         self.GaussianBlurSlider = QSlider(QtCore.Qt.Orientation.Horizontal)
         self.GaussianBlurSlider.setRange(0, 2000)
         layout.addRow("Gaussian Blur", self.GaussianBlurSlider)
-
-        # Default value of the Sharpness slider
-        self.GaussianBlurSlider.setValue(20) 
-
         self.GaussianBlurSlider.valueChanged.connect(self.OnGaussianBlurChanged)
 
     def OnGaussianBlurChanged(self, value):
@@ -275,7 +279,8 @@ class Gui(QtCore.QObject):
         Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Brightness, self.Brightness)
         Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Contrast, self.Contrast)
         Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Sharpness, self.Sharpness)
-        Pixmap = self.ApplyGaussianBlur(Pixmap, float(self.GaussianBlurRadius / 100))
+        if self.GaussianBlurRadius > 0:
+            Pixmap = self.ApplyGaussianBlur(Pixmap, float(self.GaussianBlurRadius / 100))
         self.image_viewer.setImage(Pixmap)
         self.UpdateHistogramPlot()
 
@@ -296,10 +301,16 @@ class Gui(QtCore.QObject):
         g_histogram = g.histogram()
         b_histogram = b.histogram()
 
+        # ITU-R 601-2 luma transform:
+        luma_histogram = [sum(x) for x in zip([item * float(299/1000) for item in r_histogram],
+                                              [item * float(587/1000) for item in g_histogram],
+                                              [item * float(114/1000) for item in b_histogram])]
+
         # Update histogram plot
         self.ImageHistogramGraphRed.setData(y=r_histogram)
         self.ImageHistogramGraphGreen.setData(y=g_histogram)
         self.ImageHistogramGraphBlue.setData(y=b_histogram)
+        self.ImageHistogramGraphLuma.setData(y=luma_histogram)
 
 def main():
     app = QApplication(sys.argv)

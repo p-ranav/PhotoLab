@@ -290,11 +290,9 @@ class Gui(QtCore.QObject):
 
     def OnCropToolButton(self, checked):
         if checked:
-            self.image_viewer._cropItem = QCropItem(self.image_viewer._image)
             self.image_viewer._isCropping = True
         else:
             # Remove the crop path item
-            self.image_viewer.scene.removeItem(self.image_viewer._cropItem)
             self.image_viewer._isCropping = False
 
     def UpdateHistogramPlot(self):

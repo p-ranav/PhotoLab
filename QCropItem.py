@@ -179,11 +179,10 @@ class SizeGripItem(QGraphicsItem):
         self.doResize()
 
 class QCropItem(QGraphicsPathItem):
-    def __init__(self, parent):
+    def __init__(self, parent, cropRect):
         QGraphicsPathItem.__init__(self, parent)
         self.extern_rect = parent.boundingRect()
-        self.intern_rect = QRectF(0, 0, self.extern_rect.width()/2, self.extern_rect.height()/2)
-        self.intern_rect.moveCenter(self.extern_rect.center())
+        self.intern_rect = cropRect
         self.setBrush(QColor(10, 100, 100, 100))
         self.setPen(QPen(Qt.NoPen))
         SizeGripItem(self)

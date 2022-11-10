@@ -153,6 +153,8 @@ class QtImageViewer(QGraphicsView):
         self._isSelecting = False
         self.selectPoints = []
         self.path = None
+        self.selectPixmap = None
+        self.selectPainterPaths = []
 
         # Store temporary position in screen pixels or scene units.
         self._pixelPosition = QPoint()
@@ -315,8 +317,13 @@ class QtImageViewer(QGraphicsView):
 
                 return
         if self._isSelecting:
+            # TODO: https://stackoverflow.com/questions/63568214/qpainter-delete-previously-drawn-shapes
+            #
+            #
             # Start dragging a region crop box?
             if (self.regionZoomButton is not None) and (event.button() == self.regionZoomButton):
+                if self.selectPixmap == None:
+                    self.selectPixmap = self.pixmap()
                 self._pixelPosition = event.pos()  # store pixel position
                 self.selectPoints.append(QPointF(self.mapToScene(event.pos())))
                 QGraphicsView.mousePressEvent(self, event)
@@ -630,10 +637,11 @@ class QtImageViewer(QGraphicsView):
                 self.setImage(output)
                 self._isSelecting = False
                 self.selectPoints = []
-                self.scene.removeItem(self.pathItem)
-                del self.path
-                del self.pathItem
-                self.path = QtGui.QPainterPath()
+
+                self.path.clear()
+                for pathItem in self.selectPainterPaths:
+                    if pathItem:
+                        self.scene.removeItem(pathItem)
 
             elif event.key() == Qt.Key_Escape:
                 self._isSelecting = False
@@ -641,7 +649,6 @@ class QtImageViewer(QGraphicsView):
                 self.scene.removeItem(self.pathItem)
                 del self.path
                 del self.pathItem
-                self.path = QtGui.QPainterPath()
 
         event.accept()
 
@@ -684,6 +691,7 @@ class QtImageViewer(QGraphicsView):
 
         self.path.quadTo(self.selectPoints[-1], self.selectPoints[-1])
         self.pathItem = self.scene.addPath(self.path)
+        self.selectPainterPaths.append(self.pathItem)
 
         self.pathItem.setPen(
             QtGui.QPen(

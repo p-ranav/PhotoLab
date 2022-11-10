@@ -630,8 +630,8 @@ class QtImageViewer(QGraphicsView):
         elif self._isSelecting:
             if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
 
-                if len(self.selectPoints) > 1:
-                    self.path.quadTo(self.selectPoints[-2], self.selectPoints[-1])
+                # if len(self.selectPoints) > 1:
+                #     self.path.quadTo(self.selectPoints[-2], self.selectPoints[-1])
 
                 self.path.quadTo(self.selectPoints[-1], self.selectPoints[-1])
 
@@ -657,6 +657,7 @@ class QtImageViewer(QGraphicsView):
                 for pathItem in self.selectPainterPaths:
                     if pathItem and pathItem in self.scene.items():
                         self.scene.removeItem(pathItem)
+                self.self.selectPainterPaths = []
 
         event.accept()
 
@@ -677,9 +678,9 @@ class QtImageViewer(QGraphicsView):
             QtGui.QPen(
                 QtGui.QColor(255, 255, 255, 127),
                 penWidth if penWidth > 0 else 1,
-                QtCore.Qt.DotLine,
+                QtCore.Qt.SolidLine,
                 QtCore.Qt.RoundCap,
-                QtCore.Qt.MiterJoin,
+                QtCore.Qt.RoundJoin,
             )
         )
         self.pathItem.setBrush(QtGui.QColor(255, 0, 0, 10))

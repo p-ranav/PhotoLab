@@ -8,7 +8,8 @@ from PyQt6.QtWidgets import (
     QFormLayout,
     QSlider,
     QToolBar,
-    QToolButton
+    QToolButton,
+    QFileDialog
 )
 from PyQt6.QtGui import QPixmap
 import sys
@@ -176,6 +177,9 @@ class Gui(QtCore.QObject):
         self.SaveShortcut = QtGui.QShortcut(QKeySequence("Ctrl+S"), self.MainWindow)
         self.SaveShortcut.activated.connect(self.OnSave)
 
+        self.SaveAsShortcut = QtGui.QShortcut(QKeySequence("Ctrl+Shift+S"), self.MainWindow)
+        self.SaveAsShortcut.activated.connect(self.OnSaveAs)
+
         self.SelectToolButton = QToolButton(self.MainWindow)
         self.SelectToolButton.setText("&Select")
         self.SelectToolButton.setIcon(QtGui.QIcon("select.svg"))
@@ -337,6 +341,10 @@ class Gui(QtCore.QObject):
 
     def OnSave(self):
         self.image_viewer.save()
+   
+    def OnSaveAs(self):
+        name = QFileDialog.getSaveFileName(self.MainWindow, 'Save File', "Untitled.png", "Images (*.bmp *.ico *.jpeg *.jpg *.pbm *.pgm *.png *.ppm *.tif *.tiff *.wbmp *.xbm *.xpm)")
+        self.image_viewer.save(name[0])
 
 def main():
     app = QApplication(sys.argv)

@@ -1,5 +1,5 @@
 from PyQt6 import QtWidgets, QtCore, QtGui
-from PyQt6.QtCore import Qt, pyqtSlot
+from PyQt6.QtCore import Qt, pyqtSlot, QPointF
 from PyQt6.QtWidgets import (
     QApplication,
     QLabel,
@@ -173,7 +173,14 @@ class Gui(QtCore.QObject):
         self.CropToolShortcut = QtGui.QShortcut(QKeySequence("Ctrl+Shift+Alt+K"), self.MainWindow)
         self.CropToolShortcut.activated.connect(lambda: self.CropToolButton.toggle())
 
+        self.SelectToolButton = QToolButton(self.MainWindow)
+        self.SelectToolButton.setText("&Select")
+        self.SelectToolButton.setIcon(QtGui.QIcon("select.svg"))
+        self.SelectToolButton.setCheckable(True)
+        self.SelectToolButton.toggled.connect(self.OnSelectToolButton)
+
         ImageToolBar.addWidget(self.CropToolButton)
+        ImageToolBar.addWidget(self.SelectToolButton)
 
         self.MainWindow.showMaximized()
 
@@ -298,6 +305,13 @@ class Gui(QtCore.QObject):
         else:
             # Remove the crop path item
             self.image_viewer._isCropping = False
+
+    def OnSelectToolButton(self, checked):
+        if checked:
+            self.image_viewer._isSelecting = True
+        else:
+            # Remove the crop path item
+            self.image_viewer._isSelecting = False
 
     def UpdateHistogramPlot(self):
         # Compute image histogram

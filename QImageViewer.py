@@ -4,6 +4,7 @@
 import os.path
 
 try:
+    from PyQt6 import QtCore, QtGui, QtWidgets
     from PyQt6.QtCore import Qt, QRect, QRectF, QPoint, QPointF, pyqtSignal, QEvent, QSize
     from PyQt6.QtGui import QImage, QPixmap, QPainterPath, QMouseEvent, QPainter, QPen
     from PyQt6.QtWidgets import QGraphicsView, QGraphicsScene, QFileDialog, QSizePolicy, \
@@ -36,6 +37,7 @@ __author__ = "Marcel Goldschen-Ohm <marcel.goldschen@gmail.com>"
 __version__ = '2.0.0'
 
 from QCropItem import QCropItem
+from math import sin, radians
 
 
 class QtImageViewer(QGraphicsView):
@@ -145,6 +147,12 @@ class QtImageViewer(QGraphicsView):
         self._isCropping = False
         self._cropItem = None
         self._cropRect = None
+
+        # Flags for active selecting
+        # Set to true when using the select tool with toolbar
+        self._isSelecting = False
+        self.selectPoints = []
+        self.path = None
 
         # Store temporary position in screen pixels or scene units.
         self._pixelPosition = QPoint()
@@ -292,8 +300,32 @@ class QtImageViewer(QGraphicsView):
         #         # Click to add points to polygon. Double-click to close polygon.
         #         pass
 
-        if not self._isCropping:
+        if self._isCropping:
+            # Start dragging a region crop box?
+            if (self.regionZoomButton is not None) and (event.button() == self.regionZoomButton):
+                self._pixelPosition = event.pos()  # store pixel position
+                self.setDragMode(QGraphicsView.DragMode.RubberBandDrag)
+                QGraphicsView.mousePressEvent(self, event)
+                event.accept()
+                self._isCropping = True
+                
+                # Remove previous crop
+                if self._cropItem:
+                    self.scene.removeItem(self._cropItem)
 
+                return
+        if self._isSelecting:
+            # Start dragging a region crop box?
+            if (self.regionZoomButton is not None) and (event.button() == self.regionZoomButton):
+                self._pixelPosition = event.pos()  # store pixel position
+                self.selectPoints.append(QPointF(self.mapToScene(event.pos())))
+                QGraphicsView.mousePressEvent(self, event)
+                self.buildPath()
+                event.accept()
+                self._isSelecting = True
+                return
+        else:
+            # Zoom
             # Start dragging a region zoom box?
             if (self.regionZoomButton is not None) and (event.button() == self.regionZoomButton):
                 self._pixelPosition = event.pos()  # store pixel position
@@ -309,20 +341,6 @@ class QtImageViewer(QGraphicsView):
                     self.updateViewer()
                     self.viewChanged.emit()
                 event.accept()
-                return
-        else:
-            # Start dragging a region crop box?
-            if (self.regionZoomButton is not None) and (event.button() == self.regionZoomButton):
-                self._pixelPosition = event.pos()  # store pixel position
-                self.setDragMode(QGraphicsView.DragMode.RubberBandDrag)
-                QGraphicsView.mousePressEvent(self, event)
-                event.accept()
-                self._isCropping = True
-                
-                # Remove previous crop
-                if self._cropItem:
-                    self.scene.removeItem(self._cropItem)
-
                 return
 
         # Start dragging to pan?
@@ -599,6 +617,55 @@ class QtImageViewer(QGraphicsView):
                 del self._cropItem
                 self._cropItem = None
         event.accept()
+
+    def buildPath(self):
+        '''
+        https://stackoverflow.com/questions/63016214/drawing-multi-point-curve-with-pyqt5
+        '''
+        factor = 0.25
+        cp1 = QPointF(0, 0)
+        if self.path in self.scene.items():
+            self.scene.removeItem(self.path)
+            del self.path
+        self.path = QtGui.QPainterPath(self.selectPoints[0])
+        for p, current in enumerate(self.selectPoints[1:-1], 1):
+            # previous segment
+            source = QtCore.QLineF(self.selectPoints[p - 1], current)
+            # next segment
+            target = QtCore.QLineF(current, self.selectPoints[p + 1])
+            targetAngle = target.angleTo(source)
+            if targetAngle > 180:
+                angle = (source.angle() + source.angleTo(target) / 2) % 360
+            else:
+                angle = (target.angle() + target.angleTo(source) / 2) % 360
+
+            revTarget = QtCore.QLineF.fromPolar(source.length() * factor, angle + 180).translated(current)
+            cp2 = revTarget.p2()
+
+            if p == 1:
+                self.path.quadTo(cp2, current)
+            else:
+                # use the control point "cp1" set in the *previous* cycle
+                self.path.cubicTo(cp1, cp2, current)
+
+            revSource = QtCore.QLineF.fromPolar(target.length() * factor, angle).translated(current)
+            cp1 = revSource.p2()
+
+        # the final curve, that joins to the last point
+        if len(self.selectPoints) > 1:
+            self.path.quadTo(self.selectPoints[-2], self.selectPoints[-1])
+        item = self.scene.addPath(self.path)
+
+        item.setPen(
+            QtGui.QPen(
+                QtGui.QColor(0, 0, 0, 127),
+                10,
+                QtCore.Qt.DashLine,
+                QtCore.Qt.FlatCap,
+                QtCore.Qt.MiterJoin,
+            )
+        )
+        item.setBrush(QtGui.QColor(255, 0, 0, 10))
 
 
 class EllipseROI(QGraphicsEllipseItem):

@@ -616,6 +616,33 @@ class QtImageViewer(QGraphicsView):
                         self.scene.removeItem(self._cropItem)
                 del self._cropItem
                 self._cropItem = None
+
+        elif self._isSelecting:
+            if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
+                output = QImage(self.pixmap().toImage().size(), QImage.Format_ARGB32)
+                output.fill(Qt.transparent)
+                painter = QPainter(output)
+                painter.setClipPath(self.path)
+                painter.drawImage(QPoint(), self.pixmap().toImage())
+                painter.end()
+                # To avoid useless transparent background you can crop it like that:
+                output = output.copy(self.path.boundingRect().toRect())
+                self.setImage(output)
+                self._isSelecting = False
+                self.selectPoints = []
+                self.scene.removeItem(self.pathItem)
+                del self.path
+                del self.pathItem
+                self.path = QtGui.QPainterPath()
+
+            elif event.key() == Qt.Key_Escape:
+                self._isSelecting = False
+                self.selectPoints = []
+                self.scene.removeItem(self.pathItem)
+                del self.path
+                del self.pathItem
+                self.path = QtGui.QPainterPath()
+
         event.accept()
 
     def buildPath(self):
@@ -654,9 +681,11 @@ class QtImageViewer(QGraphicsView):
         # the final curve, that joins to the last point
         if len(self.selectPoints) > 1:
             self.path.quadTo(self.selectPoints[-2], self.selectPoints[-1])
-        item = self.scene.addPath(self.path)
 
-        item.setPen(
+        self.path.quadTo(self.selectPoints[-1], self.selectPoints[-1])
+        self.pathItem = self.scene.addPath(self.path)
+
+        self.pathItem.setPen(
             QtGui.QPen(
                 QtGui.QColor(0, 0, 0, 127),
                 10,
@@ -665,8 +694,7 @@ class QtImageViewer(QGraphicsView):
                 QtCore.Qt.MiterJoin,
             )
         )
-        item.setBrush(QtGui.QColor(255, 0, 0, 10))
-
+        self.pathItem.setBrush(QtGui.QColor(255, 0, 0, 10))
 
 class EllipseROI(QGraphicsEllipseItem):
 

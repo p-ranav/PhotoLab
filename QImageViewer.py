@@ -694,10 +694,10 @@ class QtImageViewer(QGraphicsView):
 
         self.pathItem.setPen(
             QtGui.QPen(
-                QtGui.QColor(0, 0, 0, 127),
-                10,
-                QtCore.Qt.DashLine,
-                QtCore.Qt.FlatCap,
+                QtGui.QColor(255, 255, 255, 127),
+                5,
+                QtCore.Qt.DotLine,
+                QtCore.Qt.RoundCap,
                 QtCore.Qt.MiterJoin,
             )
         )

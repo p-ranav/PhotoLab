@@ -635,20 +635,19 @@ class QtImageViewer(QGraphicsView):
                 # To avoid useless transparent background you can crop it like that:
                 output = output.copy(self.path.boundingRect().toRect())
                 self.setImage(output)
-                self._isSelecting = False
                 self.selectPoints = []
 
                 self.path.clear()
                 for pathItem in self.selectPainterPaths:
-                    if pathItem:
+                    if pathItem and pathItem in self.scene.items():
                         self.scene.removeItem(pathItem)
 
             elif event.key() == Qt.Key_Escape:
-                self._isSelecting = False
                 self.selectPoints = []
-                self.scene.removeItem(self.pathItem)
-                del self.path
-                del self.pathItem
+                self.path.clear()
+                for pathItem in self.selectPainterPaths:
+                    if pathItem and pathItem in self.scene.items():
+                        self.scene.removeItem(pathItem)
 
         event.accept()
 

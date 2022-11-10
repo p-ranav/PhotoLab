@@ -122,7 +122,7 @@ class Gui(QtCore.QObject):
         # to take up all the space in the window by default.
         self.MainWindow.setCentralWidget(self.image_viewer)
 
-        dock = QtWidgets.QDockWidget("Adjust")
+        dock = QtWidgets.QDockWidget("")
         dock.setMinimumSize(200, self.image_viewer.height())
         MainWindow.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, dock)
 
@@ -132,6 +132,10 @@ class Gui(QtCore.QObject):
         scroll.setWidget(content)
         scroll.setWidgetResizable(True)
         lay = QtWidgets.QFormLayout(content)
+
+        # Filter sliders
+        filter_label = QLabel("Basic")
+        lay.addWidget(filter_label)
         
         # Enhance sliders
         self.AddColorSlider(lay)

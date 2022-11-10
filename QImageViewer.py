@@ -669,10 +669,51 @@ class QtImageViewer(QGraphicsView):
         '''
         https://stackoverflow.com/questions/63016214/drawing-multi-point-curve-with-pyqt5
         '''
+        factor = 0.05
+        cp1 = QPointF(0, 0)
+        if self.path in self.scene.items():
+            self.scene.removeItem(self.path)
+            del self.path
+        self.path = QtGui.QPainterPath(self.selectPoints[0])
+        for p, current in enumerate(self.selectPoints[1:-1], 1):
+            # previous segment
+            source = QtCore.QLineF(self.selectPoints[p - 1], current)
+            # next segment
+            target = QtCore.QLineF(current, self.selectPoints[p + 1])
+            targetAngle = target.angleTo(source)
+            if targetAngle > 180:
+                angle = (source.angle() + source.angleTo(target) / 2) % 360
+            else:
+                angle = (target.angle() + target.angleTo(source) / 2) % 360
+
+            revTarget = QtCore.QLineF.fromPolar(source.length() * factor, angle + 180).translated(current)
+            cp2 = revTarget.p2()
+
+            if p == 1:
+                self.path.quadTo(cp2, current)
+            else:
+                # use the control point "cp1" set in the *previous* cycle
+                self.path.cubicTo(cp1, cp2, current)
+
+            revSource = QtCore.QLineF.fromPolar(target.length() * factor, angle).translated(current)
+            cp1 = revSource.p2()
+
+        # the final curve, that joins to the last point
+        if len(self.selectPoints) > 1:
+            self.path.quadTo(self.selectPoints[-2], self.selectPoints[-1])
+
+        self.path.quadTo(self.selectPoints[-1], self.selectPoints[-1])
+
+        '''
+        Alternate simpler solution that does not draw any curves
+        just lines:
         if not self.path:
             self.path = QtGui.QPainterPath(self.selectPoints[0])
         if len(self.selectPoints) > 1:
             self.path.quadTo(self.selectPoints[-2], self.selectPoints[-1])
+        '''
+      
+        
         self.pathItem = self.scene.addPath(self.path)
         self.selectPainterPaths.append(self.pathItem)
 

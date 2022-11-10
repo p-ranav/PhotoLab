@@ -650,6 +650,9 @@ class QtImageViewer(QGraphicsView):
                 for pathItem in self.selectPainterPaths:
                     if pathItem and pathItem in self.scene.items():
                         self.scene.removeItem(pathItem)
+                
+                self.selectPainterPaths = []
+                self.path = None
 
             elif event.key() == Qt.Key_Escape:
                 self.selectPoints = []
@@ -657,7 +660,8 @@ class QtImageViewer(QGraphicsView):
                 for pathItem in self.selectPainterPaths:
                     if pathItem and pathItem in self.scene.items():
                         self.scene.removeItem(pathItem)
-                self.self.selectPainterPaths = []
+                self.selectPainterPaths = []
+                self.path = None
 
         event.accept()
 

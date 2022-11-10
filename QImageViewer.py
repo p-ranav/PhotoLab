@@ -642,8 +642,6 @@ class QtImageViewer(QGraphicsView):
                 self._cropItem = None
 
         elif self._isSelecting:
-            self._shiftPressedWhileSelecting = False
-
             if event.key() == Qt.Key_Shift:
                 self._shiftPressedWhileSelecting = True
 
@@ -683,6 +681,11 @@ class QtImageViewer(QGraphicsView):
                 self.path = None
 
         event.accept()
+
+    def keyReleaseEvent(self, event):
+        if self._isSelecting:
+            if event.key() == Qt.Key_Shift:
+                self._shiftPressedWhileSelecting = False
 
     def buildPath(self):
         '''

@@ -133,6 +133,7 @@ class QtImageViewer(QGraphicsView):
         self.zoomOutButton = Qt.MouseButton.RightButton  # Pop end of zoom stack (double click clears zoom stack).
         self.panButton = Qt.MouseButton.MiddleButton  # Drag to pan.
         self.wheelZoomFactor = 1.25  # Set to None or 1 to disable mouse wheel zoom.
+        self.zoomLevel = 1
 
         # Stack of QRectF zoom boxes in scene coordinates.
         # !!! If you update this manually, be sure to call updateViewer() to reflect any changes.
@@ -500,6 +501,7 @@ class QtImageViewer(QGraphicsView):
                 self.zoomStack[-1] = zoomRect.intersected(self.sceneRect())
                 self.updateViewer()
                 self.viewChanged.emit()
+                self.zoomLevel += 1
             else:
                 # zoom out
                 if len(self.zoomStack) == 0:
@@ -517,6 +519,7 @@ class QtImageViewer(QGraphicsView):
                     self.zoomStack = []
                 self.updateViewer()
                 self.viewChanged.emit()
+                self.zoomLevel -= 1
             event.accept()
             return
 
@@ -626,6 +629,12 @@ class QtImageViewer(QGraphicsView):
 
         elif self._isSelecting:
             if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
+
+                if len(self.selectPoints) > 1:
+                    self.path.quadTo(self.selectPoints[-2], self.selectPoints[-1])
+
+                self.path.quadTo(self.selectPoints[-1], self.selectPoints[-1])
+
                 output = QImage(self.pixmap().toImage().size(), QImage.Format_ARGB32)
                 output.fill(Qt.transparent)
                 painter = QPainter(output)
@@ -655,47 +664,19 @@ class QtImageViewer(QGraphicsView):
         '''
         https://stackoverflow.com/questions/63016214/drawing-multi-point-curve-with-pyqt5
         '''
-        factor = 0.25
-        cp1 = QPointF(0, 0)
-        if self.path in self.scene.items():
-            self.scene.removeItem(self.path)
-            del self.path
-        self.path = QtGui.QPainterPath(self.selectPoints[0])
-        for p, current in enumerate(self.selectPoints[1:-1], 1):
-            # previous segment
-            source = QtCore.QLineF(self.selectPoints[p - 1], current)
-            # next segment
-            target = QtCore.QLineF(current, self.selectPoints[p + 1])
-            targetAngle = target.angleTo(source)
-            if targetAngle > 180:
-                angle = (source.angle() + source.angleTo(target) / 2) % 360
-            else:
-                angle = (target.angle() + target.angleTo(source) / 2) % 360
-
-            revTarget = QtCore.QLineF.fromPolar(source.length() * factor, angle + 180).translated(current)
-            cp2 = revTarget.p2()
-
-            if p == 1:
-                self.path.quadTo(cp2, current)
-            else:
-                # use the control point "cp1" set in the *previous* cycle
-                self.path.cubicTo(cp1, cp2, current)
-
-            revSource = QtCore.QLineF.fromPolar(target.length() * factor, angle).translated(current)
-            cp1 = revSource.p2()
-
-        # the final curve, that joins to the last point
+        if not self.path:
+            self.path = QtGui.QPainterPath(self.selectPoints[0])
         if len(self.selectPoints) > 1:
             self.path.quadTo(self.selectPoints[-2], self.selectPoints[-1])
-
-        self.path.quadTo(self.selectPoints[-1], self.selectPoints[-1])
         self.pathItem = self.scene.addPath(self.path)
         self.selectPainterPaths.append(self.pathItem)
+
+        penWidth = int(5 / self.zoomLevel)
 
         self.pathItem.setPen(
             QtGui.QPen(
                 QtGui.QColor(255, 255, 255, 127),
-                5,
+                penWidth if penWidth > 0 else 1,
                 QtCore.Qt.DotLine,
                 QtCore.Qt.RoundCap,
                 QtCore.Qt.MiterJoin,

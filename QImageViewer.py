@@ -41,6 +41,7 @@ from math import sin, radians
 from PIL import Image
 from QColorPicker import QColorPicker
 from PIL.ImageQt import ImageQt
+import cv2
 
 class QtImageViewer(QGraphicsView):
     """ PyQt image viewer widget based on QGraphicsView with mouse zooming/panning and ROIs.
@@ -342,14 +343,30 @@ class QtImageViewer(QGraphicsView):
         # Perform K-means clustering and find the average color
         # of this small image
         # Set the pixel of the area to be that average color
-        brush_size = 30
-        small_image = currentPixmap.toImage().copy(QRect(QPoint(int(x - brush_size), int(y - brush_size)), QPoint(int(x + brush_size), int(y + brush_size))))
-        small_image_numpy = self.QImageToCvMat(small_image)
-        average = small_image_numpy.mean(axis=0).mean(axis=0)
-        print(average)
-        r, g, b, a = average
-        print("Average", (r, g, b))
-        pixelAccess[x, y] = (int(r), int(g), int(b))
+        def average_rgb(x, y, sample_size):
+            small_image = currentPixmap.toImage().copy(QRect(QPoint(int(x - sample_size), int(y - sample_size)), QPoint(int(x + sample_size), int(y + sample_size))))
+            small_image_numpy = self.QImageToCvMat(small_image)
+            average = small_image_numpy.mean(axis=0).mean(axis=0)
+            #pixels = np.float32(small_image_numpy.reshape(-1, 4))
+
+            #n_colors = 5
+            #criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 200, .1)
+            #flags = cv2.KMEANS_RANDOM_CENTERS
+
+            #_, labels, palette = cv2.kmeans(pixels, n_colors, None, criteria, 10, flags)
+            #_, counts = np.unique(labels, return_counts=True)
+            #dominant = palette[np.argmax(counts)]
+
+            return average
+
+        brush_size = 300
+        #small_image = currentPixmap.toImage().copy(QRect(QPoint(int(x - brush_size), int(y - brush_size)), QPoint(int(x + brush_size), int(y + brush_size))))
+        #small_image_numpy = self.QImageToCvMat(small_image)
+        #average = small_image_numpy.mean(axis=0).mean(axis=0)
+        #print(average)
+        #r, g, b, a = average
+        #print("Average", (r, g, b))
+        #pixelAccess[x, y] = (int(r), int(g), int(b))
 
         # if the centre is at (a,b) 
         # and you know that (a−x,b−y) is in the circle, 
@@ -358,8 +375,10 @@ class QtImageViewer(QGraphicsView):
         for i in range(int(x - brush_size), int(x + brush_size)):
             for j in range(int(y - brush_size), int(y + brush_size)):
                 dist = (i - x) * (i - x) + (j - y) * (j - y)
-                if dist <= 3:
+                if dist <= brush_size:
                     # point is inside circle
+                    sample_size = 30
+                    r, g, b, a = average_rgb(i, j, sample_size)
                     pixelAccess[i, j] = (int(r), int(g), int(b))
 
         updatedPixmap = self.ImageToQPixmap(currentImage)

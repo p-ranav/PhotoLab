@@ -24,6 +24,7 @@ import pyqtgraph as pg
 import cv2
 from matplotlib import pyplot as plt
 import numpy as np
+from QColorPicker import QColorPicker
 
 def QImageToCvMat(incomingImage):
     '''  Converts a QImage into an opencv MAT format  '''
@@ -155,6 +156,10 @@ class Gui(QtCore.QObject):
         lay.addWidget(filter_label)
 
         self.AddGaussianBlurSlider(lay)
+
+        self.color_picker = QColorPicker(dock, rgb=(50, 50, 50))
+        self.image_viewer.ColorPicker = self.color_picker
+        lay.addWidget(self.color_picker)
 
         # State of filter sliders
         self.GaussianBlurRadius = 0

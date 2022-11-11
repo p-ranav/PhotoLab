@@ -38,7 +38,8 @@ __version__ = '2.0.0'
 
 from QCropItem import QCropItem
 from math import sin, radians
-
+from PIL import Image
+from QColorPicker import QColorPicker
 
 class QtImageViewer(QGraphicsView):
     """ PyQt image viewer widget based on QGraphicsView with mouse zooming/panning and ROIs.
@@ -176,6 +177,8 @@ class QtImageViewer(QGraphicsView):
 
         self.OriginalImage = None
 
+        self.ColorPicker = None
+
     def sizeHint(self):
         return QSize(900, 600)
 
@@ -287,6 +290,15 @@ class QtImageViewer(QGraphicsView):
         """
         self.updateViewer()
 
+    def QPixmapToImage(self, pixmap):
+        width = pixmap.width()
+        height = pixmap.height()
+        image = pixmap.toImage()
+
+        byteCount = image.bytesPerLine() * height
+        data = image.constBits().asstring(byteCount)
+        return Image.frombuffer('RGBA', (width, height), data, 'raw', 'BGRA', 0, 1)
+
     def mousePressEvent(self, event):
         """ Start mouse pan or zoom mode.
         """
@@ -297,6 +309,11 @@ class QtImageViewer(QGraphicsView):
             QGraphicsView.mousePressEvent(self, event)
             event.accept()
             return
+
+        pixelAccess = self.QPixmapToImage(self._image.pixmap()).load()
+        scene_pos = self.mapToScene(event.pos())
+        r, g, b, a = pixelAccess[scene_pos.x(), scene_pos.y()]
+        self.ColorPicker.setRGB((r, g, b))
 
         # # Draw ROI
         # if self.drawROI is not None:

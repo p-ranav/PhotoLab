@@ -1,4 +1,4 @@
-""" QtImageViewer.py: PyQt image viewer widget based on QGraphicsView with mouse zooming/panning and ROIs.
+﻿""" QtImageViewer.py: PyQt image viewer widget based on QGraphicsView with mouse zooming/panning and ROIs.
 """
 
 import os.path
@@ -350,6 +350,17 @@ class QtImageViewer(QGraphicsView):
         r, g, b, a = average
         print("Average", (r, g, b))
         pixelAccess[x, y] = (int(r), int(g), int(b))
+
+        # if the centre is at (a,b) 
+        # and you know that (a−x,b−y) is in the circle, 
+        # you know that (a+x,b−y), (a−x,b+y) and (a+x,b+y)
+
+        for i in range(int(x - brush_size), int(x + brush_size)):
+            for j in range(int(y - brush_size), int(y + brush_size)):
+                dist = (i - x) * (i - x) + (j - y) * (j - y)
+                if dist <= 3:
+                    # point is inside circle
+                    pixelAccess[i, j] = (int(r), int(g), int(b))
 
         updatedPixmap = self.ImageToQPixmap(currentImage)
         self.setImage(updatedPixmap.toImage())

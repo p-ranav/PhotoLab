@@ -40,6 +40,7 @@ from QCropItem import QCropItem
 from math import sin, radians
 from PIL import Image
 from QColorPicker import QColorPicker
+from PIL.ImageQt import ImageQt
 
 class QtImageViewer(QGraphicsView):
     """ PyQt image viewer widget based on QGraphicsView with mouse zooming/panning and ROIs.
@@ -299,6 +300,22 @@ class QtImageViewer(QGraphicsView):
         data = image.constBits().asstring(byteCount)
         return Image.frombuffer('RGBA', (width, height), data, 'raw', 'BGRA', 0, 1)
 
+    def ImageToQPixmap(self, image):
+        return QPixmap.fromImage(ImageQt(image))
+
+    def QImageToCvMat(self, incomingImage):
+        '''  Converts a QImage into an opencv MAT format  '''
+
+        incomingImage = incomingImage.convertToFormat(QtGui.QImage.Format.Format_RGBA8888)
+
+        width = incomingImage.width()
+        height = incomingImage.height()
+
+        ptr = incomingImage.bits()
+        ptr.setsize(height * width * 4)
+        arr = np.frombuffer(ptr, np.uint8).reshape((height, width, 4))
+        return arr
+
     def mousePressEvent(self, event):
         """ Start mouse pan or zoom mode.
         """
@@ -310,10 +327,44 @@ class QtImageViewer(QGraphicsView):
             event.accept()
             return
 
-        pixelAccess = self.QPixmapToImage(self._image.pixmap()).load()
+        currentPixmap = self._image.pixmap()
+        currentImage = self.QPixmapToImage(currentPixmap)
+        pixelAccess = currentImage.load()
         scene_pos = self.mapToScene(event.pos())
-        r, g, b, a = pixelAccess[scene_pos.x(), scene_pos.y()]
+        x = scene_pos.x()
+        y = scene_pos.y()
+        r, g, b, a = pixelAccess[x, y]
+        print("Pixel", (r, g, b))
         self.ColorPicker.setRGB((r, g, b))
+
+        # Prepare numpy array of a small region of the image
+        # around the point where the user clicked
+        # Perform K-means clustering and find the average color
+        # of this small image
+        # Set the pixel of the area to be that average color
+        brush_size = 30
+        small_image = currentPixmap.toImage().copy(QRect(QPoint(int(x - brush_size), int(y - brush_size)), QPoint(int(x + brush_size), int(y + brush_size))))
+        small_image_numpy = self.QImageToCvMat(small_image)
+        average = small_image_numpy.mean(axis=0).mean(axis=0)
+        print(average)
+        r, g, b, a = average
+        print("Average", (r, g, b))
+        pixelAccess[x, y] = (int(r), int(g), int(b))
+
+        updatedPixmap = self.ImageToQPixmap(currentImage)
+        self.setImage(updatedPixmap.toImage())
+
+        currentPixmap = self._image.pixmap()
+        pixelAccess = self.QPixmapToImage(currentPixmap).load()
+        scene_pos = self.mapToScene(event.pos())
+        x = scene_pos.x()
+        y = scene_pos.y()
+        r, g, b, a = pixelAccess[x, y]
+        print("New Pixel Value", (r, g, b))
+        self.ColorPicker.setRGB((r, g, b))
+
+        # self.ColorPicker.setRGB((r, g, b))
+        # self.setImage(currentPixmap.toImage())
 
         # # Draw ROI
         # if self.drawROI is not None:

@@ -105,18 +105,25 @@ class Gui(QtCore.QObject):
         self.ImageHistogramPlot.addItem(self.ImageHistogramGraphBlue)
         self.ImageHistogramPlot.addItem(self.ImageHistogramGraphLuma)
 
+        ##############################################################################################
+        ##############################################################################################
+        # Histogram Dock
+        ##############################################################################################
+        ##############################################################################################
+
         # Create histogram dock
         HistogramDock = QtWidgets.QDockWidget("Histogram")
-        HistogramDock.setMinimumWidth(200)
-        HistogramDock.setMinimumHeight(300)
+        # TODO: Change these numbers on dock resize
+        # These are just the starting value
+        HistogramDock.setMinimumWidth(100)
+        HistogramDock.setMinimumHeight(220)
+        HistogramDock.setMaximumHeight(220)
+        HistogramDock.setMaximumWidth(380)
         MainWindow.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, HistogramDock)
 
-        scroll = QtWidgets.QScrollArea()
-        HistogramDock.setWidget(scroll)
         content = QtWidgets.QWidget()
-        scroll.setWidget(content)
-        scroll.setWidgetResizable(True)
         HistogramLayout = QtWidgets.QVBoxLayout(content)
+        HistogramDock.setWidget(content)
 
         HistogramLayout.addWidget(self.ImageHistogramPlot)
 
@@ -124,8 +131,43 @@ class Gui(QtCore.QObject):
         # to take up all the space in the window by default.
         self.MainWindow.setCentralWidget(self.image_viewer)
 
+        ##############################################################################################
+        ##############################################################################################
+        # Color Picker
+        ##############################################################################################
+        ##############################################################################################
+
+        # Create color picker dock
+        ColorPickerDock = QtWidgets.QDockWidget("ColorPicker")
+        ColorPickerDock.setMinimumWidth(100)
+        ColorPickerDock.setMinimumHeight(100)
+        ColorPickerDock.setMaximumHeight(260)
+        ColorPickerDock.setMaximumWidth(380)
+        MainWindow.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, ColorPickerDock)
+
+        content = QtWidgets.QWidget()
+        ColorPickerLayout = QtWidgets.QVBoxLayout(content)
+        ColorPickerDock.setWidget(content)
+
+        self.color_picker = QColorPicker(content, rgb=(173, 36, 207))
+        ColorPickerLayout.addWidget(self.color_picker)
+        self.image_viewer.ColorPicker = self.color_picker
+
+        # Set the RGB in the color picker to the value in the middle of the image
+        pixelAccess = self.QPixmapToImage(self.image_viewer.OriginalImage).load()
+        middle_pixel_x = int(self.image_viewer.OriginalImage.width() / 2)
+        middle_pixel_y = int(self.image_viewer.OriginalImage.height() / 2)
+        r, g, b, a = pixelAccess[middle_pixel_x, middle_pixel_y]
+        self.color_picker.setRGB((r, g, b))
+
+        ##############################################################################################
+        ##############################################################################################
+        # Adjustment Sliders
+        ##############################################################################################
+        ##############################################################################################
+
         dock = QtWidgets.QDockWidget("")
-        dock.setMinimumSize(200, self.image_viewer.height())
+        # dock.setMinimumSize(100, self.image_viewer.height())
         MainWindow.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, dock)
 
         scroll = QtWidgets.QScrollArea()
@@ -156,10 +198,6 @@ class Gui(QtCore.QObject):
         lay.addWidget(filter_label)
 
         self.AddGaussianBlurSlider(lay)
-
-        self.color_picker = QColorPicker(dock, rgb=(50, 50, 50))
-        self.image_viewer.ColorPicker = self.color_picker
-        lay.addWidget(self.color_picker)
 
         # State of filter sliders
         self.GaussianBlurRadius = 0

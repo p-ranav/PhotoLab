@@ -280,7 +280,7 @@ class QtImageViewer(QGraphicsView):
         if filepath:
             path = filepath
 
-        self.pixmap().save(path, None, 100)
+        self.OriginalImage.save(path, None, 100)
 
     def updateViewer(self):
         """ Show current zoom (if showing entire image, apply current aspect ratio mode).
@@ -373,7 +373,6 @@ class QtImageViewer(QGraphicsView):
                 self.setDragMode(QGraphicsView.DragMode.RubberBandDrag)
                 QGraphicsView.mousePressEvent(self, event)
                 event.accept()
-                self._isCropping = True
                 
                 # Remove previous crop
                 if self._cropItem:
@@ -393,7 +392,6 @@ class QtImageViewer(QGraphicsView):
                 QGraphicsView.mousePressEvent(self, event)
                 self.buildPath()
                 event.accept()
-                self._isSelecting = True
                 return
         elif self._isRemovingSpots:
             if (self.regionZoomButton is not None) and (event.button() == self.regionZoomButton):
@@ -684,72 +682,19 @@ class QtImageViewer(QGraphicsView):
     def keyPressEvent(self, event):
         if self._isCropping:
             if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
-                # Crop the pixmap
-                cropQPixmap = self.pixmap().copy(self._cropRect.toAlignedRect())
-
-                # Crop the original image as well
-                self.OriginalImage = self.OriginalImage.copy(self._cropRect.toAlignedRect())
-
-                self.setImage(cropQPixmap)
-
-                # Remove crop item
-                if self._cropItem:
-                    if self._cropItem in self.scene.items():
-                        self.scene.removeItem(self._cropItem)
-                del self._cropItem
-                self._cropItem = None
-
-                self.updateViewer()
-                self.viewChanged.emit()
-                event.accept()
+                self.performCrop(event)
 
             elif event.key() == Qt.Key_Escape:
-                # If cropping
-                # Leave crop mode
-                if self._cropItem:
-                    if self._cropItem in self.scene.items():
-                        self.scene.removeItem(self._cropItem)
-                del self._cropItem
-                self._cropItem = None
+                self.exitCrop()
 
         elif self._isSelecting:
             if event.key() == Qt.Key_Shift:
                 self._shiftPressed = True
 
             if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
-
-                # if len(self.selectPoints) > 1:
-                #     self.path.quadTo(self.selectPoints[-2], self.selectPoints[-1])
-
-                self.path.quadTo(self.selectPoints[-1], self.selectPoints[-1])
-
-                output = QImage(self.pixmap().toImage().size(), QImage.Format_ARGB32)
-                output.fill(Qt.transparent)
-                painter = QPainter(output)
-                painter.setClipPath(self.path)
-                painter.drawImage(QPoint(), self.pixmap().toImage())
-                painter.end()
-                # To avoid useless transparent background you can crop it like that:
-                output = output.copy(self.path.boundingRect().toRect())
-                self.setImage(output)
-                self.selectPoints = []
-
-                self.path.clear()
-                for pathItem in self.selectPainterPaths:
-                    if pathItem and pathItem in self.scene.items():
-                        self.scene.removeItem(pathItem)
-                
-                self.selectPainterPaths = []
-                self.path = None
-
+                self.performSelect(event)
             elif event.key() == Qt.Key_Escape:
-                self.selectPoints = []
-                self.path.clear()
-                for pathItem in self.selectPainterPaths:
-                    if pathItem and pathItem in self.scene.items():
-                        self.scene.removeItem(pathItem)
-                self.selectPainterPaths = []
-                self.path = None
+                self.exitSelect()
         elif self._isRemovingSpots:
             if event.key() == Qt.Key_Shift:
                 self._shiftPressed = True
@@ -776,6 +721,72 @@ class QtImageViewer(QGraphicsView):
         if self._isRemovingSpots:
             if event.key() == Qt.Key_Shift:
                 self._shiftPressed = False
+
+    def performCrop(self, event):
+        # Crop the pixmap
+        cropQPixmap = self.pixmap().copy(self._cropRect.toAlignedRect())
+
+        # Crop the original image as well
+        self.OriginalImage = self.OriginalImage.copy(self._cropRect.toAlignedRect())
+
+        self.setImage(cropQPixmap)
+
+        # Remove crop item
+        if self._cropItem:
+            if self._cropItem in self.scene.items():
+                self.scene.removeItem(self._cropItem)
+        del self._cropItem
+        self._cropItem = None
+
+        self.updateViewer()
+        self.viewChanged.emit()
+        event.accept()
+
+    def exitCrop(self):
+        # If cropping
+        # Leave crop mode
+        if self._cropItem:
+            if self._cropItem in self.scene.items():
+                self.scene.removeItem(self._cropItem)
+        del self._cropItem
+        self._cropItem = None
+
+    def performSelect(self, event):
+        # if len(self.selectPoints) > 1:
+        #     self.path.quadTo(self.selectPoints[-2], self.selectPoints[-1])
+
+        self.path.quadTo(self.selectPoints[-1], self.selectPoints[-1])
+
+        output = QImage(self.pixmap().toImage().size(), QImage.Format_ARGB32)
+        output.fill(Qt.transparent)
+        painter = QPainter(output)
+        painter.setClipPath(self.path)
+        painter.drawImage(QPoint(), self.pixmap().toImage())
+        painter.end()
+        # To avoid useless transparent background you can crop it like that:
+        output = output.copy(self.path.boundingRect().toRect())
+        self.setImage(output)
+        self.selectPoints = []
+
+        if self.path:
+            self.path.clear()
+        
+        for pathItem in self.selectPainterPaths:
+            if pathItem and pathItem in self.scene.items():
+                self.scene.removeItem(pathItem)
+                
+        self.selectPainterPaths = []
+        self.path = None
+
+    def exitSelect(self):
+        self.selectPoints = []
+        if self.path:
+            self.path.clear()
+        for pathItem in self.selectPainterPaths:
+            if pathItem and pathItem in self.scene.items():
+                self.scene.removeItem(pathItem)
+        self.selectPainterPaths = []
+        self.path = None
 
     def buildPath(self):
         '''

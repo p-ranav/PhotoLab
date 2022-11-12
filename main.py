@@ -283,6 +283,27 @@ class Gui(QtCore.QObject):
         ##############################################################################################
         ##############################################################################################
 
+        self.tools = {
+            "crop": {
+                "tool": "CropToolButton",
+                "var": '_isCropping',
+                "destructor": 'exitCrop'
+            },
+            "select": {
+                "tool": "SelectToolButton",
+                "var": '_isSelecting',
+                "destructor": 'exitSelect'
+            },
+            "spot_removal": {
+                "tool": "SpotRemovalToolButton",
+                "var": '_isRemovingSpots'
+            },
+            "blur": {
+                "tool": "BlurToolButton",
+                "var": '_isBlurring'
+            },
+        }
+
         ImageToolBar.addWidget(self.CropToolButton)
         ImageToolBar.addWidget(self.SelectToolButton)
         ImageToolBar.addWidget(self.SpotRemovalToolButton)
@@ -400,31 +421,6 @@ class Gui(QtCore.QObject):
         self.Sharpness = value
         self.UpdateImageWithDelay()
 
-    def UpdateImage(self):
-        Pixmap = self.image_viewer.OriginalImage
-        Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Color, self.Color)
-        Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Brightness, self.Brightness)
-        Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Contrast, self.Contrast)
-        Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Sharpness, self.Sharpness)
-        if self.GaussianBlurRadius > 0:
-            Pixmap = self.ApplyGaussianBlur(Pixmap, float(self.GaussianBlurRadius / 100))
-        self.image_viewer.setImage(Pixmap)
-        self.UpdateHistogramPlot()
-
-    def OnCropToolButton(self, checked):
-        if checked:
-            self.image_viewer._isCropping = True
-        else:
-            # Remove the crop path item
-            self.image_viewer._isCropping = False
-
-    def OnSelectToolButton(self, checked):
-        if checked:
-            self.image_viewer._isSelecting = True
-        else:
-            # Remove the crop path item
-            self.image_viewer._isSelecting = False
-
     def UpdateHistogramPlot(self):
         # Compute image histogram
         img = self.QPixmapToImage(self.image_viewer.pixmap())
@@ -444,24 +440,54 @@ class Gui(QtCore.QObject):
         self.ImageHistogramGraphBlue.setData(y=b_histogram)
         self.ImageHistogramGraphLuma.setData(y=luma_histogram)
 
+    def UpdateImage(self):
+        Pixmap = self.image_viewer.OriginalImage
+        Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Color, self.Color)
+        Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Brightness, self.Brightness)
+        Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Contrast, self.Contrast)
+        Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Sharpness, self.Sharpness)
+        if self.GaussianBlurRadius > 0:
+            Pixmap = self.ApplyGaussianBlur(Pixmap, float(self.GaussianBlurRadius / 100))
+        self.image_viewer.setImage(Pixmap)
+        self.UpdateHistogramPlot()
+
+    def OnCropToolButton(self, checked):
+        self.EnableTool("crop") if checked else self.DisableTool("crop")
+
+    def OnSelectToolButton(self, checked):
+        self.EnableTool("select") if checked else self.DisableTool("select")
+
+    def OnSpotRemovalToolButton(self, checked):
+        self.EnableTool("spot_removal") if checked else self.DisableTool("spot_removal")
+
+    def OnBlurToolButton(self, checked):
+        self.EnableTool("blur") if checked else self.DisableTool("blur")
+
+    def EnableTool(self, tool):
+        for key, value in self.tools.items():
+            if key == tool:
+                getattr(self, value["tool"]).setChecked(True)
+                setattr(self.image_viewer, value["var"], True)
+            else:
+                # Disable the other tools
+                getattr(self, value["tool"]).setChecked(False)
+                setattr(self.image_viewer, value["var"], False)
+                if "destructor" in value:
+                    getattr(self.image_viewer, value["destructor"])()
+
+    def DisableTool(self, tool):
+        value = self.tools[tool]
+        getattr(self, value["tool"]).setChecked(False)
+        setattr(self.image_viewer, value["var"], False)
+        if "destructor" in value:
+            getattr(self.image_viewer, value["destructor"])()
+
     def OnSave(self):
         self.image_viewer.save()
    
     def OnSaveAs(self):
         name = QFileDialog.getSaveFileName(self.MainWindow, 'Save File', "Untitled.png", "Images (*.bmp *.ico *.jpeg *.jpg *.pbm *.pgm *.png *.ppm *.tif *.tiff *.wbmp *.xbm *.xpm)")
         self.image_viewer.save(name[0])
-
-    def OnSpotRemovalToolButton(self, checked):
-        if checked:
-            self.image_viewer._isRemovingSpots = True
-        else:
-            self.image_viewer._isRemovingSpots = False
-
-    def OnBlurToolButton(self, checked):
-        if checked:
-            self.image_viewer._isBlurring= True
-        else:
-            self.image_viewer._isBlurring = False
 
 def main():
     app = QApplication(sys.argv)

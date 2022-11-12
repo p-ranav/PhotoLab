@@ -861,6 +861,7 @@ class QtImageViewer(QGraphicsView):
             small_image = currentPixmap.toImage().copy(QRect(QPoint(int(x - sample_size), int(y - sample_size)), QPoint(int(x + sample_size), int(y + sample_size))))
             small_image_pillow = self.QImageToImage(small_image)
             small_image_pillow = small_image_pillow.filter(ImageFilter.SMOOTH)
+            small_image_pillow = small_image_pillow.filter(ImageFilter.SMOOTH_MORE)
             small_image = self.ImageToQPixmap(small_image_pillow).toImage()
             small_image_numpy = self.QImageToCvMat(small_image)
             average = small_image_numpy.mean(axis=0).mean(axis=0)
@@ -869,7 +870,7 @@ class QtImageViewer(QGraphicsView):
         dominant = dominant_rgb(x, y, 1)
         average = average_rgb(x, y, 60)
 
-        brush_size = 300
+        brush_size = 200
 
         # Find neighbor pixels in a circle around (x, y)
         neighbors = []
@@ -892,7 +893,7 @@ class QtImageViewer(QGraphicsView):
             pr, pg, pb, _ = pixelAccess[i, j] # current neighbor pixel inside the brush circle
             ar, ag, ab, _ = average # average_rgb(i, j, sample_size)
             dr, dg, db, _ = dominant # pixelAccess[x, y]
-            if is_similar((dr, dg, db), (pr, pg, pb), 30):
+            if is_similar((dr, dg, db), (pr, pg, pb), 15):
                 # Update this pixel
                 rr = 0
                 if ar > 200:
@@ -904,6 +905,22 @@ class QtImageViewer(QGraphicsView):
                 if ab > 200:
                     rb = random.randint(-3, 3)
                 pixelAccess[i, j] = (int(ar + rr), int(ag + rg), int(ab + rb))
+
+        average_sample_size = 50
+        for ny in range(int(x-50), int(x+50)):
+            for nx in range(int(y-50), int(y+50)):    
+                px1 = pixelAccess[nx, ny] #0/0
+                px2 = pixelAccess[nx, ny+1] #0/1
+                px3 = pixelAccess[nx, ny+2] #0/2
+                px4 = pixelAccess[nx+1, ny] #1/0
+                px5 = pixelAccess[nx+1, ny+1] #1/1
+                px6 = pixelAccess[nx+1, ny+2] #1/2
+                px7 = pixelAccess[nx+2, ny] #2/0
+                px8 = pixelAccess[nx+2, ny+1] #2/1
+                px9 = pixelAccess[nx+2, ny+2] #2/2
+
+                average = np.average([px1, px2, px3, px4, px5, px6, px7, px8, px9], axis=0)
+                pixelAccess[nx+1, ny+1] = (int(average[0]), int(average[1]), int(average[2]))   #1/1
 
         # Update the pixmap
         updatedPixmap = self.ImageToQPixmap(currentImage)

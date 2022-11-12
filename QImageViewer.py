@@ -38,7 +38,7 @@ __version__ = '2.0.0'
 
 from QCropItem import QCropItem
 from math import sin, radians
-from PIL import Image, ImageFilter
+from PIL import Image, ImageFilter, ImageDraw
 from QColorPicker import QColorPicker
 from PIL.ImageQt import ImageQt
 import cv2
@@ -165,6 +165,10 @@ class QtImageViewer(QGraphicsView):
 
         # Flags for spot removal tool
         self._isRemovingSpots = False
+
+        # Flags for blur tool
+        self._isBlurring = False
+        self.blurPixmap = None
 
         # Store temporary position in screen pixels or scene units.
         self._pixelPosition = QPoint()
@@ -391,6 +395,9 @@ class QtImageViewer(QGraphicsView):
         elif self._isRemovingSpots:
             if (self.regionZoomButton is not None) and (event.button() == self.regionZoomButton):
                 self.removeSpots(event)
+        elif self._isBlurring:
+            if (self.regionZoomButton is not None) and (event.button() == self.regionZoomButton):
+                self.blur(event)
         else:
             # Zoom
             # Start dragging a region zoom box?
@@ -600,6 +607,30 @@ class QtImageViewer(QGraphicsView):
             if self._shiftPressedWhileSelecting:
                 self.selectPoints.append(QPointF(self.mapToScene(event.pos())))
                 self.buildPath()
+        elif self._isBlurring:
+            if not self.blurPixmap:
+                self.blurPixmap = self.pixmap()
+                # TODO: Set this to None when you're done blurring
+
+            pos = QPointF(self.mapToScene(event.pos()))
+            pixmap = self.blurPixmap.copy()
+            self.blurPainter = QPainter()
+            self.blurPainter.begin(pixmap)
+
+            #gradient = QtGui.QRadialGradient(50, 50, 50, 50, 50);
+            #gradient.setColorAt(0, QtGui.QColor.fromRgbF(255, 0, 0, 1))
+            #gradient.setColorAt(1, QtGui.QColor.fromRgbF(255, 0, 0, 0))
+
+            brush = QtGui.QBrush() # (gradient)
+            brush.setColor(QtGui.QColor(255, 0, 0, 127))
+            brush.setStyle(QtCore.Qt.BrushStyle.SolidPattern)
+            pen = QtGui.QPen()
+            pen.setBrush(brush)
+            self.blurPainter.setBrush(brush)
+            self.blurPainter.setPen(pen)
+            self.blurPainter.drawEllipse(pos, 20, 20)
+            self.blurPainter.end() 
+            self.setImage(pixmap)
 
         scenePos = self.mapToScene(event.pos())
         if self.sceneRect().contains(scenePos):
@@ -836,7 +867,7 @@ class QtImageViewer(QGraphicsView):
             _, counts = np.unique(labels, return_counts=True)
 
             dominant = palette[np.argmax(counts)]
-            return dominant
+            return palette, dominant
 
         # Prepare numpy array of a small region of the image
         # around the point where the user clicked
@@ -867,12 +898,14 @@ class QtImageViewer(QGraphicsView):
             average = small_image_numpy.mean(axis=0).mean(axis=0)
             return average
 
-        dominant = dominant_rgb(x, y, 1)
+        palette, dominant = dominant_rgb(x, y, 1)
         # average = average_rgb(x, y, 60)
 
         brush_size = 200
         if self.zoomLevel > 0:
             brush_size = int(brush_size / self.zoomLevel)
+
+        average = average_rgb(x, y, int(brush_size / 10))
 
         # Find neighbor pixels in a circle around (x, y)
         neighbors = []
@@ -939,11 +972,76 @@ class QtImageViewer(QGraphicsView):
         #                    rb = random.randint(-3, 3)
         #                pixelAccess[nx, ny] = (int(ar + rr), int(ag + rg), int(ab + rb))
 
+        #pixelAccess[x - 1, y] = (int(average[0]), int(average[1]), int(average[2]))
+        #pixelAccess[x, y] = (int(average[0]), int(average[1]), int(average[2]))
+        #pixelAccess[x + 1, y] = (int(average[0]), int(average[1]), int(average[2]))
+        #pixelAccess[x + 1, y + 1] = (int(average[0]), int(average[1]), int(average[2]))
+
+        brush_size = 3
+        for i in range(int(x - brush_size), int(x + brush_size)):
+            for j in range(int(y - brush_size), int(y + brush_size)):
+                dist = (i - x) * (i - x) + (j - y) * (j - y)
+                # Introduce some randomnes in the distance check
+                if dist <= brush_size:
+                    pixelAccess[i, j] = (int(average[0]), int(average[1]), int(average[2]))
+
         # Update the pixmap
         updatedPixmap = self.ImageToQPixmap(currentImage)
-        updatedPixmap.save("test.png", "PNG", 100);
         self.setImage(updatedPixmap)
         self.OriginalImage = updatedPixmap
+
+    def blur(self, event, brush_size = 80):
+        currentPixmap = self.blurPixmap # self._image.pixmap()
+        currentImage = self.QPixmapToImage(currentPixmap)
+        scene_pos = self.mapToScene(event.pos())
+        x = scene_pos.x()
+        y = scene_pos.y()
+
+        # Make a mask the same size as the image filled with black
+        mask = Image.new('L',currentImage.size)
+
+        # Draw a filled white circle onto the black mask
+        draw = ImageDraw.Draw(mask)
+        draw.ellipse([x - brush_size, y - brush_size, x + brush_size, y + brush_size],fill=255)
+
+        # Blur the entire image
+        blurred = currentImage.filter(ImageFilter.BLUR)
+
+        # Composite blurred image over sharp one within mask
+        currentImage = Image.composite(blurred, currentImage, mask)
+
+        #def make_ellipse_mask(size, x0, y0, x1, y1, blur_radius):
+        #    img = Image.new("L", size, color=0)
+        #    draw = ImageDraw.Draw(img)
+        #    draw.ellipse((x0, y0, x1, y1), fill=255)
+        #    return img.filter(ImageFilter.GaussianBlur(radius=blur_radius))
+
+        #brush_size = 200
+        #mask_image = make_ellipse_mask(currentImage.size, x - brush_size, y - brush_size, x + brush_size, y + brush_size, brush_size)
+        #overlay_image = currentImage.filter(ImageFilter.GaussianBlur(radius=15))
+        ## overlay_image = Image.new("RGB", currentImage.size, color="orange")  # This could be a bitmap fill too, but let's just make it orange
+        #mask_image = make_ellipse_mask(currentImage.size, 150, 70, 350, 250, 5)
+        #masked_image = Image.composite(overlay_image, currentImage, mask_image)
+
+        ##brush_size = 200
+        ### Gaussian blur on circle
+        ### Create circle mask
+        ##mask = Image.new('L', (currentImage.width, currentImage.height), 0)
+        ##draw = ImageDraw.Draw(mask)
+        ### (x1, y1, x2, y2), where x1 <= x2 and y1 <= y2, as those pairs, 
+        ### (x1, y1) and (x2, y2), represents respectively 
+        ### top left and bottom right corners of enclosing rectangle.
+        ##draw.ellipse([(x - brush_size, y - brush_size), (x + brush_size, y + brush_size)], fill=255)
+        ##blur_filter = currentImage.filter(ImageFilter.GaussianBlur(brush_size))
+        ##blur_filter.paste(currentImage, mask=mask)
+
+        # Update the pixmap
+        updatedPixmap = self.ImageToQPixmap(currentImage)
+        self.setImage(updatedPixmap)
+        self.OriginalImage = updatedPixmap
+        self.blurPixmap = updatedPixmap
+
+        print("Done")
 
 class EllipseROI(QGraphicsEllipseItem):
 

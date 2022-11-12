@@ -265,9 +265,28 @@ class Gui(QtCore.QObject):
         self.SpotRemovalToolButton.setCheckable(True)
         self.SpotRemovalToolButton.toggled.connect(self.OnSpotRemovalToolButton)
 
+        ##############################################################################################
+        ##############################################################################################
+        # Blur Tool
+        ##############################################################################################
+        ##############################################################################################
+
+        self.BlurToolButton = QToolButton(self.MainWindow)
+        self.BlurToolButton.setText("&Blur")
+        self.BlurToolButton.setIcon(QtGui.QIcon("blur.svg"))
+        self.BlurToolButton.setCheckable(True)
+        self.BlurToolButton.toggled.connect(self.OnBlurToolButton)
+
+        ##############################################################################################
+        ##############################################################################################
+        # Toolbar
+        ##############################################################################################
+        ##############################################################################################
+
         ImageToolBar.addWidget(self.CropToolButton)
         ImageToolBar.addWidget(self.SelectToolButton)
         ImageToolBar.addWidget(self.SpotRemovalToolButton)
+        ImageToolBar.addWidget(self.BlurToolButton)
 
         ##############################################################################################
         ##############################################################################################
@@ -437,6 +456,12 @@ class Gui(QtCore.QObject):
             self.image_viewer._isRemovingSpots = True
         else:
             self.image_viewer._isRemovingSpots = False
+
+    def OnBlurToolButton(self, checked):
+        if checked:
+            self.image_viewer._isBlurring= True
+        else:
+            self.image_viewer._isBlurring = False
 
 def main():
     app = QApplication(sys.argv)

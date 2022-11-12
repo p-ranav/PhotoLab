@@ -220,6 +220,12 @@ class Gui(QtCore.QObject):
         ImageToolBar = QToolBar("Toolbar", self.MainWindow)
         self.MainWindow.addToolBar(Qt.LeftToolBarArea, ImageToolBar)
 
+        ##############################################################################################
+        ##############################################################################################
+        # Crop Tool
+        ##############################################################################################
+        ##############################################################################################
+
         self.CropToolButton = QToolButton(self.MainWindow)
         self.CropToolButton.setText("&Crop")
         self.CropToolButton.setIcon(QtGui.QIcon("crop.svg"))
@@ -235,14 +241,33 @@ class Gui(QtCore.QObject):
         self.SaveAsShortcut = QtGui.QShortcut(QKeySequence("Ctrl+Shift+S"), self.MainWindow)
         self.SaveAsShortcut.activated.connect(self.OnSaveAs)
 
+        ##############################################################################################
+        ##############################################################################################
+        # Select + Crop Tool
+        ##############################################################################################
+        ##############################################################################################
+
         self.SelectToolButton = QToolButton(self.MainWindow)
         self.SelectToolButton.setText("&Select")
         self.SelectToolButton.setIcon(QtGui.QIcon("select.svg"))
         self.SelectToolButton.setCheckable(True)
         self.SelectToolButton.toggled.connect(self.OnSelectToolButton)
 
+        ##############################################################################################
+        ##############################################################################################
+        # Spot Removal Tool
+        ##############################################################################################
+        ##############################################################################################
+
+        self.SpotRemovalToolButton = QToolButton(self.MainWindow)
+        self.SpotRemovalToolButton.setText("&Spot Removal")
+        self.SpotRemovalToolButton.setIcon(QtGui.QIcon("spot_removal.svg"))
+        self.SpotRemovalToolButton.setCheckable(True)
+        self.SpotRemovalToolButton.toggled.connect(self.OnSpotRemovalToolButton)
+
         ImageToolBar.addWidget(self.CropToolButton)
         ImageToolBar.addWidget(self.SelectToolButton)
+        ImageToolBar.addWidget(self.SpotRemovalToolButton)
 
         ##############################################################################################
         ##############################################################################################
@@ -406,6 +431,12 @@ class Gui(QtCore.QObject):
     def OnSaveAs(self):
         name = QFileDialog.getSaveFileName(self.MainWindow, 'Save File', "Untitled.png", "Images (*.bmp *.ico *.jpeg *.jpg *.pbm *.pgm *.png *.ppm *.tif *.tiff *.wbmp *.xbm *.xpm)")
         self.image_viewer.save(name[0])
+
+    def OnSpotRemovalToolButton(self, checked):
+        if checked:
+            self.image_viewer._isRemovingSpots = True
+        else:
+            self.image_viewer._isRemovingSpots = False
 
 def main():
     app = QApplication(sys.argv)

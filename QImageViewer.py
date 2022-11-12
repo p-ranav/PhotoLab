@@ -38,10 +38,11 @@ __version__ = '2.0.0'
 
 from QCropItem import QCropItem
 from math import sin, radians
-from PIL import Image
+from PIL import Image, ImageFilter
 from QColorPicker import QColorPicker
 from PIL.ImageQt import ImageQt
 import cv2
+import random
 
 class QtImageViewer(QGraphicsView):
     """ PyQt image viewer widget based on QGraphicsView with mouse zooming/panning and ROIs.
@@ -161,6 +162,9 @@ class QtImageViewer(QGraphicsView):
         self.selectPixmap = None
         self.selectPainterPaths = []
         self._shiftPressedWhileSelecting = False
+
+        # Flags for spot removal tool
+        self._isRemovingSpots = False
 
         # Store temporary position in screen pixels or scene units.
         self._pixelPosition = QPoint()
@@ -301,6 +305,15 @@ class QtImageViewer(QGraphicsView):
         data = image.constBits().asstring(byteCount)
         return Image.frombuffer('RGBA', (width, height), data, 'raw', 'BGRA', 0, 1)
 
+    def QImageToImage(self, qimage):
+        width = qimage.width()
+        height = qimage.height()
+        image = qimage
+
+        byteCount = image.bytesPerLine() * height
+        data = image.constBits().asstring(byteCount)
+        return Image.frombuffer('RGBA', (width, height), data, 'raw', 'BGRA', 0, 1)
+
     def ImageToQPixmap(self, image):
         return QPixmap.fromImage(ImageQt(image))
 
@@ -327,71 +340,6 @@ class QtImageViewer(QGraphicsView):
             QGraphicsView.mousePressEvent(self, event)
             event.accept()
             return
-
-        currentPixmap = self._image.pixmap()
-        currentImage = self.QPixmapToImage(currentPixmap)
-        pixelAccess = currentImage.load()
-        scene_pos = self.mapToScene(event.pos())
-        x = scene_pos.x()
-        y = scene_pos.y()
-        r, g, b, a = pixelAccess[x, y]
-        print("Pixel", (r, g, b))
-        self.ColorPicker.setRGB((r, g, b))
-
-        # Prepare numpy array of a small region of the image
-        # around the point where the user clicked
-        # Perform K-means clustering and find the average color
-        # of this small image
-        # Set the pixel of the area to be that average color
-        def average_rgb(x, y, sample_size):
-            small_image = currentPixmap.toImage().copy(QRect(QPoint(int(x - sample_size), int(y - sample_size)), QPoint(int(x + sample_size), int(y + sample_size))))
-            small_image_numpy = self.QImageToCvMat(small_image)
-            average = small_image_numpy.mean(axis=0).mean(axis=0)
-            #pixels = np.float32(small_image_numpy.reshape(-1, 4))
-
-            #n_colors = 5
-            #criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 200, .1)
-            #flags = cv2.KMEANS_RANDOM_CENTERS
-
-            #_, labels, palette = cv2.kmeans(pixels, n_colors, None, criteria, 10, flags)
-            #_, counts = np.unique(labels, return_counts=True)
-            #dominant = palette[np.argmax(counts)]
-
-            return average
-
-        brush_size = 300
-        #small_image = currentPixmap.toImage().copy(QRect(QPoint(int(x - brush_size), int(y - brush_size)), QPoint(int(x + brush_size), int(y + brush_size))))
-        #small_image_numpy = self.QImageToCvMat(small_image)
-        #average = small_image_numpy.mean(axis=0).mean(axis=0)
-        #print(average)
-        #r, g, b, a = average
-        #print("Average", (r, g, b))
-        #pixelAccess[x, y] = (int(r), int(g), int(b))
-
-        # if the centre is at (a,b) 
-        # and you know that (a−x,b−y) is in the circle, 
-        # you know that (a+x,b−y), (a−x,b+y) and (a+x,b+y)
-
-        for i in range(int(x - brush_size), int(x + brush_size)):
-            for j in range(int(y - brush_size), int(y + brush_size)):
-                dist = (i - x) * (i - x) + (j - y) * (j - y)
-                if dist <= brush_size:
-                    # point is inside circle
-                    sample_size = 30
-                    r, g, b, a = average_rgb(i, j, sample_size)
-                    pixelAccess[i, j] = (int(r), int(g), int(b))
-
-        updatedPixmap = self.ImageToQPixmap(currentImage)
-        self.setImage(updatedPixmap.toImage())
-
-        currentPixmap = self._image.pixmap()
-        pixelAccess = self.QPixmapToImage(currentPixmap).load()
-        scene_pos = self.mapToScene(event.pos())
-        x = scene_pos.x()
-        y = scene_pos.y()
-        r, g, b, a = pixelAccess[x, y]
-        print("New Pixel Value", (r, g, b))
-        self.ColorPicker.setRGB((r, g, b))
 
         # self.ColorPicker.setRGB((r, g, b))
         # self.setImage(currentPixmap.toImage())
@@ -440,6 +388,9 @@ class QtImageViewer(QGraphicsView):
                 event.accept()
                 self._isSelecting = True
                 return
+        elif self._isRemovingSpots:
+            if (self.regionZoomButton is not None) and (event.button() == self.regionZoomButton):
+                self.removeSpots(event)
         else:
             # Zoom
             # Start dragging a region zoom box?
@@ -849,6 +800,114 @@ class QtImageViewer(QGraphicsView):
             )
         )
         self.pathItem.setBrush(QtGui.QColor(255, 0, 0, 10))
+
+    def removeSpots(self, event):
+        currentPixmap = self._image.pixmap()
+        currentImage = self.QPixmapToImage(currentPixmap)
+        pixelAccess = currentImage.load()
+        scene_pos = self.mapToScene(event.pos())
+        x = scene_pos.x()
+        y = scene_pos.y()
+
+        THRESHOLD = 18
+
+        def luminance(pixel):
+            return (0.299 * pixel[0] + 0.587 * pixel[1] + 0.114 * pixel[2])
+
+        def is_similar(pixel_a, pixel_b, threshold):
+            return abs(luminance(pixel_a) - luminance(pixel_b)) < threshold
+
+        # Prepare numpy array of a small region of the image
+        # around the point where the user clicked
+        # Perform K-means clustering and find the average color
+        # of this small image
+        # Set the pixel of the area to be that average color
+        # https://stackoverflow.com/questions/43111029/how-to-find-the-average-colour-of-an-image-in-python-with-opencv
+        def dominant_rgb(x, y, sample_size):
+            small_image = currentPixmap.toImage().copy(QRect(QPoint(int(x - sample_size), int(y - sample_size)), QPoint(int(x + sample_size), int(y + sample_size))))
+            small_image_numpy = self.QImageToCvMat(small_image)
+            pixels = np.float32(small_image_numpy.reshape(-1, 4))
+
+            n_colors = 5
+            criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 200, .1)
+            flags = cv2.KMEANS_RANDOM_CENTERS
+
+            _, labels, palette = cv2.kmeans(pixels, n_colors, None, criteria, 10, flags)
+            _, counts = np.unique(labels, return_counts=True)
+
+            dominant = palette[np.argmax(counts)]
+            return dominant
+
+        # Prepare numpy array of a small region of the image
+        # around the point where the user clicked
+        # Perform K-means clustering and find the average color
+        # of this small image
+        # Set the pixel of the area to be that average color
+        # https://stackoverflow.com/questions/43111029/how-to-find-the-average-colour-of-an-image-in-python-with-opencv
+        def average_rgb(x, y, sample_size):
+
+            ## Find neighbor pixels in a circle around (x, y)
+            #neighbors = []
+            #for i in range(int(x - sample_size), int(x + sample_size)):
+            #    for j in range(int(y - sample_size), int(y + sample_size)):
+            #        dist = (i - x) * (i - x) + (j - y) * (j - y)
+            #        if dist <= brush_size:
+            #            # point is inside circle
+            #            neighbors.append(pixelAccess[i, j])
+            
+            #average = np.mean(np.array(neighbors), axis=0)
+            #return average
+
+            small_image = currentPixmap.toImage().copy(QRect(QPoint(int(x - sample_size), int(y - sample_size)), QPoint(int(x + sample_size), int(y + sample_size))))
+            small_image_pillow = self.QImageToImage(small_image)
+            small_image_pillow = small_image_pillow.filter(ImageFilter.SMOOTH)
+            small_image = self.ImageToQPixmap(small_image_pillow).toImage()
+            small_image_numpy = self.QImageToCvMat(small_image)
+            average = small_image_numpy.mean(axis=0).mean(axis=0)
+            return average
+
+        dominant = dominant_rgb(x, y, 1)
+        average = average_rgb(x, y, 60)
+
+        brush_size = 300
+
+        # Find neighbor pixels in a circle around (x, y)
+        neighbors = []
+        for i in range(int(x - brush_size), int(x + brush_size)):
+            for j in range(int(y - brush_size), int(y + brush_size)):
+                dist = (i - x) * (i - x) + (j - y) * (j - y)
+
+                # Introduce some randomnes in the distance check
+                if dist <= brush_size + random.randint(0, 15):
+                    # point is inside circle
+                    neighbors.append([i, j])
+
+        # Sort the list of neighbors by distance
+        neighbors.sort(key=lambda p: (p[0] - x) * (p[0] - x) + (p[1] - y) * (p[1] - y))
+
+        # For each point, update the pixel by averaging
+        for point in neighbors:
+            i, j = point
+            sample_size = 100
+            pr, pg, pb, _ = pixelAccess[i, j] # current neighbor pixel inside the brush circle
+            ar, ag, ab, _ = average # average_rgb(i, j, sample_size)
+            dr, dg, db, _ = dominant # pixelAccess[x, y]
+            if is_similar((dr, dg, db), (pr, pg, pb), 30):
+                # Update this pixel
+                rr = 0
+                if ar > 200:
+                    rr = random.randint(-3, 3)
+                rg = 0
+                if ag > 200:
+                    rg = random.randint(-3, 3)
+                rb = 0
+                if ab > 200:
+                    rb = random.randint(-3, 3)
+                pixelAccess[i, j] = (int(ar + rr), int(ag + rg), int(ab + rb))
+
+        # Update the pixmap
+        updatedPixmap = self.ImageToQPixmap(currentImage)
+        self.setImage(updatedPixmap.toImage())
 
 class EllipseROI(QGraphicsEllipseItem):
 

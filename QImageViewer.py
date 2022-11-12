@@ -273,7 +273,7 @@ class QtImageViewer(QGraphicsView):
         if filepath:
             path = filepath
 
-        self.pixmap().toImage().save(path)
+        self.pixmap().save(path, None, 100)
 
     def updateViewer(self):
         """ Show current zoom (if showing entire image, apply current aspect ratio mode).
@@ -868,9 +868,11 @@ class QtImageViewer(QGraphicsView):
             return average
 
         dominant = dominant_rgb(x, y, 1)
-        average = average_rgb(x, y, 60)
+        # average = average_rgb(x, y, 60)
 
         brush_size = 200
+        if self.zoomLevel > 0:
+            brush_size = int(brush_size / self.zoomLevel)
 
         # Find neighbor pixels in a circle around (x, y)
         neighbors = []
@@ -889,42 +891,59 @@ class QtImageViewer(QGraphicsView):
         # For each point, update the pixel by averaging
         for point in neighbors:
             i, j = point
-            sample_size = 100
+            sample_size = int(brush_size / 10)
             pr, pg, pb, _ = pixelAccess[i, j] # current neighbor pixel inside the brush circle
-            ar, ag, ab, _ = average # average_rgb(i, j, sample_size)
+            ar, ag, ab, _ = average_rgb(i, j, sample_size)
             dr, dg, db, _ = dominant # pixelAccess[x, y]
             if is_similar((dr, dg, db), (pr, pg, pb), 15):
                 # Update this pixel
                 rr = 0
-                if ar > 200:
+                if ar > 150:
                     rr = random.randint(-3, 3)
                 rg = 0
-                if ag > 200:
+                if ag > 150:
                     rg = random.randint(-3, 3)
                 rb = 0
-                if ab > 200:
+                if ab > 150:
                     rb = random.randint(-3, 3)
                 pixelAccess[i, j] = (int(ar + rr), int(ag + rg), int(ab + rb))
 
-        average_sample_size = 50
-        for ny in range(int(x-50), int(x+50)):
-            for nx in range(int(y-50), int(y+50)):    
-                px1 = pixelAccess[nx, ny] #0/0
-                px2 = pixelAccess[nx, ny+1] #0/1
-                px3 = pixelAccess[nx, ny+2] #0/2
-                px4 = pixelAccess[nx+1, ny] #1/0
-                px5 = pixelAccess[nx+1, ny+1] #1/1
-                px6 = pixelAccess[nx+1, ny+2] #1/2
-                px7 = pixelAccess[nx+2, ny] #2/0
-                px8 = pixelAccess[nx+2, ny+1] #2/1
-                px9 = pixelAccess[nx+2, ny+2] #2/2
+        #average_sample_size = int(brush_size / 10)
+        #for ny in range(int(x-average_sample_size), int(x+average_sample_size)):
+        #    for nx in range(int(y-average_sample_size), int(y+average_sample_size)):    
+        #        if nx > 0 and nx < currentImage.width and nx + 2 < currentImage.width:
+        #            if ny > 0 and ny < currentImage.height and nx + 2 < currentImage.height:
+        #                px1 = pixelAccess[nx, ny] #0/0
+        #                px2 = pixelAccess[nx, ny+1] #0/1
+        #                px3 = pixelAccess[nx, ny+2] #0/2
+        #                px4 = pixelAccess[nx+1, ny] #1/0
+        #                px5 = pixelAccess[nx+1, ny+1] #1/1
+        #                px6 = pixelAccess[nx+1, ny+2] #1/2
+        #                px7 = pixelAccess[nx+2, ny] #2/0
+        #                px8 = pixelAccess[nx+2, ny+1] #2/1
+        #                px9 = pixelAccess[nx+2, ny+2] #2/2
 
-                average = np.average([px1, px2, px3, px4, px5, px6, px7, px8, px9], axis=0)
-                pixelAccess[nx+1, ny+1] = (int(average[0]), int(average[1]), int(average[2]))   #1/1
+        #                average = np.average([px1, px2, px3, px4, px5, px6, px7, px8, px9], axis=0)
+        #                ar = int(average[0])
+        #                ag = int(average[1])
+        #                ab = int(average[2])
+        #                # Update this pixel
+        #                rr = 0
+        #                if ar > 200:
+        #                    rr = random.randint(-3, 3)
+        #                rg = 0
+        #                if ag > 200:
+        #                    rg = random.randint(-3, 3)
+        #                rb = 0
+        #                if ab > 200:
+        #                    rb = random.randint(-3, 3)
+        #                pixelAccess[nx, ny] = (int(ar + rr), int(ag + rg), int(ab + rb))
 
         # Update the pixmap
         updatedPixmap = self.ImageToQPixmap(currentImage)
-        self.setImage(updatedPixmap.toImage())
+        updatedPixmap.save("test.png", "PNG", 100);
+        self.setImage(updatedPixmap)
+        self.OriginalImage = updatedPixmap
 
 class EllipseROI(QGraphicsEllipseItem):
 

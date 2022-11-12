@@ -161,14 +161,15 @@ class QtImageViewer(QGraphicsView):
         self.path = None
         self.selectPixmap = None
         self.selectPainterPaths = []
-        self._shiftPressedWhileSelecting = False
+        self._shiftPressed = False
 
         # Flags for spot removal tool
         self._isRemovingSpots = False
+        self.spotsBrushSize = 80
+        self.spotRemovalSimilarityThreshold = 10
 
         # Flags for blur tool
         self._isBlurring = False
-        self.blurPixmap = None
         self.blurBrushSize = 80
 
         # Store temporary position in screen pixels or scene units.
@@ -610,11 +611,17 @@ class QtImageViewer(QGraphicsView):
                 self.updateViewer()
                 self.viewChanged.emit()
         elif self._isSelecting:
-            if self._shiftPressedWhileSelecting:
+            if self._shiftPressed:
                 self.selectPoints.append(QPointF(self.mapToScene(event.pos())))
                 self.buildPath()
+        elif self._isRemovingSpots:
+            image = self.OriginalImage.copy()
+            self.renderCursorOverlay(image, self._lastMousePositionInScene, self.spotsBrushSize)
+            if self._shiftPressed:
+                self.removeSpots(event)
         elif self._isBlurring:
-            self.updateBlurCursor(self._lastMousePositionInScene)
+            image = self.OriginalImage.copy()
+            self.renderCursorOverlay(image, self._lastMousePositionInScene, self.blurBrushSize)
 
         scenePos = self.mapToScene(event.pos())
         if self.sceneRect().contains(scenePos):
@@ -707,7 +714,7 @@ class QtImageViewer(QGraphicsView):
 
         elif self._isSelecting:
             if event.key() == Qt.Key_Shift:
-                self._shiftPressedWhileSelecting = True
+                self._shiftPressed = True
 
             if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
 
@@ -743,20 +750,32 @@ class QtImageViewer(QGraphicsView):
                         self.scene.removeItem(pathItem)
                 self.selectPainterPaths = []
                 self.path = None
+        elif self._isRemovingSpots:
+            if event.key() == Qt.Key_Shift:
+                self._shiftPressed = True
+            if event.key() == Qt.Key_BracketLeft:
+                self.spotsBrushSize -= 1
+                self.renderCursorOverlay(self.OriginalImage, self._lastMousePositionInScene, self.spotsBrushSize)
+            elif event.key() == Qt.Key_BracketRight:
+                self.spotsBrushSize += 1
+                self.renderCursorOverlay(self.OriginalImage, self._lastMousePositionInScene, self.spotsBrushSize)
         elif self._isBlurring:
             if event.key() == Qt.Key_BracketLeft:
                 self.blurBrushSize -= 1
-                self.updateBlurCursor(self._lastMousePositionInScene)
+                self.renderCursorOverlay(self.OriginalImage, self._lastMousePositionInScene, self.blurBrushSize)
             elif event.key() == Qt.Key_BracketRight:
                 self.blurBrushSize += 1
-                self.updateBlurCursor(self._lastMousePositionInScene)
+                self.renderCursorOverlay(self.OriginalImage, self._lastMousePositionInScene, self.blurBrushSize)
 
         event.accept()
 
     def keyReleaseEvent(self, event):
         if self._isSelecting:
             if event.key() == Qt.Key_Shift:
-                self._shiftPressedWhileSelecting = False
+                self._shiftPressed = False
+        if self._isRemovingSpots:
+            if event.key() == Qt.Key_Shift:
+                self._shiftPressed = False
 
     def buildPath(self):
         '''
@@ -824,41 +843,18 @@ class QtImageViewer(QGraphicsView):
         self.pathItem.setBrush(QtGui.QColor(255, 0, 0, 10))
 
     def removeSpots(self, event):
-        currentPixmap = self._image.pixmap()
+        currentPixmap = self.OriginalImage
         currentImage = self.QPixmapToImage(currentPixmap)
         pixelAccess = currentImage.load()
         scene_pos = self.mapToScene(event.pos())
         x = scene_pos.x()
         y = scene_pos.y()
 
-        THRESHOLD = 18
-
         def luminance(pixel):
             return (0.299 * pixel[0] + 0.587 * pixel[1] + 0.114 * pixel[2])
 
         def is_similar(pixel_a, pixel_b, threshold):
             return abs(luminance(pixel_a) - luminance(pixel_b)) < threshold
-
-        # Prepare numpy array of a small region of the image
-        # around the point where the user clicked
-        # Perform K-means clustering and find the average color
-        # of this small image
-        # Set the pixel of the area to be that average color
-        # https://stackoverflow.com/questions/43111029/how-to-find-the-average-colour-of-an-image-in-python-with-opencv
-        def dominant_rgb(x, y, sample_size):
-            small_image = currentPixmap.toImage().copy(QRect(QPoint(int(x - sample_size), int(y - sample_size)), QPoint(int(x + sample_size), int(y + sample_size))))
-            small_image_numpy = self.QImageToCvMat(small_image)
-            pixels = np.float32(small_image_numpy.reshape(-1, 4))
-
-            n_colors = 5
-            criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 200, .1)
-            flags = cv2.KMEANS_RANDOM_CENTERS
-
-            _, labels, palette = cv2.kmeans(pixels, n_colors, None, criteria, 10, flags)
-            _, counts = np.unique(labels, return_counts=True)
-
-            dominant = palette[np.argmax(counts)]
-            return palette, dominant
 
         # Prepare numpy array of a small region of the image
         # around the point where the user clicked
@@ -889,14 +885,8 @@ class QtImageViewer(QGraphicsView):
             average = small_image_numpy.mean(axis=0).mean(axis=0)
             return average
 
-        palette, dominant = dominant_rgb(x, y, 1)
-        # average = average_rgb(x, y, 60)
-
-        brush_size = 200
-        if self.zoomLevel > 0:
-            brush_size = int(brush_size / self.zoomLevel)
-
-        average = average_rgb(x, y, int(brush_size / 10))
+        brush_size = 2 * self.spotsBrushSize
+        average = average_rgb(x, y, brush_size + 10)
 
         # Find neighbor pixels in a circle around (x, y)
         neighbors = []
@@ -910,16 +900,14 @@ class QtImageViewer(QGraphicsView):
                     neighbors.append([i, j])
 
         # Sort the list of neighbors by distance
-        neighbors.sort(key=lambda p: (p[0] - x) * (p[0] - x) + (p[1] - y) * (p[1] - y))
+        neighbors.sort(key=lambda p: (p[0] - x) * (p[0] - x) + (p[1] - y) * (p[1] - y), reverse=True)
 
         # For each point, update the pixel by averaging
         for point in neighbors:
             i, j = point
-            sample_size = int(brush_size / 10)
             pr, pg, pb, _ = pixelAccess[i, j] # current neighbor pixel inside the brush circle
-            ar, ag, ab, _ = average_rgb(i, j, sample_size)
-            dr, dg, db, _ = dominant # pixelAccess[x, y]
-            if is_similar((dr, dg, db), (pr, pg, pb), 15):
+            ar, ag, ab, _ = average # average_rgb(i, j, sample_size)
+            if not is_similar((ar, ag, ab), (pr, pg, pb), self.spotRemovalSimilarityThreshold):
                 # Update this pixel
                 rr = 0
                 if ar > 150:
@@ -932,50 +920,6 @@ class QtImageViewer(QGraphicsView):
                     rb = random.randint(-3, 3)
                 pixelAccess[i, j] = (int(ar + rr), int(ag + rg), int(ab + rb))
 
-        #average_sample_size = int(brush_size / 10)
-        #for ny in range(int(x-average_sample_size), int(x+average_sample_size)):
-        #    for nx in range(int(y-average_sample_size), int(y+average_sample_size)):    
-        #        if nx > 0 and nx < currentImage.width and nx + 2 < currentImage.width:
-        #            if ny > 0 and ny < currentImage.height and nx + 2 < currentImage.height:
-        #                px1 = pixelAccess[nx, ny] #0/0
-        #                px2 = pixelAccess[nx, ny+1] #0/1
-        #                px3 = pixelAccess[nx, ny+2] #0/2
-        #                px4 = pixelAccess[nx+1, ny] #1/0
-        #                px5 = pixelAccess[nx+1, ny+1] #1/1
-        #                px6 = pixelAccess[nx+1, ny+2] #1/2
-        #                px7 = pixelAccess[nx+2, ny] #2/0
-        #                px8 = pixelAccess[nx+2, ny+1] #2/1
-        #                px9 = pixelAccess[nx+2, ny+2] #2/2
-
-        #                average = np.average([px1, px2, px3, px4, px5, px6, px7, px8, px9], axis=0)
-        #                ar = int(average[0])
-        #                ag = int(average[1])
-        #                ab = int(average[2])
-        #                # Update this pixel
-        #                rr = 0
-        #                if ar > 200:
-        #                    rr = random.randint(-3, 3)
-        #                rg = 0
-        #                if ag > 200:
-        #                    rg = random.randint(-3, 3)
-        #                rb = 0
-        #                if ab > 200:
-        #                    rb = random.randint(-3, 3)
-        #                pixelAccess[nx, ny] = (int(ar + rr), int(ag + rg), int(ab + rb))
-
-        #pixelAccess[x - 1, y] = (int(average[0]), int(average[1]), int(average[2]))
-        #pixelAccess[x, y] = (int(average[0]), int(average[1]), int(average[2]))
-        #pixelAccess[x + 1, y] = (int(average[0]), int(average[1]), int(average[2]))
-        #pixelAccess[x + 1, y + 1] = (int(average[0]), int(average[1]), int(average[2]))
-
-        brush_size = 3
-        for i in range(int(x - brush_size), int(x + brush_size)):
-            for j in range(int(y - brush_size), int(y + brush_size)):
-                dist = (i - x) * (i - x) + (j - y) * (j - y)
-                # Introduce some randomnes in the distance check
-                if dist <= brush_size:
-                    pixelAccess[i, j] = (int(average[0]), int(average[1]), int(average[2]))
-
         # Update the pixmap
         updatedPixmap = self.ImageToQPixmap(currentImage)
         self.setImage(updatedPixmap)
@@ -983,7 +927,7 @@ class QtImageViewer(QGraphicsView):
 
     def blur(self, event):
         brush_size = self.blurBrushSize
-        currentPixmap = self.blurPixmap # self._image.pixmap()
+        currentPixmap = self.OriginalImage
         currentImage = self.QPixmapToImage(currentPixmap)
         scene_pos = self.mapToScene(event.pos())
         x = scene_pos.x()
@@ -1031,27 +975,25 @@ class QtImageViewer(QGraphicsView):
         updatedPixmap = self.ImageToQPixmap(currentImage)
         self.setImage(updatedPixmap)
         self.OriginalImage = updatedPixmap
-        self.blurPixmap = updatedPixmap
-
     
-    def updateBlurCursor(self, scenePosition):
-        if not self.blurPixmap:
-            self.blurPixmap = self.pixmap()
+    def renderCursorOverlay(self, pixmap, scenePosition, brushSize):
+        if not pixmap:
+            pixmap = self.pixmap()
             # TODO: Set this to None when you're done blurring
 
-        pixmap = self.blurPixmap.copy()
-        self.blurPainter = QPainter()
-        self.blurPainter.begin(pixmap)
+        pixmapTmp = pixmap.copy()
+        cursorPainter = QPainter()
+        cursorPainter.begin(pixmapTmp)
         brush = QtGui.QBrush()
         brush.setColor(QtGui.QColor(255, 0, 0, 127))
         brush.setStyle(QtCore.Qt.BrushStyle.SolidPattern)
         pen = QtGui.QPen()
         pen.setBrush(brush)
-        self.blurPainter.setBrush(brush)
-        self.blurPainter.setPen(pen)
-        self.blurPainter.drawEllipse(scenePosition, self.blurBrushSize, self.blurBrushSize)
-        self.blurPainter.end() 
-        self.setImage(pixmap)
+        cursorPainter.setBrush(brush)
+        cursorPainter.setPen(pen)
+        cursorPainter.drawEllipse(scenePosition, brushSize, brushSize)
+        cursorPainter.end() 
+        self.setImage(pixmapTmp)
 
 class EllipseROI(QGraphicsEllipseItem):
 

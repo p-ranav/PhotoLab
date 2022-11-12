@@ -169,10 +169,12 @@ class QtImageViewer(QGraphicsView):
         # Flags for blur tool
         self._isBlurring = False
         self.blurPixmap = None
+        self.blurBrushSize = 80
 
         # Store temporary position in screen pixels or scene units.
         self._pixelPosition = QPoint()
         self._scenePosition = QPointF()
+        self._lastMousePositionInScene = QPointF()
 
         # Track mouse position. e.g., For displaying coordinates in a UI.
         # self.setMouseTracking(True)
@@ -592,6 +594,10 @@ class QtImageViewer(QGraphicsView):
         QGraphicsView.wheelEvent(self, event)
 
     def mouseMoveEvent(self, event):
+
+        if self.scene:
+            self._lastMousePositionInScene = QPointF(self.mapToScene(event.pos()))
+
         # Emit updated view during panning.
         if self._isPanning:
             QGraphicsView.mouseMoveEvent(self, event)
@@ -608,29 +614,7 @@ class QtImageViewer(QGraphicsView):
                 self.selectPoints.append(QPointF(self.mapToScene(event.pos())))
                 self.buildPath()
         elif self._isBlurring:
-            if not self.blurPixmap:
-                self.blurPixmap = self.pixmap()
-                # TODO: Set this to None when you're done blurring
-
-            pos = QPointF(self.mapToScene(event.pos()))
-            pixmap = self.blurPixmap.copy()
-            self.blurPainter = QPainter()
-            self.blurPainter.begin(pixmap)
-
-            #gradient = QtGui.QRadialGradient(50, 50, 50, 50, 50);
-            #gradient.setColorAt(0, QtGui.QColor.fromRgbF(255, 0, 0, 1))
-            #gradient.setColorAt(1, QtGui.QColor.fromRgbF(255, 0, 0, 0))
-
-            brush = QtGui.QBrush() # (gradient)
-            brush.setColor(QtGui.QColor(255, 0, 0, 127))
-            brush.setStyle(QtCore.Qt.BrushStyle.SolidPattern)
-            pen = QtGui.QPen()
-            pen.setBrush(brush)
-            self.blurPainter.setBrush(brush)
-            self.blurPainter.setPen(pen)
-            self.blurPainter.drawEllipse(pos, 20, 20)
-            self.blurPainter.end() 
-            self.setImage(pixmap)
+            self.updateBlurCursor(self._lastMousePositionInScene)
 
         scenePos = self.mapToScene(event.pos())
         if self.sceneRect().contains(scenePos):
@@ -759,6 +743,13 @@ class QtImageViewer(QGraphicsView):
                         self.scene.removeItem(pathItem)
                 self.selectPainterPaths = []
                 self.path = None
+        elif self._isBlurring:
+            if event.key() == Qt.Key_BracketLeft:
+                self.blurBrushSize -= 1
+                self.updateBlurCursor(self._lastMousePositionInScene)
+            elif event.key() == Qt.Key_BracketRight:
+                self.blurBrushSize += 1
+                self.updateBlurCursor(self._lastMousePositionInScene)
 
         event.accept()
 
@@ -990,7 +981,8 @@ class QtImageViewer(QGraphicsView):
         self.setImage(updatedPixmap)
         self.OriginalImage = updatedPixmap
 
-    def blur(self, event, brush_size = 80):
+    def blur(self, event):
+        brush_size = self.blurBrushSize
         currentPixmap = self.blurPixmap # self._image.pixmap()
         currentImage = self.QPixmapToImage(currentPixmap)
         scene_pos = self.mapToScene(event.pos())
@@ -1041,7 +1033,25 @@ class QtImageViewer(QGraphicsView):
         self.OriginalImage = updatedPixmap
         self.blurPixmap = updatedPixmap
 
-        print("Done")
+    
+    def updateBlurCursor(self, scenePosition):
+        if not self.blurPixmap:
+            self.blurPixmap = self.pixmap()
+            # TODO: Set this to None when you're done blurring
+
+        pixmap = self.blurPixmap.copy()
+        self.blurPainter = QPainter()
+        self.blurPainter.begin(pixmap)
+        brush = QtGui.QBrush()
+        brush.setColor(QtGui.QColor(255, 0, 0, 127))
+        brush.setStyle(QtCore.Qt.BrushStyle.SolidPattern)
+        pen = QtGui.QPen()
+        pen.setBrush(brush)
+        self.blurPainter.setBrush(brush)
+        self.blurPainter.setPen(pen)
+        self.blurPainter.drawEllipse(scenePosition, self.blurBrushSize, self.blurBrushSize)
+        self.blurPainter.end() 
+        self.setImage(pixmap)
 
 class EllipseROI(QGraphicsEllipseItem):
 

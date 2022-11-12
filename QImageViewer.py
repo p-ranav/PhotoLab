@@ -699,17 +699,21 @@ class QtImageViewer(QGraphicsView):
             if event.key() == Qt.Key_Shift:
                 self._shiftPressed = True
             if event.key() == Qt.Key_BracketLeft:
-                self.spotsBrushSize -= 1
+                self.spotsBrushSize -= 3
+                if self.spotsBrushSize < 3:
+                    self.spotsBrushSize = 3
                 self.renderCursorOverlay(self.OriginalImage, self._lastMousePositionInScene, self.spotsBrushSize)
             elif event.key() == Qt.Key_BracketRight:
-                self.spotsBrushSize += 1
+                self.spotsBrushSize += 3
                 self.renderCursorOverlay(self.OriginalImage, self._lastMousePositionInScene, self.spotsBrushSize)
         elif self._isBlurring:
             if event.key() == Qt.Key_BracketLeft:
-                self.blurBrushSize -= 1
+                self.blurBrushSize -= 3
+                if self.blurBrushSize < 3:
+                    self.blurBrushSize = 3
                 self.renderCursorOverlay(self.OriginalImage, self._lastMousePositionInScene, self.blurBrushSize)
             elif event.key() == Qt.Key_BracketRight:
-                self.blurBrushSize += 1
+                self.blurBrushSize += 3
                 self.renderCursorOverlay(self.OriginalImage, self._lastMousePositionInScene, self.blurBrushSize)
 
         event.accept()
@@ -874,19 +878,6 @@ class QtImageViewer(QGraphicsView):
         # Set the pixel of the area to be that average color
         # https://stackoverflow.com/questions/43111029/how-to-find-the-average-colour-of-an-image-in-python-with-opencv
         def average_rgb(x, y, sample_size):
-
-            ## Find neighbor pixels in a circle around (x, y)
-            #neighbors = []
-            #for i in range(int(x - sample_size), int(x + sample_size)):
-            #    for j in range(int(y - sample_size), int(y + sample_size)):
-            #        dist = (i - x) * (i - x) + (j - y) * (j - y)
-            #        if dist <= brush_size:
-            #            # point is inside circle
-            #            neighbors.append(pixelAccess[i, j])
-            
-            #average = np.mean(np.array(neighbors), axis=0)
-            #return average
-
             small_image = currentPixmap.toImage().copy(QRect(QPoint(int(x - sample_size), int(y - sample_size)), QPoint(int(x + sample_size), int(y + sample_size))))
             small_image_pillow = self.QImageToImage(small_image)
             small_image_pillow = small_image_pillow.filter(ImageFilter.SMOOTH)
@@ -901,23 +892,28 @@ class QtImageViewer(QGraphicsView):
 
         # Find neighbor pixels in a circle around (x, y)
         neighbors = []
-        for i in range(int(x - brush_size), int(x + brush_size)):
-            for j in range(int(y - brush_size), int(y + brush_size)):
+        sample_freq = 50
+        for i in range(int(x - brush_size), int(x + brush_size), int(brush_size / sample_freq) if int(brush_size / sample_freq) > 0 else 1):
+            for j in range(int(y - brush_size), int(y + brush_size), int(brush_size / sample_freq) if int(brush_size / sample_freq) > 0 else 1):
                 dist = (i - x) * (i - x) + (j - y) * (j - y)
 
+                # print("Loop", i, j, dist, brush_size)
+
                 # Introduce some randomnes in the distance check
-                if dist <= brush_size + random.randint(0, 15):
+                if dist <= brush_size + random.randint(0, 15) * brush_size + random.randint(0, 15):
                     # point is inside circle
                     neighbors.append([i, j])
 
         # Sort the list of neighbors by distance
-        neighbors.sort(key=lambda p: (p[0] - x) * (p[0] - x) + (p[1] - y) * (p[1] - y), reverse=True)
+        # neighbors.sort(key=lambda p: (p[0] - x) * (p[0] - x) + (p[1] - y) * (p[1] - y), reverse=True)
+
+        # print(brush_size / 5, len(neighbors))
 
         # For each point, update the pixel by averaging
         for point in neighbors:
             i, j = point
             pr, pg, pb, _ = pixelAccess[i, j] # current neighbor pixel inside the brush circle
-            ar, ag, ab, _ = average # average_rgb(i, j, sample_size)
+            ar, ag, ab, _ = average
             if not is_similar((ar, ag, ab), (pr, pg, pb), self.spotRemovalSimilarityThreshold):
                 # Update this pixel
                 rr = 0

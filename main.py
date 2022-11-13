@@ -637,7 +637,9 @@ class Gui(QtCore.QObject):
         self.image_viewer.save()
    
     def OnSaveAs(self):
-        name = QFileDialog.getSaveFileName(self.MainWindow, 'Save File', "Untitled.png", "Images (*.bmp *.ico *.jpeg *.jpg *.pbm *.pgm *.png *.ppm *.tif *.tiff *.wbmp *.xbm *.xpm)")
+        dialog = QFileDialog()
+        dialog.setDefaultSuffix("png")
+        name = dialog.getSaveFileName(self.MainWindow, 'Save File', "Untitled.png", "BMP (*.bmp);;Icon (*.ico);;JPEG (*.jpeg *.jpg);;PBM (*.pbm);;PGM (*.pgm);;PNG (*.png);;PPM (*.ppm);;TIF (*.tif *.tiff);;WBMP (*.wbmp);;XBM (*.xbm);;XPM (*.xpm)")
         self.image_viewer.OriginalImage = self.image_viewer.pixmap()
         self.image_viewer.save(name[0])
         filename = self.image_viewer._current_filename

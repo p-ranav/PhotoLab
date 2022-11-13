@@ -25,6 +25,7 @@ import cv2
 from matplotlib import pyplot as plt
 import numpy as np
 from QColorPicker import QColorPicker
+import os
 
 def QImageToCvMat(incomingImage):
     '''  Converts a QImage into an opencv MAT format  '''
@@ -79,6 +80,9 @@ class Gui(QtCore.QObject):
         
         # Load an image file to be displayed (will popup a file dialog).
         self.image_viewer.open()
+        filename = self.image_viewer._current_filename
+        filename = os.path.basename(filename)
+        self.MainWindow.setWindowTitle(filename)
         self.image_viewer.OriginalImage = self.image_viewer.pixmap()
 
         ##############################################################################################
@@ -247,6 +251,19 @@ class Gui(QtCore.QObject):
 
         ##############################################################################################
         ##############################################################################################
+        # Paint Tool
+        ##############################################################################################
+        ##############################################################################################
+
+        self.PaintToolButton = QToolButton(self.MainWindow)
+        self.PaintToolButton.setText("&Paint")
+        self.PaintToolButton.setToolTip("Paint")
+        self.PaintToolButton.setIcon(QtGui.QIcon("paint.svg"))
+        self.PaintToolButton.setCheckable(True)
+        self.PaintToolButton.toggled.connect(self.OnPaintToolButton)
+
+        ##############################################################################################
+        ##############################################################################################
         # Crop Tool
         ##############################################################################################
         ##############################################################################################
@@ -311,6 +328,10 @@ class Gui(QtCore.QObject):
                 "tool": "ColorPickerToolButton",
                 "var": '_isColorPicking'
             },
+            "paint": {
+                "tool": "PaintToolButton",
+                "var": '_isPainting'
+            },
             "crop": {
                 "tool": "CropToolButton",
                 "var": '_isCropping'
@@ -331,6 +352,7 @@ class Gui(QtCore.QObject):
         }
 
         ImageToolBar.addWidget(self.ColorPickerToolButton)
+        ImageToolBar.addWidget(self.PaintToolButton)
         ImageToolBar.addWidget(self.CropToolButton)
         ImageToolBar.addWidget(self.SelectToolButton)
         ImageToolBar.addWidget(self.SpotRemovalToolButton)
@@ -485,6 +507,9 @@ class Gui(QtCore.QObject):
     def OnColorPickerToolButton(self, checked):
         self.EnableTool("color_picker") if checked else self.DisableTool("color_picker")
 
+    def OnPaintToolButton(self, checked):
+        self.EnableTool("paint") if checked else self.DisableTool("paint")
+
     def OnCropToolButton(self, checked):
         self.EnableTool("crop") if checked else self.DisableTool("crop")
 
@@ -522,6 +547,9 @@ class Gui(QtCore.QObject):
     def OnSaveAs(self):
         name = QFileDialog.getSaveFileName(self.MainWindow, 'Save File', "Untitled.png", "Images (*.bmp *.ico *.jpeg *.jpg *.pbm *.pgm *.png *.ppm *.tif *.tiff *.wbmp *.xbm *.xpm)")
         self.image_viewer.save(name[0])
+        filename = self.image_viewer._current_filename
+        filename = os.path.basename(filename)
+        self.MainWindow.setWindowTitle(filename)
 
 def main():
     app = QApplication(sys.argv)

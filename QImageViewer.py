@@ -152,6 +152,10 @@ class QtImageViewer(QGraphicsView):
 
         # Flags for color picking
         self._isColorPicking = False
+
+        # Flags for painting
+        self._isPainting = False
+        self.paintBrushSize = 40
         
         # Flags for active cropping
         # Set to true when using the crop tool with toolbar
@@ -170,12 +174,12 @@ class QtImageViewer(QGraphicsView):
 
         # Flags for spot removal tool
         self._isRemovingSpots = False
-        self.spotsBrushSize = 80
+        self.spotsBrushSize = 40
         self.spotRemovalSimilarityThreshold = 10
 
         # Flags for blur tool
         self._isBlurring = False
-        self.blurBrushSize = 80
+        self.blurBrushSize = 40
 
         # Store temporary position in screen pixels or scene units.
         self._pixelPosition = QPoint()
@@ -284,6 +288,7 @@ class QtImageViewer(QGraphicsView):
         path = self._current_filename
         if filepath:
             path = filepath
+            self._current_filename = path
 
         self.OriginalImage.save(path, None, 100)
 
@@ -373,6 +378,9 @@ class QtImageViewer(QGraphicsView):
 
         if self._isColorPicking:
             self.performColorPick(event)
+        elif self._isPainting:
+            if (self.regionZoomButton is not None) and (event.button() == self.regionZoomButton):
+                self.performPaint(event)
         elif self._isCropping:
             # Start dragging a region crop box?
             if (self.regionZoomButton is not None) and (event.button() == self.regionZoomButton):
@@ -618,6 +626,11 @@ class QtImageViewer(QGraphicsView):
                 self.zoomStack[-1] = self.zoomStack[-1].intersected(self.sceneRect())
                 self.updateViewer()
                 self.viewChanged.emit()
+        elif self._isPainting:
+            image = self.OriginalImage.copy()
+            self.renderCursorOverlay(image, self._lastMousePositionInScene, self.paintBrushSize)
+            if self._shiftPressed or self._isLeftMouseButtonPressed:
+                self.performPaint(event)
         elif self._isSelecting:
             if self._shiftPressed:
                 self.selectPoints.append(QPointF(self.mapToScene(event.pos())))
@@ -690,7 +703,18 @@ class QtImageViewer(QGraphicsView):
             self.ROIs.append(spot)
 
     def keyPressEvent(self, event):
-        if self._isCropping:
+        if self._isPainting:
+            if event.key() == Qt.Key_Shift:
+                self._shiftPressed = True
+            if event.key() == Qt.Key_BracketLeft:
+                self.paintBrushSize -= 3
+                if self.paintBrushSize < 3:
+                    self.paintBrushSize = 3
+                self.renderCursorOverlay(self.OriginalImage, self._lastMousePositionInScene, self.paintBrushSize)
+            elif event.key() == Qt.Key_BracketRight:
+                self.paintBrushSize += 3
+                self.renderCursorOverlay(self.OriginalImage, self._lastMousePositionInScene, self.paintBrushSize)
+        elif self._isCropping:
             if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
                 self.performCrop(event)
 
@@ -745,6 +769,42 @@ class QtImageViewer(QGraphicsView):
         y = scene_pos.y()
         r, g, b, _ = pixelAccess[x, y]
         self.ColorPicker.setRGB((r, g, b))
+
+    def performPaint(self, event):
+        currentPixmap = self.OriginalImage
+        currentImage = self.QPixmapToImage(currentPixmap)
+        pixelAccess = currentImage.load()
+        scene_pos = self.mapToScene(event.pos())
+        x = scene_pos.x()
+        y = scene_pos.y()
+        w = currentImage.width
+        h = currentImage.height
+
+        brush_size = 2 * self.paintBrushSize
+        r, g, b = self.ColorPicker.getRGB()
+
+        # Find neighbor pixels in a circle around (x, y)
+        pixels = []
+        for i in range(int(x - brush_size), int(x + brush_size)):
+            for j in range(int(y - brush_size), int(y + brush_size)):
+                dist = (i - x) * (i - x) + (j - y) * (j - y)
+
+                if dist <= brush_size * brush_size:
+                    # point is inside circle
+
+                    # is the point inside the image?
+                    if i >= 0 and i < w and j >= 0 and j < h:
+                        pixels.append([i, j])
+
+        # For each point, update the pixel by averaging
+        for point in pixels:
+            i, j = point
+            pixelAccess[i, j] = (int(r), int(g), int(b))
+
+        # Update the pixmap
+        updatedPixmap = self.ImageToQPixmap(currentImage)
+        self.setImage(updatedPixmap)
+        self.OriginalImage = updatedPixmap
 
     def performCrop(self, event):
         # Crop the pixmap
@@ -887,6 +947,8 @@ class QtImageViewer(QGraphicsView):
         scene_pos = self.mapToScene(event.pos())
         x = scene_pos.x()
         y = scene_pos.y()
+        w = currentImage.width
+        h = currentImage.height
 
         def luminance(pixel):
             return (0.299 * pixel[0] + 0.587 * pixel[1] + 0.114 * pixel[2])
@@ -894,49 +956,43 @@ class QtImageViewer(QGraphicsView):
         def is_similar(pixel_a, pixel_b, threshold):
             return abs(luminance(pixel_a) - luminance(pixel_b)) < threshold
 
-        # Prepare numpy array of a small region of the image
-        # around the point where the user clicked
-        # Perform K-means clustering and find the average color
-        # of this small image
-        # Set the pixel of the area to be that average color
-        # https://stackoverflow.com/questions/43111029/how-to-find-the-average-colour-of-an-image-in-python-with-opencv
-        def average_rgb(x, y, sample_size):
-            small_image = currentPixmap.toImage().copy(QRect(QPoint(int(x - sample_size), int(y - sample_size)), QPoint(int(x + sample_size), int(y + sample_size))))
-            small_image_pillow = self.QImageToImage(small_image)
-            small_image_pillow = small_image_pillow.filter(ImageFilter.SMOOTH)
-            small_image_pillow = small_image_pillow.filter(ImageFilter.SMOOTH_MORE)
-            small_image = self.ImageToQPixmap(small_image_pillow).toImage()
-            small_image_numpy = self.QImageToCvMat(small_image)
-            average = small_image_numpy.mean(axis=0).mean(axis=0)
-            return average
-
         brush_size = 2 * self.spotsBrushSize
-        average = average_rgb(x, y, brush_size + 10)
 
-        # Find neighbor pixels in a circle around (x, y)
+        # Compute average of pixels in a rectange around current point
         neighbors = []
         sample_freq = 50
+        sum = [0, 0, 0]
+        count = 0
         for i in range(int(x - brush_size), int(x + brush_size), int(brush_size / sample_freq) if int(brush_size / sample_freq) > 0 else 1):
             for j in range(int(y - brush_size), int(y + brush_size), int(brush_size / sample_freq) if int(brush_size / sample_freq) > 0 else 1):
-                dist = (i - x) * (i - x) + (j - y) * (j - y)
+                
+                # Keep track of RGB sum (for average calculation)
+                # for each sampled point
+                if i >= 0 and i < w and j >= 0 and j < h:
+                    pr, pg, pb, _ = pixelAccess[i, j]
+                    sum[0] += pr
+                    sum[1] += pg
+                    sum[2] += pb
+                    count += 1
 
-                # print("Loop", i, j, dist, brush_size)
+                # Find neighbor pixels in a circle around (x, y)
+                dist = (i - x) * (i - x) + (j - y) * (j - y)
 
                 # Introduce some randomnes in the distance check
                 if dist <= brush_size + random.randint(0, 15) * brush_size + random.randint(0, 15):
                     # point is inside circle
-                    neighbors.append([i, j])
 
-        # Sort the list of neighbors by distance
-        # neighbors.sort(key=lambda p: (p[0] - x) * (p[0] - x) + (p[1] - y) * (p[1] - y), reverse=True)
+                    # is point inside the image?
+                    if i >= 0 and i < w and j >= 0 and j < h:
+                        neighbors.append([i, j])
 
-        # print(brush_size / 5, len(neighbors))
+        average = [sum[0] / count, sum[1] / count, sum[2] / count]
 
         # For each point, update the pixel by averaging
         for point in neighbors:
             i, j = point
             pr, pg, pb, _ = pixelAccess[i, j] # current neighbor pixel inside the brush circle
-            ar, ag, ab, _ = average
+            ar, ag, ab = average
             if not is_similar((ar, ag, ab), (pr, pg, pb), self.spotRemovalSimilarityThreshold):
                 # Update this pixel
                 rr = 0
@@ -954,7 +1010,7 @@ class QtImageViewer(QGraphicsView):
         updatedPixmap = self.ImageToQPixmap(currentImage)
         self.setImage(updatedPixmap)
         self.OriginalImage = updatedPixmap
-
+        
     def blur(self, event):
         brush_size = self.blurBrushSize
         currentPixmap = self.OriginalImage
@@ -975,31 +1031,6 @@ class QtImageViewer(QGraphicsView):
 
         # Composite blurred image over sharp one within mask
         currentImage = Image.composite(blurred, currentImage, mask)
-
-        #def make_ellipse_mask(size, x0, y0, x1, y1, blur_radius):
-        #    img = Image.new("L", size, color=0)
-        #    draw = ImageDraw.Draw(img)
-        #    draw.ellipse((x0, y0, x1, y1), fill=255)
-        #    return img.filter(ImageFilter.GaussianBlur(radius=blur_radius))
-
-        #brush_size = 200
-        #mask_image = make_ellipse_mask(currentImage.size, x - brush_size, y - brush_size, x + brush_size, y + brush_size, brush_size)
-        #overlay_image = currentImage.filter(ImageFilter.GaussianBlur(radius=15))
-        ## overlay_image = Image.new("RGB", currentImage.size, color="orange")  # This could be a bitmap fill too, but let's just make it orange
-        #mask_image = make_ellipse_mask(currentImage.size, 150, 70, 350, 250, 5)
-        #masked_image = Image.composite(overlay_image, currentImage, mask_image)
-
-        ##brush_size = 200
-        ### Gaussian blur on circle
-        ### Create circle mask
-        ##mask = Image.new('L', (currentImage.width, currentImage.height), 0)
-        ##draw = ImageDraw.Draw(mask)
-        ### (x1, y1, x2, y2), where x1 <= x2 and y1 <= y2, as those pairs, 
-        ### (x1, y1) and (x2, y2), represents respectively 
-        ### top left and bottom right corners of enclosing rectangle.
-        ##draw.ellipse([(x - brush_size, y - brush_size), (x + brush_size, y + brush_size)], fill=255)
-        ##blur_filter = currentImage.filter(ImageFilter.GaussianBlur(brush_size))
-        ##blur_filter.paste(currentImage, mask=mask)
 
         # Update the pixmap
         updatedPixmap = self.ImageToQPixmap(currentImage)

@@ -147,6 +147,9 @@ class QtImageViewer(QGraphicsView):
         # Flags for active zooming/panning.
         self._isZooming = False
         self._isPanning = False
+
+        # Flags for color picking
+        self._isColorPicking = False
         
         # Flags for active cropping
         # Set to true when using the crop tool with toolbar
@@ -348,9 +351,6 @@ class QtImageViewer(QGraphicsView):
             event.accept()
             return
 
-        # self.ColorPicker.setRGB((r, g, b))
-        # self.setImage(currentPixmap.toImage())
-
         # # Draw ROI
         # if self.drawROI is not None:
         #     if self.drawROI == "Ellipse":
@@ -366,7 +366,9 @@ class QtImageViewer(QGraphicsView):
         #         # Click to add points to polygon. Double-click to close polygon.
         #         pass
 
-        if self._isCropping:
+        if self._isColorPicking:
+            self.performColorPick(event)
+        elif self._isCropping:
             # Start dragging a region crop box?
             if (self.regionZoomButton is not None) and (event.button() == self.regionZoomButton):
                 self._pixelPosition = event.pos()  # store pixel position
@@ -379,7 +381,7 @@ class QtImageViewer(QGraphicsView):
                     self.scene.removeItem(self._cropItem)
 
                 return
-        if self._isSelecting:
+        elif self._isSelecting:
             # TODO: https://stackoverflow.com/questions/63568214/qpainter-delete-previously-drawn-shapes
             #
             #
@@ -726,6 +728,16 @@ class QtImageViewer(QGraphicsView):
             if event.key() == Qt.Key_Shift:
                 self._shiftPressed = False
 
+    def performColorPick(self, event):
+        currentPixmap = self.OriginalImage
+        currentImage = self.QPixmapToImage(currentPixmap)
+        pixelAccess = currentImage.load()
+        scene_pos = self.mapToScene(event.pos())
+        x = scene_pos.x()
+        y = scene_pos.y()
+        r, g, b, _ = pixelAccess[x, y]
+        self.ColorPicker.setRGB((r, g, b))
+
     def performCrop(self, event):
         # Crop the pixmap
         cropQPixmap = self.pixmap().copy(self._cropRect.toAlignedRect())
@@ -770,6 +782,9 @@ class QtImageViewer(QGraphicsView):
         # To avoid useless transparent background you can crop it like that:
         output = output.copy(self.path.boundingRect().toRect())
         self.setImage(output)
+        # Crop the original image as well
+        self.OriginalImage = QPixmap(output)
+
         self.selectPoints = []
 
         if self.path:

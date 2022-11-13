@@ -212,6 +212,18 @@ class Gui(QtCore.QObject):
 
         ##############################################################################################
         ##############################################################################################
+        # Keyboard Shortcuts
+        ##############################################################################################
+        ##############################################################################################
+
+        self.SaveShortcut = QtGui.QShortcut(QKeySequence("Ctrl+S"), self.MainWindow)
+        self.SaveShortcut.activated.connect(self.OnSave)
+
+        self.SaveAsShortcut = QtGui.QShortcut(QKeySequence("Ctrl+Shift+S"), self.MainWindow)
+        self.SaveAsShortcut.activated.connect(self.OnSaveAs)
+
+        ##############################################################################################
+        ##############################################################################################
         # Toolbar
         ##############################################################################################
         ##############################################################################################
@@ -222,6 +234,19 @@ class Gui(QtCore.QObject):
 
         ##############################################################################################
         ##############################################################################################
+        # Color Picker Tool
+        ##############################################################################################
+        ##############################################################################################
+
+        self.ColorPickerToolButton = QToolButton(self.MainWindow)
+        self.ColorPickerToolButton.setText("&Color Picker")
+        self.ColorPickerToolButton.setToolTip("Color Picker")
+        self.ColorPickerToolButton.setIcon(QtGui.QIcon("color_picker.svg"))
+        self.ColorPickerToolButton.setCheckable(True)
+        self.ColorPickerToolButton.toggled.connect(self.OnColorPickerToolButton)
+
+        ##############################################################################################
+        ##############################################################################################
         # Crop Tool
         ##############################################################################################
         ##############################################################################################
@@ -229,17 +254,12 @@ class Gui(QtCore.QObject):
         self.CropToolButton = QToolButton(self.MainWindow)
         self.CropToolButton.setText("&Crop")
         self.CropToolButton.setIcon(QtGui.QIcon("crop.svg"))
+        self.ColorPickerToolButton.setToolTip("Basic Crop")
         self.CropToolButton.setCheckable(True)
         self.CropToolButton.toggled.connect(self.OnCropToolButton)
 
         self.CropToolShortcut = QtGui.QShortcut(QKeySequence("Ctrl+Shift+Alt+K"), self.MainWindow)
         self.CropToolShortcut.activated.connect(lambda: self.CropToolButton.toggle())
-
-        self.SaveShortcut = QtGui.QShortcut(QKeySequence("Ctrl+S"), self.MainWindow)
-        self.SaveShortcut.activated.connect(self.OnSave)
-
-        self.SaveAsShortcut = QtGui.QShortcut(QKeySequence("Ctrl+Shift+S"), self.MainWindow)
-        self.SaveAsShortcut.activated.connect(self.OnSaveAs)
 
         ##############################################################################################
         ##############################################################################################
@@ -249,6 +269,7 @@ class Gui(QtCore.QObject):
 
         self.SelectToolButton = QToolButton(self.MainWindow)
         self.SelectToolButton.setText("&Select")
+        self.ColorPickerToolButton.setToolTip("Path Crop")
         self.SelectToolButton.setIcon(QtGui.QIcon("select.svg"))
         self.SelectToolButton.setCheckable(True)
         self.SelectToolButton.toggled.connect(self.OnSelectToolButton)
@@ -261,6 +282,7 @@ class Gui(QtCore.QObject):
 
         self.SpotRemovalToolButton = QToolButton(self.MainWindow)
         self.SpotRemovalToolButton.setText("&Spot Removal")
+        self.ColorPickerToolButton.setToolTip("Spot Removal")
         self.SpotRemovalToolButton.setIcon(QtGui.QIcon("spot_removal.svg"))
         self.SpotRemovalToolButton.setCheckable(True)
         self.SpotRemovalToolButton.toggled.connect(self.OnSpotRemovalToolButton)
@@ -273,6 +295,7 @@ class Gui(QtCore.QObject):
 
         self.BlurToolButton = QToolButton(self.MainWindow)
         self.BlurToolButton.setText("&Blur")
+        self.ColorPickerToolButton.setToolTip("Blur")
         self.BlurToolButton.setIcon(QtGui.QIcon("blur.svg"))
         self.BlurToolButton.setCheckable(True)
         self.BlurToolButton.toggled.connect(self.OnBlurToolButton)
@@ -284,10 +307,13 @@ class Gui(QtCore.QObject):
         ##############################################################################################
 
         self.tools = {
+            "color_picker": {
+                "tool": "ColorPickerToolButton",
+                "var": '_isColorPicking'
+            },
             "crop": {
                 "tool": "CropToolButton",
-                "var": '_isCropping',
-                "destructor": 'exitCrop'
+                "var": '_isCropping'
             },
             "select": {
                 "tool": "SelectToolButton",
@@ -304,6 +330,7 @@ class Gui(QtCore.QObject):
             },
         }
 
+        ImageToolBar.addWidget(self.ColorPickerToolButton)
         ImageToolBar.addWidget(self.CropToolButton)
         ImageToolBar.addWidget(self.SelectToolButton)
         ImageToolBar.addWidget(self.SpotRemovalToolButton)
@@ -449,7 +476,14 @@ class Gui(QtCore.QObject):
         if self.GaussianBlurRadius > 0:
             Pixmap = self.ApplyGaussianBlur(Pixmap, float(self.GaussianBlurRadius / 100))
         self.image_viewer.setImage(Pixmap)
+        # TODO: Add every adjusted image to a history list
+        # Will help with implementing undo
+        # Will also help with using sliders AND using tools at the same time and
+        # maintaining consistency
         self.UpdateHistogramPlot()
+
+    def OnColorPickerToolButton(self, checked):
+        self.EnableTool("color_picker") if checked else self.DisableTool("color_picker")
 
     def OnCropToolButton(self, checked):
         self.EnableTool("crop") if checked else self.DisableTool("crop")

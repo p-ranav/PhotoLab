@@ -76,7 +76,7 @@ def load_model(model_name: str = "u2net"):
     #    print("Choose between u2net, u2net_human_seg or u2netp", file=sys.stderr)
 
     net = u2net.U2NET(3, 1)
-    path = "u2net.pth"
+    path = model_name + ".pth" # "u2net_human_seg.pth" # "u2net.pth"
 
     try:
         if torch.cuda.is_available():

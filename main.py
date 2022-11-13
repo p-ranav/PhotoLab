@@ -288,7 +288,7 @@ class Gui(QtCore.QObject):
         self.CropToolButton = QToolButton(self.MainWindow)
         self.CropToolButton.setText("&Crop")
         self.CropToolButton.setIcon(QtGui.QIcon("icons/crop.svg"))
-        self.ColorPickerToolButton.setToolTip("Basic Crop")
+        self.CropToolButton.setToolTip("Basic Crop")
         self.CropToolButton.setCheckable(True)
         self.CropToolButton.toggled.connect(self.OnCropToolButton)
 
@@ -303,7 +303,7 @@ class Gui(QtCore.QObject):
 
         self.SelectToolButton = QToolButton(self.MainWindow)
         self.SelectToolButton.setText("&Select")
-        self.ColorPickerToolButton.setToolTip("Path Crop")
+        self.SelectToolButton.setToolTip("Path Crop")
         self.SelectToolButton.setIcon(QtGui.QIcon("icons/select.svg"))
         self.SelectToolButton.setCheckable(True)
         self.SelectToolButton.toggled.connect(self.OnSelectToolButton)
@@ -316,23 +316,10 @@ class Gui(QtCore.QObject):
 
         self.SpotRemovalToolButton = QToolButton(self.MainWindow)
         self.SpotRemovalToolButton.setText("&Spot Removal")
-        self.ColorPickerToolButton.setToolTip("Spot Removal")
+        self.SpotRemovalToolButton.setToolTip("Spot Removal")
         self.SpotRemovalToolButton.setIcon(QtGui.QIcon("icons/spot_removal.svg"))
         self.SpotRemovalToolButton.setCheckable(True)
         self.SpotRemovalToolButton.toggled.connect(self.OnSpotRemovalToolButton)
-
-        ##############################################################################################
-        ##############################################################################################
-        # Background Removal Tool
-        ##############################################################################################
-        ##############################################################################################
-
-        self.BackgroundRemovalToolButton = QToolButton(self.MainWindow)
-        self.BackgroundRemovalToolButton.setText("&Spot Removal")
-        self.ColorPickerToolButton.setToolTip("Spot Removal")
-        self.BackgroundRemovalToolButton.setIcon(QtGui.QIcon("icons/background_removal.svg"))
-        self.BackgroundRemovalToolButton.setCheckable(True)
-        self.BackgroundRemovalToolButton.toggled.connect(self.OnBackgroundRemovalToolButton)
 
         ##############################################################################################
         ##############################################################################################
@@ -342,10 +329,36 @@ class Gui(QtCore.QObject):
 
         self.BlurToolButton = QToolButton(self.MainWindow)
         self.BlurToolButton.setText("&Blur")
-        self.ColorPickerToolButton.setToolTip("Blur")
+        self.BlurToolButton.setToolTip("Blur")
         self.BlurToolButton.setIcon(QtGui.QIcon("icons/blur.svg"))
         self.BlurToolButton.setCheckable(True)
         self.BlurToolButton.toggled.connect(self.OnBlurToolButton)
+
+        ##############################################################################################
+        ##############################################################################################
+        # Background Removal Tool
+        ##############################################################################################
+        ##############################################################################################
+
+        self.BackgroundRemovalToolButton = QToolButton(self.MainWindow)
+        self.BackgroundRemovalToolButton.setText("&Background Removal")
+        self.BackgroundRemovalToolButton.setToolTip("Background Removal")
+        self.BackgroundRemovalToolButton.setIcon(QtGui.QIcon("icons/background_removal.svg"))
+        self.BackgroundRemovalToolButton.setCheckable(True)
+        self.BackgroundRemovalToolButton.toggled.connect(self.OnBackgroundRemovalToolButton)
+
+        ##############################################################################################
+        ##############################################################################################
+        # Human Segmentation Tool
+        ##############################################################################################
+        ##############################################################################################
+
+        self.HumanSegmentationToolButton = QToolButton(self.MainWindow)
+        self.HumanSegmentationToolButton.setText("&Human Segmentation")
+        self.HumanSegmentationToolButton.setToolTip("Human Segmentation")
+        self.HumanSegmentationToolButton.setIcon(QtGui.QIcon("icons/human_segmentation.svg"))
+        self.HumanSegmentationToolButton.setCheckable(True)
+        self.HumanSegmentationToolButton.toggled.connect(self.OnHumanSegmentationToolButton)
 
         ##############################################################################################
         ##############################################################################################
@@ -387,6 +400,10 @@ class Gui(QtCore.QObject):
                 "tool": "BackgroundRemovalToolButton",
                 "var": '_isRemovingBackground'
             },
+            "human_segmentation": {
+                "tool": "HumanSegmentationToolButton",
+                "var": '_isSegmentingHuman'
+            },
             "blur": {
                 "tool": "BlurToolButton",
                 "var": '_isBlurring'
@@ -401,8 +418,8 @@ class Gui(QtCore.QObject):
 
         tool_buttons = [
             self.CursorToolButton, self.ColorPickerToolButton, self.PaintToolButton, self.FillToolButton, 
-            self.CropToolButton, self.SelectToolButton, self.SpotRemovalToolButton, self.BackgroundRemovalToolButton, 
-            self.BlurToolButton
+            self.CropToolButton, self.SelectToolButton, self.SpotRemovalToolButton, self.BlurToolButton,
+            self.BackgroundRemovalToolButton, self.HumanSegmentationToolButton            
         ]
 
         for button in tool_buttons:
@@ -583,13 +600,39 @@ class Gui(QtCore.QObject):
 
     def OnBackgroundRemovalToolButton(self, checked):
         if checked:
+            # Set cursor to wait
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+            
             self.EnableTool("background_removal") if checked else self.DisableTool("background_removal")
 
-            BackgroundRemovedImage = remove2(self.QPixmapToImage(self.image_viewer.OriginalImage))
+            # Remove background
+            BackgroundRemovedImage = remove2(self.QPixmapToImage(self.image_viewer.OriginalImage), model_name="u2net")
             updatedPixmap = self.ImageToQPixmap(BackgroundRemovedImage)
             self.image_viewer.setImage(updatedPixmap)
             self.image_viewer.OriginalImage = updatedPixmap
+
+            # Restore cursor
+            QApplication.restoreOverrideCursor()
+
         self.BackgroundRemovalToolButton.setChecked(False)
+
+    def OnHumanSegmentationToolButton(self, checked):
+        if checked:
+            # Set cursor to wait
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+            
+            self.EnableTool("human_segmentation") if checked else self.DisableTool("human_segmentation")
+
+            # Remove background
+            BackgroundRemovedImage = remove2(self.QPixmapToImage(self.image_viewer.OriginalImage), model_name="u2net_human_seg")
+            updatedPixmap = self.ImageToQPixmap(BackgroundRemovedImage)
+            self.image_viewer.setImage(updatedPixmap)
+            self.image_viewer.OriginalImage = updatedPixmap
+
+            # Restore cursor
+            QApplication.restoreOverrideCursor()
+
+        self.HumanSegmentationToolButton.setChecked(False)
 
     def OnBlurToolButton(self, checked):
         self.EnableTool("blur") if checked else self.DisableTool("blur")

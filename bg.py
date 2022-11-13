@@ -83,7 +83,7 @@ class Net(torch.nn.Module):
         #    print("Choose between u2net, u2net_human_seg or u2netp", file=sys.stderr)
 
         net = u2net.U2NET(3, 1)
-        path="u2net.pth"
+        path = model_name # "u2net_human_seg.pth" # "u2net.pth"
         net.load_state_dict(torch.load(path, map_location=torch.device(DEVICE)))
         net.to(device=DEVICE, dtype=torch.float32, non_blocking=True)
         net.eval()
@@ -172,7 +172,7 @@ def get_model(model_name):
 
 def remove(
     data,
-    model_name="u2net",
+    model_name="u2net_human_seg",
     alpha_matting=False,
     alpha_matting_foreground_threshold=240,
     alpha_matting_background_threshold=10,

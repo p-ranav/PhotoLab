@@ -26,6 +26,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 from QColorPicker import QColorPicker
 import os
+from QFlowLayout import QFlowLayout
 
 def QImageToCvMat(incomingImage):
     '''  Converts a QImage into an opencv MAT format  '''
@@ -222,7 +223,6 @@ class Gui(QtCore.QObject):
 
         # Using a QToolBar object and a toolbar area
         ImageToolBar = QToolBar("Toolbar", self.MainWindow)
-        self.MainWindow.addToolBar(Qt.LeftToolBarArea, ImageToolBar)
 
         ##############################################################################################
         ##############################################################################################
@@ -231,9 +231,10 @@ class Gui(QtCore.QObject):
         ##############################################################################################
 
         self.CursorToolButton = QToolButton(self.MainWindow)
+        # self.CursorToolButton.setIconSize(QtCore.QSize(32, 32))
         self.CursorToolButton.setText("&Cursor")
         self.CursorToolButton.setToolTip("Cursor")
-        self.CursorToolButton.setIcon(QtGui.QIcon("cursor.svg"))
+        self.CursorToolButton.setIcon(QtGui.QIcon("icons/cursor.svg"))
         self.CursorToolButton.setCheckable(True)
         self.CursorToolButton.toggled.connect(self.OnCursorToolButton)
 
@@ -246,7 +247,7 @@ class Gui(QtCore.QObject):
         self.ColorPickerToolButton = QToolButton(self.MainWindow)
         self.ColorPickerToolButton.setText("&Color Picker")
         self.ColorPickerToolButton.setToolTip("Color Picker")
-        self.ColorPickerToolButton.setIcon(QtGui.QIcon("color_picker.svg"))
+        self.ColorPickerToolButton.setIcon(QtGui.QIcon("icons/color_picker.svg"))
         self.ColorPickerToolButton.setCheckable(True)
         self.ColorPickerToolButton.toggled.connect(self.OnColorPickerToolButton)
 
@@ -259,7 +260,7 @@ class Gui(QtCore.QObject):
         self.PaintToolButton = QToolButton(self.MainWindow)
         self.PaintToolButton.setText("&Paint")
         self.PaintToolButton.setToolTip("Paint")
-        self.PaintToolButton.setIcon(QtGui.QIcon("paint.svg"))
+        self.PaintToolButton.setIcon(QtGui.QIcon("icons/paint.svg"))
         self.PaintToolButton.setCheckable(True)
         self.PaintToolButton.toggled.connect(self.OnPaintToolButton)
 
@@ -272,7 +273,7 @@ class Gui(QtCore.QObject):
         self.FillToolButton = QToolButton(self.MainWindow)
         self.FillToolButton.setText("&Fill")
         self.FillToolButton.setToolTip("Fill")
-        self.FillToolButton.setIcon(QtGui.QIcon("fill.svg"))
+        self.FillToolButton.setIcon(QtGui.QIcon("icons/fill.svg"))
         self.FillToolButton.setCheckable(True)
         self.FillToolButton.toggled.connect(self.OnFillToolButton)
 
@@ -284,7 +285,7 @@ class Gui(QtCore.QObject):
 
         self.CropToolButton = QToolButton(self.MainWindow)
         self.CropToolButton.setText("&Crop")
-        self.CropToolButton.setIcon(QtGui.QIcon("crop.svg"))
+        self.CropToolButton.setIcon(QtGui.QIcon("icons/crop.svg"))
         self.ColorPickerToolButton.setToolTip("Basic Crop")
         self.CropToolButton.setCheckable(True)
         self.CropToolButton.toggled.connect(self.OnCropToolButton)
@@ -301,7 +302,7 @@ class Gui(QtCore.QObject):
         self.SelectToolButton = QToolButton(self.MainWindow)
         self.SelectToolButton.setText("&Select")
         self.ColorPickerToolButton.setToolTip("Path Crop")
-        self.SelectToolButton.setIcon(QtGui.QIcon("select.svg"))
+        self.SelectToolButton.setIcon(QtGui.QIcon("icons/select.svg"))
         self.SelectToolButton.setCheckable(True)
         self.SelectToolButton.toggled.connect(self.OnSelectToolButton)
 
@@ -314,7 +315,7 @@ class Gui(QtCore.QObject):
         self.SpotRemovalToolButton = QToolButton(self.MainWindow)
         self.SpotRemovalToolButton.setText("&Spot Removal")
         self.ColorPickerToolButton.setToolTip("Spot Removal")
-        self.SpotRemovalToolButton.setIcon(QtGui.QIcon("spot_removal.svg"))
+        self.SpotRemovalToolButton.setIcon(QtGui.QIcon("icons/spot_removal.svg"))
         self.SpotRemovalToolButton.setCheckable(True)
         self.SpotRemovalToolButton.toggled.connect(self.OnSpotRemovalToolButton)
 
@@ -327,7 +328,7 @@ class Gui(QtCore.QObject):
         self.BlurToolButton = QToolButton(self.MainWindow)
         self.BlurToolButton.setText("&Blur")
         self.ColorPickerToolButton.setToolTip("Blur")
-        self.BlurToolButton.setIcon(QtGui.QIcon("blur.svg"))
+        self.BlurToolButton.setIcon(QtGui.QIcon("icons/blur.svg"))
         self.BlurToolButton.setCheckable(True)
         self.BlurToolButton.toggled.connect(self.OnBlurToolButton)
 
@@ -373,14 +374,25 @@ class Gui(QtCore.QObject):
             },
         }
 
-        ImageToolBar.addWidget(self.CursorToolButton)
-        ImageToolBar.addWidget(self.ColorPickerToolButton)
-        ImageToolBar.addWidget(self.PaintToolButton)
-        ImageToolBar.addWidget(self.FillToolButton)
-        ImageToolBar.addWidget(self.CropToolButton)
-        ImageToolBar.addWidget(self.SelectToolButton)
-        ImageToolBar.addWidget(self.SpotRemovalToolButton)
-        ImageToolBar.addWidget(self.BlurToolButton)
+        ToolbarDockWidget = QtWidgets.QDockWidget("Tools")
+        ToolbarDockWidget.setMinimumWidth(145)
+        ToolbarContent = QtWidgets.QWidget()
+        ToolbarLayout = QFlowLayout(ToolbarContent)
+        ToolbarLayout.setSpacing(0)
+
+        tool_buttons = [
+            self.CursorToolButton, self.ColorPickerToolButton, self.PaintToolButton, self.FillToolButton, 
+            self.CropToolButton, self.SelectToolButton, self.SpotRemovalToolButton, self.BlurToolButton
+        ]
+
+        for button in tool_buttons:
+            button.setIconSize(QtCore.QSize(20, 20))
+            ToolbarLayout.addWidget(button)
+
+        ToolbarContent.setLayout(ToolbarLayout)
+        ToolbarDockWidget.setWidget(ToolbarContent)
+
+        self.MainWindow.addDockWidget(QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, ToolbarDockWidget)
 
         ##############################################################################################
         ##############################################################################################

@@ -156,6 +156,9 @@ class QtImageViewer(QGraphicsView):
         # Flags for painting
         self._isPainting = False
         self.paintBrushSize = 40
+
+        # Flags for filling
+        self._isFilling = False
         
         # Flags for active cropping
         # Set to true when using the crop tool with toolbar
@@ -381,6 +384,9 @@ class QtImageViewer(QGraphicsView):
         elif self._isPainting:
             if (self.regionZoomButton is not None) and (event.button() == self.regionZoomButton):
                 self.performPaint(event)
+        elif self._isFilling:
+            if (self.regionZoomButton is not None) and (event.button() == self.regionZoomButton):
+                self.performFill(event)
         elif self._isCropping:
             # Start dragging a region crop box?
             if (self.regionZoomButton is not None) and (event.button() == self.regionZoomButton):
@@ -631,6 +637,9 @@ class QtImageViewer(QGraphicsView):
             self.renderCursorOverlay(image, self._lastMousePositionInScene, self.paintBrushSize)
             if self._shiftPressed or self._isLeftMouseButtonPressed:
                 self.performPaint(event)
+        elif self._isFilling:
+            pass
+            # TODO: Change cursor to a paint bucket?
         elif self._isSelecting:
             if self._shiftPressed:
                 self.selectPoints.append(QPointF(self.mapToScene(event.pos())))
@@ -807,6 +816,30 @@ class QtImageViewer(QGraphicsView):
         self.setImage(updatedPixmap)
         self.OriginalImage = updatedPixmap
 
+    def performFill(self, event):
+        currentPixmap = self.OriginalImage
+        currentImage = self.QPixmapToImage(currentPixmap)
+        pixelAccess = currentImage.load()
+        scene_pos = self.mapToScene(event.pos())
+        x = scene_pos.x()
+        y = scene_pos.y()
+
+        # https://stackoverflow.com/questions/8629085/qt-pyqt-other-how-do-i-change-specific-colors-in-a-pixmap
+
+        r, g, b, _ = pixelAccess[x, y]
+        cr, cg, cb = self.ColorPicker.getRGB()
+
+        mask = currentPixmap.createMaskFromColor(QtGui.QColor(r, g, b), Qt.MaskOutColor)
+
+        p = QPainter(currentPixmap)
+        p.setPen(QtGui.QColor(int(cr), int(cg), int(cb)))
+        p.drawPixmap(currentPixmap.rect(), mask, mask.rect())
+        p.end()
+
+        # Update the pixmap
+        self.setImage(currentPixmap)
+        self.OriginalImage = currentPixmap
+
     def performCrop(self, event):
         # Crop the pixmap
         cropQPixmap = self.pixmap().copy(self._cropRect.toAlignedRect())
@@ -941,6 +974,12 @@ class QtImageViewer(QGraphicsView):
         )
         self.pathItem.setBrush(QtGui.QColor(255, 0, 0, 10))
 
+    def Luminance(self, pixel):
+        return (0.299 * pixel[0] + 0.587 * pixel[1] + 0.114 * pixel[2])
+
+    def isSimilar(self, pixel_a, pixel_b, threshold):
+        return abs(self.Luminance(pixel_a) - self.Luminance(pixel_b)) < threshold
+
     def removeSpots(self, event):
         currentPixmap = self.OriginalImage
         currentImage = self.QPixmapToImage(currentPixmap)
@@ -950,12 +989,6 @@ class QtImageViewer(QGraphicsView):
         y = scene_pos.y()
         w = currentImage.width
         h = currentImage.height
-
-        def luminance(pixel):
-            return (0.299 * pixel[0] + 0.587 * pixel[1] + 0.114 * pixel[2])
-
-        def is_similar(pixel_a, pixel_b, threshold):
-            return abs(luminance(pixel_a) - luminance(pixel_b)) < threshold
 
         brush_size = 2 * self.spotsBrushSize
 
@@ -994,7 +1027,7 @@ class QtImageViewer(QGraphicsView):
             i, j = point
             pr, pg, pb, _ = pixelAccess[i, j] # current neighbor pixel inside the brush circle
             ar, ag, ab = average
-            if not is_similar((ar, ag, ab), (pr, pg, pb), self.spotRemovalSimilarityThreshold):
+            if not self.isSimilar((ar, ag, ab), (pr, pg, pb), self.spotRemovalSimilarityThreshold):
                 # Update this pixel
                 rr = 0
                 if ar > 150:

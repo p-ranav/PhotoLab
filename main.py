@@ -265,6 +265,19 @@ class Gui(QtCore.QObject):
 
         ##############################################################################################
         ##############################################################################################
+        # Fill Tool
+        ##############################################################################################
+        ##############################################################################################
+
+        self.FillToolButton = QToolButton(self.MainWindow)
+        self.FillToolButton.setText("&Fill")
+        self.FillToolButton.setToolTip("Fill")
+        self.FillToolButton.setIcon(QtGui.QIcon("fill.svg"))
+        self.FillToolButton.setCheckable(True)
+        self.FillToolButton.toggled.connect(self.OnFillToolButton)
+
+        ##############################################################################################
+        ##############################################################################################
         # Crop Tool
         ##############################################################################################
         ##############################################################################################
@@ -337,6 +350,10 @@ class Gui(QtCore.QObject):
                 "tool": "PaintToolButton",
                 "var": '_isPainting'
             },
+            "fill": {
+                "tool": "FillToolButton",
+                "var": '_isFilling'
+            },
             "crop": {
                 "tool": "CropToolButton",
                 "var": '_isCropping'
@@ -359,6 +376,7 @@ class Gui(QtCore.QObject):
         ImageToolBar.addWidget(self.CursorToolButton)
         ImageToolBar.addWidget(self.ColorPickerToolButton)
         ImageToolBar.addWidget(self.PaintToolButton)
+        ImageToolBar.addWidget(self.FillToolButton)
         ImageToolBar.addWidget(self.CropToolButton)
         ImageToolBar.addWidget(self.SelectToolButton)
         ImageToolBar.addWidget(self.SpotRemovalToolButton)
@@ -518,6 +536,9 @@ class Gui(QtCore.QObject):
 
     def OnPaintToolButton(self, checked):
         self.EnableTool("paint") if checked else self.DisableTool("paint")
+
+    def OnFillToolButton(self, checked):
+        self.EnableTool("fill") if checked else self.DisableTool("fill")
 
     def OnCropToolButton(self, checked):
         self.EnableTool("crop") if checked else self.DisableTool("crop")

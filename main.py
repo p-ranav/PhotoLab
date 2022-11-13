@@ -205,6 +205,9 @@ class Gui(QtCore.QObject):
         self.OpenShortcut = QtGui.QShortcut(QKeySequence("Ctrl+O"), self.MainWindow)
         self.OpenShortcut.activated.connect(self.OnOpen)
 
+        self.PasteShortcut = QtGui.QShortcut(QKeySequence("Ctrl+V"), self.MainWindow)
+        self.PasteShortcut.activated.connect(self.OnPaste)
+
         self.SaveShortcut = QtGui.QShortcut(QKeySequence("Ctrl+S"), self.MainWindow)
         self.SaveShortcut.activated.connect(self.OnSave)
 
@@ -526,14 +529,7 @@ class Gui(QtCore.QObject):
         if "destructor" in value:
             getattr(self.image_viewer, value["destructor"])()
 
-    def OnOpen(self):
-        # Load an image file to be displayed (will popup a file dialog).
-        self.image_viewer.open()
-        filename = self.image_viewer._current_filename
-        filename = os.path.basename(filename)
-        self.MainWindow.setWindowTitle(filename)
-        self.image_viewer.OriginalImage = self.image_viewer.pixmap()
-
+    def updateHistogram(self):
         # Update Histogram
 
         # Compute image histogram
@@ -563,12 +559,24 @@ class Gui(QtCore.QObject):
         self.ImageHistogramPlot.addItem(self.ImageHistogramGraphBlue)
         self.ImageHistogramPlot.addItem(self.ImageHistogramGraphLuma)
 
+    def updateColorPicker(self):
         # Set the RGB in the color picker to the value in the middle of the image
         pixelAccess = self.QPixmapToImage(self.image_viewer.OriginalImage).load()
         middle_pixel_x = int(self.image_viewer.OriginalImage.width() / 2)
         middle_pixel_y = int(self.image_viewer.OriginalImage.height() / 2)
         r, g, b, a = pixelAccess[middle_pixel_x, middle_pixel_y]
         self.color_picker.setRGB((r, g, b))
+
+    def OnOpen(self):
+        # Load an image file to be displayed (will popup a file dialog).
+        self.image_viewer.open()
+        filename = self.image_viewer._current_filename
+        filename = os.path.basename(filename)
+        self.MainWindow.setWindowTitle(filename)
+        self.image_viewer.OriginalImage = self.image_viewer.pixmap()
+
+        self.updateHistogram()
+        self.updateColorPicker()
 
     def OnSave(self):
         self.image_viewer.OriginalImage = self.image_viewer.pixmap()
@@ -581,6 +589,20 @@ class Gui(QtCore.QObject):
         filename = self.image_viewer._current_filename
         filename = os.path.basename(filename)
         self.MainWindow.setWindowTitle(filename)
+
+    def OnPaste(self):
+        cb = QApplication.clipboard()
+        md = cb.mimeData()
+        if md.hasImage():
+            img = cb.image()
+            self.image_viewer._current_filename = "Untitled.png"
+            self.image_viewer.setImage(img)
+            filename = self.image_viewer._current_filename
+            self.MainWindow.setWindowTitle(filename)
+            self.image_viewer.OriginalImage = self.image_viewer.pixmap()
+
+            self.updateHistogram()
+            self.updateColorPicker()
 
 def main():
     app = QApplication(sys.argv)

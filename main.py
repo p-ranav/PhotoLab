@@ -27,6 +27,8 @@ import numpy as np
 from QColorPicker import QColorPicker
 import os
 from QFlowLayout import QFlowLayout
+import utilities
+from bg import remove2
 
 def QImageToCvMat(incomingImage):
     '''  Converts a QImage into an opencv MAT format  '''
@@ -321,6 +323,19 @@ class Gui(QtCore.QObject):
 
         ##############################################################################################
         ##############################################################################################
+        # Background Removal Tool
+        ##############################################################################################
+        ##############################################################################################
+
+        self.BackgroundRemovalToolButton = QToolButton(self.MainWindow)
+        self.BackgroundRemovalToolButton.setText("&Spot Removal")
+        self.ColorPickerToolButton.setToolTip("Spot Removal")
+        self.BackgroundRemovalToolButton.setIcon(QtGui.QIcon("icons/background_removal.svg"))
+        self.BackgroundRemovalToolButton.setCheckable(True)
+        self.BackgroundRemovalToolButton.toggled.connect(self.OnBackgroundRemovalToolButton)
+
+        ##############################################################################################
+        ##############################################################################################
         # Blur Tool
         ##############################################################################################
         ##############################################################################################
@@ -368,6 +383,10 @@ class Gui(QtCore.QObject):
                 "tool": "SpotRemovalToolButton",
                 "var": '_isRemovingSpots'
             },
+            "background_removal": {
+                "tool": "BackgroundRemovalToolButton",
+                "var": '_isRemovingBackground'
+            },
             "blur": {
                 "tool": "BlurToolButton",
                 "var": '_isBlurring'
@@ -382,7 +401,8 @@ class Gui(QtCore.QObject):
 
         tool_buttons = [
             self.CursorToolButton, self.ColorPickerToolButton, self.PaintToolButton, self.FillToolButton, 
-            self.CropToolButton, self.SelectToolButton, self.SpotRemovalToolButton, self.BlurToolButton
+            self.CropToolButton, self.SelectToolButton, self.SpotRemovalToolButton, self.BackgroundRemovalToolButton, 
+            self.BlurToolButton
         ]
 
         for button in tool_buttons:
@@ -561,6 +581,16 @@ class Gui(QtCore.QObject):
     def OnSpotRemovalToolButton(self, checked):
         self.EnableTool("spot_removal") if checked else self.DisableTool("spot_removal")
 
+    def OnBackgroundRemovalToolButton(self, checked):
+        if checked:
+            self.EnableTool("background_removal") if checked else self.DisableTool("background_removal")
+
+            BackgroundRemovedImage = remove2(self.QPixmapToImage(self.image_viewer.OriginalImage))
+            updatedPixmap = self.ImageToQPixmap(BackgroundRemovedImage)
+            self.image_viewer.setImage(updatedPixmap)
+            self.image_viewer.OriginalImage = updatedPixmap
+        self.BackgroundRemovalToolButton.setChecked(False)
+
     def OnBlurToolButton(self, checked):
         self.EnableTool("blur") if checked else self.DisableTool("blur")
 
@@ -628,7 +658,6 @@ class Gui(QtCore.QObject):
         filename = os.path.basename(filename)
         self.MainWindow.setWindowTitle(filename)
         self.image_viewer.OriginalImage = self.image_viewer.pixmap()
-
         self.updateHistogram()
         self.updateColorPicker()
 

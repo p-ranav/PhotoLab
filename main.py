@@ -542,10 +542,12 @@ class Gui(QtCore.QObject):
             getattr(self.image_viewer, value["destructor"])()
 
     def OnSave(self):
+        self.image_viewer.OriginalImage = self.image_viewer.pixmap()
         self.image_viewer.save()
    
     def OnSaveAs(self):
         name = QFileDialog.getSaveFileName(self.MainWindow, 'Save File', "Untitled.png", "Images (*.bmp *.ico *.jpeg *.jpg *.pbm *.pgm *.png *.ppm *.tif *.tiff *.wbmp *.xbm *.xpm)")
+        self.image_viewer.OriginalImage = self.image_viewer.pixmap()
         self.image_viewer.save(name[0])
         filename = self.image_viewer._current_filename
         filename = os.path.basename(filename)

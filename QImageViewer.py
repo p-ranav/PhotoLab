@@ -780,13 +780,14 @@ class QtImageViewer(QGraphicsView):
         w = currentImage.width
         h = currentImage.height
 
-        brush_size = 2 * self.paintBrushSize
+        brush_size = self.paintBrushSize
+        sample_size = 2 * brush_size
         r, g, b = self.ColorPicker.getRGB()
 
         # Find neighbor pixels in a circle around (x, y)
         pixels = []
-        for i in range(int(x - brush_size), int(x + brush_size)):
-            for j in range(int(y - brush_size), int(y + brush_size)):
+        for i in range(int(x - sample_size), int(x + sample_size)):
+            for j in range(int(y - sample_size), int(y + sample_size)):
                 dist = (i - x) * (i - x) + (j - y) * (j - y)
 
                 if dist <= brush_size * brush_size:

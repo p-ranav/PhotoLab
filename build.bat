@@ -1,1 +1,1 @@
-python -m nuitka --follow-imports --onefile --enable-plugin=numpy --enable-plugin=pyqt6 --enable-plugin=cv2 --windows-disable-console main.py
+python -m nuitka --follow-imports --onefile --enable-plugin=numpy --enable-plugin=pyqt6 --windows-disable-console main.py

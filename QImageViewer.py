@@ -148,6 +148,8 @@ class QtImageViewer(QGraphicsView):
         self._isZooming = False
         self._isPanning = False
 
+        self._isLeftMouseButtonPressed = False
+
         # Flags for color picking
         self._isColorPicking = False
         
@@ -351,6 +353,9 @@ class QtImageViewer(QGraphicsView):
             event.accept()
             return
 
+        if event.button() == self.regionZoomButton:
+            self._isLeftMouseButtonPressed = True
+
         # # Draw ROI
         # if self.drawROI is not None:
         #     if self.drawROI == "Ellipse":
@@ -463,6 +468,9 @@ class QtImageViewer(QGraphicsView):
             QGraphicsView.mouseReleaseEvent(self, event)
             event.accept()
             return
+
+        if event.button() == self.regionZoomButton:
+            self._isLeftMouseButtonPressed = False
 
         if not self._isCropping:
             # Finish dragging a region zoom box?
@@ -617,7 +625,7 @@ class QtImageViewer(QGraphicsView):
         elif self._isRemovingSpots:
             image = self.OriginalImage.copy()
             self.renderCursorOverlay(image, self._lastMousePositionInScene, self.spotsBrushSize)
-            if self._shiftPressed:
+            if self._shiftPressed or self._isLeftMouseButtonPressed:
                 self.removeSpots(event)
         elif self._isBlurring:
             image = self.OriginalImage.copy()

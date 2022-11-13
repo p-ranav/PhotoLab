@@ -226,6 +226,19 @@ class Gui(QtCore.QObject):
 
         ##############################################################################################
         ##############################################################################################
+        # Cursor Tool
+        ##############################################################################################
+        ##############################################################################################
+
+        self.CursorToolButton = QToolButton(self.MainWindow)
+        self.CursorToolButton.setText("&Cursor")
+        self.CursorToolButton.setToolTip("Cursor")
+        self.CursorToolButton.setIcon(QtGui.QIcon("cursor.svg"))
+        self.CursorToolButton.setCheckable(True)
+        self.CursorToolButton.toggled.connect(self.OnCursorToolButton)
+
+        ##############################################################################################
+        ##############################################################################################
         # Color Picker Tool
         ##############################################################################################
         ##############################################################################################
@@ -312,6 +325,10 @@ class Gui(QtCore.QObject):
         ##############################################################################################
 
         self.tools = {
+            "cursor": {
+                "tool": "CursorToolButton",
+                "var": '_isCursor'
+            },
             "color_picker": {
                 "tool": "ColorPickerToolButton",
                 "var": '_isColorPicking'
@@ -339,6 +356,7 @@ class Gui(QtCore.QObject):
             },
         }
 
+        ImageToolBar.addWidget(self.CursorToolButton)
         ImageToolBar.addWidget(self.ColorPickerToolButton)
         ImageToolBar.addWidget(self.PaintToolButton)
         ImageToolBar.addWidget(self.CropToolButton)
@@ -491,6 +509,9 @@ class Gui(QtCore.QObject):
         # Will also help with using sliders AND using tools at the same time and
         # maintaining consistency
         self.UpdateHistogramPlot()
+
+    def OnCursorToolButton(self, checked):
+        self.EnableTool("cursor") if checked else self.DisableTool("cursor")
 
     def OnColorPickerToolButton(self, checked):
         self.EnableTool("color_picker") if checked else self.DisableTool("color_picker")

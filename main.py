@@ -77,13 +77,6 @@ class Gui(QtCore.QObject):
     
         # Allow panning with the middle mouse button.
         self.image_viewer.panButton = Qt.MouseButton.MiddleButton  # set to None to disable
-        
-        # Load an image file to be displayed (will popup a file dialog).
-        self.image_viewer.open()
-        filename = self.image_viewer._current_filename
-        filename = os.path.basename(filename)
-        self.MainWindow.setWindowTitle(filename)
-        self.image_viewer.OriginalImage = self.image_viewer.pixmap()
 
         ##############################################################################################
         ##############################################################################################
@@ -92,16 +85,12 @@ class Gui(QtCore.QObject):
         ##############################################################################################
 
         # Compute image histogram
-        img = self.QPixmapToImage(self.image_viewer.OriginalImage)
-        r, g, b, a = img.split()
-        r_histogram = r.histogram()
-        g_histogram = g.histogram()
-        b_histogram = b.histogram()
+        r_histogram = []
+        g_histogram = []
+        b_histogram = []
         
         # ITU-R 601-2 luma transform:
-        luma_histogram = [sum(x) for x in zip([item * float(299/1000) for item in r_histogram],
-                                              [item * float(587/1000) for item in g_histogram],
-                                              [item * float(114/1000) for item in b_histogram])]
+        luma_histogram = []
 
         # Create histogram plot
         self.ImageHistogramPlot = pg.plot()
@@ -163,13 +152,6 @@ class Gui(QtCore.QObject):
         ColorPickerLayout.addWidget(self.color_picker)
         self.image_viewer.ColorPicker = self.color_picker
 
-        # Set the RGB in the color picker to the value in the middle of the image
-        pixelAccess = self.QPixmapToImage(self.image_viewer.OriginalImage).load()
-        middle_pixel_x = int(self.image_viewer.OriginalImage.width() / 2)
-        middle_pixel_y = int(self.image_viewer.OriginalImage.height() / 2)
-        r, g, b, a = pixelAccess[middle_pixel_x, middle_pixel_y]
-        self.color_picker.setRGB((r, g, b))
-
         ##############################################################################################
         ##############################################################################################
         # Adjustment Sliders
@@ -219,6 +201,9 @@ class Gui(QtCore.QObject):
         # Keyboard Shortcuts
         ##############################################################################################
         ##############################################################################################
+
+        self.OpenShortcut = QtGui.QShortcut(QKeySequence("Ctrl+O"), self.MainWindow)
+        self.OpenShortcut.activated.connect(self.OnOpen)
 
         self.SaveShortcut = QtGui.QShortcut(QKeySequence("Ctrl+S"), self.MainWindow)
         self.SaveShortcut.activated.connect(self.OnSave)
@@ -540,6 +525,50 @@ class Gui(QtCore.QObject):
         setattr(self.image_viewer, value["var"], False)
         if "destructor" in value:
             getattr(self.image_viewer, value["destructor"])()
+
+    def OnOpen(self):
+        # Load an image file to be displayed (will popup a file dialog).
+        self.image_viewer.open()
+        filename = self.image_viewer._current_filename
+        filename = os.path.basename(filename)
+        self.MainWindow.setWindowTitle(filename)
+        self.image_viewer.OriginalImage = self.image_viewer.pixmap()
+
+        # Update Histogram
+
+        # Compute image histogram
+        img = self.QPixmapToImage(self.image_viewer.OriginalImage)
+        r, g, b, a = img.split()
+        r_histogram = r.histogram()
+        g_histogram = g.histogram()
+        b_histogram = b.histogram()
+        
+        # ITU-R 601-2 luma transform:
+        luma_histogram = [sum(x) for x in zip([item * float(299/1000) for item in r_histogram],
+                                              [item * float(587/1000) for item in g_histogram],
+                                              [item * float(114/1000) for item in b_histogram])]
+
+        # Create histogram plot
+        x = list(range(len(r_histogram)))
+        self.ImageHistogramPlot.removeItem(self.ImageHistogramGraphRed)
+        self.ImageHistogramPlot.removeItem(self.ImageHistogramGraphGreen)
+        self.ImageHistogramPlot.removeItem(self.ImageHistogramGraphBlue)
+        self.ImageHistogramPlot.removeItem(self.ImageHistogramGraphLuma)
+        self.ImageHistogramGraphRed = pg.PlotCurveItem(x = x, y = r_histogram, fillLevel=2, width = 1.0, brush=(255,0,0,80))
+        self.ImageHistogramGraphGreen = pg.PlotCurveItem(x = x, y = g_histogram, fillLevel=2, width = 1.0, brush=(0,255,0,80))
+        self.ImageHistogramGraphBlue = pg.PlotCurveItem(x = x, y = b_histogram, fillLevel=2, width = 1.0, brush=(0,0,255,80))
+        self.ImageHistogramGraphLuma = pg.PlotCurveItem(x = x, y = luma_histogram, fillLevel=2, width = 1.0, brush=(255,255,255,80))
+        self.ImageHistogramPlot.addItem(self.ImageHistogramGraphRed)
+        self.ImageHistogramPlot.addItem(self.ImageHistogramGraphGreen)
+        self.ImageHistogramPlot.addItem(self.ImageHistogramGraphBlue)
+        self.ImageHistogramPlot.addItem(self.ImageHistogramGraphLuma)
+
+        # Set the RGB in the color picker to the value in the middle of the image
+        pixelAccess = self.QPixmapToImage(self.image_viewer.OriginalImage).load()
+        middle_pixel_x = int(self.image_viewer.OriginalImage.width() / 2)
+        middle_pixel_y = int(self.image_viewer.OriginalImage.height() / 2)
+        r, g, b, a = pixelAccess[middle_pixel_x, middle_pixel_y]
+        self.color_picker.setRGB((r, g, b))
 
     def OnSave(self):
         self.image_viewer.OriginalImage = self.image_viewer.pixmap()

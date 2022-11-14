@@ -1202,6 +1202,11 @@ class QtImageViewer(QGraphicsView):
     def performErase(self, event):
         currentPixmap = self.getCurrentLayerLatestPixmap().copy()
         currentImage = currentPixmap.toImage()
+
+        # First convert to a format that supports transparency
+        # https://stackoverflow.com/questions/16910905/set-alpha-channel-per-pixel-in-qimage
+        currentImage = currentImage.convertToFormat(QImage.Format_ARGB32)
+
         scene_pos = self.mapToScene(event.pos())
         x = scene_pos.x()
         y = scene_pos.y()
@@ -1227,7 +1232,9 @@ class QtImageViewer(QGraphicsView):
         # For each point, update the pixel by averaging
         for point in pixels:
             i, j = point
-            currentImage.setPixelColor(i, j, QtGui.QColor(255, 255, 255, 0))
+            color = QtGui.QColor(255, 255, 255, 0)
+            rgba = color.rgba()
+            currentImage.setPixel(i, j, rgba)
 
         # Update the pixmap
         self.setImage(currentImage, True, "Eraser")

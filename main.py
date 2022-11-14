@@ -14,8 +14,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QPixmap
 import sys
 import qdarkstyle
-from PIL import Image, ImageEnhance, ImageFilter
-from PIL.ImageQt import ImageQt
+
 from functools import partial
 from QImageViewer import QtImageViewer
 from QCropItem import QCropItem
@@ -31,6 +30,8 @@ import utilities
 from bg import remove2
 from threading import Thread
 from queue import Queue
+from PIL import Image, ImageEnhance, ImageFilter
+from PIL.ImageQt import ImageQt
 
 def QImageToCvMat(incomingImage):
     '''  Converts a QImage into an opencv MAT format  '''
@@ -374,6 +375,19 @@ class Gui(QtCore.QObject):
 
         ##############################################################################################
         ##############################################################################################
+        # Eraser Tool
+        ##############################################################################################
+        ##############################################################################################
+
+        self.EraserToolButton = QToolButton(self.MainWindow)
+        self.EraserToolButton.setText("&Eraser")
+        self.EraserToolButton.setToolTip("Eraser")
+        self.EraserToolButton.setIcon(QtGui.QIcon("icons/eraser.svg"))
+        self.EraserToolButton.setCheckable(True)
+        self.EraserToolButton.toggled.connect(self.OnEraserToolButton)
+
+        ##############################################################################################
+        ##############################################################################################
         # Toolbar
         ##############################################################################################
         ##############################################################################################
@@ -416,6 +430,10 @@ class Gui(QtCore.QObject):
                 "tool": "HumanSegmentationToolButton",
                 "var": '_isSegmentingHuman'
             },
+            "eraser": {
+                "tool": "EraserToolButton",
+                "var": '_isErasing'
+            },
             "blur": {
                 "tool": "BlurToolButton",
                 "var": '_isBlurring'
@@ -429,9 +447,9 @@ class Gui(QtCore.QObject):
         ToolbarLayout.setSpacing(0)
 
         tool_buttons = [
-            self.CursorToolButton, self.ColorPickerToolButton, self.PaintToolButton, self.FillToolButton, 
-            self.CropToolButton, self.SelectToolButton, self.SpotRemovalToolButton, self.BlurToolButton,
-            self.BackgroundRemovalToolButton, self.HumanSegmentationToolButton            
+            self.CursorToolButton, self.ColorPickerToolButton, self.PaintToolButton, self.EraserToolButton, 
+            self.FillToolButton, self.CropToolButton, self.SelectToolButton, self.SpotRemovalToolButton, 
+            self.BlurToolButton, self.BackgroundRemovalToolButton, self.HumanSegmentationToolButton            
         ]
 
         for button in tool_buttons:
@@ -638,6 +656,9 @@ class Gui(QtCore.QObject):
             QApplication.restoreOverrideCursor()
 
         self.HumanSegmentationToolButton.setChecked(False)
+
+    def OnEraserToolButton(self, checked):
+        self.EnableTool("eraser") if checked else self.DisableTool("eraser")
 
     def OnBlurToolButton(self, checked):
         self.EnableTool("blur") if checked else self.DisableTool("blur")

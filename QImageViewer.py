@@ -38,11 +38,11 @@ __version__ = '2.0.0'
 
 from QCropItem import QCropItem
 from math import sin, radians
-from PIL import Image, ImageFilter, ImageDraw
 from QColorPicker import QColorPicker
-from PIL.ImageQt import ImageQt
 import cv2
 import random
+from PIL import Image, ImageFilter, ImageDraw
+from PIL.ImageQt import ImageQt
 
 class QtImageViewer(QGraphicsView):
     """ PyQt image viewer widget based on QGraphicsView with mouse zooming/panning and ROIs.
@@ -155,7 +155,7 @@ class QtImageViewer(QGraphicsView):
 
         # Flags for painting
         self._isPainting = False
-        self.paintBrushSize = 40
+        self.paintBrushSize = 43
 
         # Flags for filling
         self._isFilling = False
@@ -171,18 +171,21 @@ class QtImageViewer(QGraphicsView):
         self._isSelecting = False
         self.selectPoints = []
         self.path = None
-        self.selectPixmap = None
         self.selectPainterPaths = []
         self._shiftPressed = False
 
         # Flags for spot removal tool
         self._isRemovingSpots = False
-        self.spotsBrushSize = 40
+        self.spotsBrushSize = 43
         self.spotRemovalSimilarityThreshold = 10
 
         # Flags for blur tool
         self._isBlurring = False
-        self.blurBrushSize = 40
+        self.blurBrushSize = 43
+
+        # Flags for erasing
+        self._isErasing = False
+        self.eraserBrushSize = 43
 
         # Store temporary position in screen pixels or scene units.
         self._pixelPosition = QPoint()
@@ -360,7 +363,15 @@ class QtImageViewer(QGraphicsView):
                 pixmap = QPixmap.fromImage(qimage)
         else:
             raise RuntimeError("ImageViewer.setImage: Argument must be a QImage, QPixmap, or numpy.ndarray.")
+
+        # Add to layer history
+        if addToHistory:
+            self.addToHistory(pixmap.copy(), explanationOfChange, typeOfChange, valueOfChange, objectOfChange)
         
+        ##########################################################################################
+        # Grid for transparent images
+        #########################################################################################
+
         original = pixmap.copy()
         painter = QPainter(pixmap)
 
@@ -387,15 +398,13 @@ class QtImageViewer(QGraphicsView):
         painter.drawPixmap(QPoint(), original)
 
         painter.end()
+
+        #########################################################################################
         
         if self.hasImage():
             self._image.setPixmap(pixmap)
         else:
             self._image = self.scene.addPixmap(pixmap)
-
-        # Add to layer history
-        if addToHistory:
-            self.addToHistory(pixmap, explanationOfChange, typeOfChange, valueOfChange, objectOfChange)
 
         # Better quality pixmap scaling?
         # !!! This will distort actual pixel data when zoomed way in.
@@ -424,7 +433,6 @@ class QtImageViewer(QGraphicsView):
             self._current_filename = path
 
         self.getCurrentLayerLatestPixmap().save(path, None, 100)
-        # self.OriginalImage.save(path, None, 100)
 
     def updateViewer(self):
         """ Show current zoom (if showing entire image, apply current aspect ratio mode).
@@ -515,6 +523,9 @@ class QtImageViewer(QGraphicsView):
         elif self._isPainting:
             if (self.regionZoomButton is not None) and (event.button() == self.regionZoomButton):
                 self.performPaint(event)
+        elif self._isErasing:
+            if (self.regionZoomButton is not None) and (event.button() == self.regionZoomButton):
+                self.performErase(event)
         elif self._isFilling:
             if (self.regionZoomButton is not None) and (event.button() == self.regionZoomButton):
                 self.performFill(event)
@@ -537,8 +548,6 @@ class QtImageViewer(QGraphicsView):
             #
             # Start dragging a region crop box?
             if (self.regionZoomButton is not None) and (event.button() == self.regionZoomButton):
-                if self.selectPixmap == None:
-                    self.selectPixmap = self.pixmap()
                 self._pixelPosition = event.pos()  # store pixel position
                 self.selectPoints.append(QPointF(self.mapToScene(event.pos())))
                 QGraphicsView.mousePressEvent(self, event)
@@ -767,6 +776,10 @@ class QtImageViewer(QGraphicsView):
             self.renderCursorOverlay(self._lastMousePositionInScene, self.paintBrushSize)
             if self._shiftPressed or self._isLeftMouseButtonPressed:
                 self.performPaint(event)
+        elif self._isErasing:
+            self.renderCursorOverlay(self._lastMousePositionInScene, self.eraserBrushSize)
+            if self._shiftPressed or self._isLeftMouseButtonPressed:
+                self.performErase(event)
         elif self._isFilling:
             pass
             # TODO: Change cursor to a paint bucket?
@@ -845,12 +858,23 @@ class QtImageViewer(QGraphicsView):
                 self._shiftPressed = True
             if event.key() == Qt.Key_BracketLeft:
                 self.paintBrushSize -= 3
-                if self.paintBrushSize < 3:
-                    self.paintBrushSize = 3
+                if self.paintBrushSize < 1:
+                    self.paintBrushSize = 1
                 self.renderCursorOverlay(self._lastMousePositionInScene, self.paintBrushSize)
             elif event.key() == Qt.Key_BracketRight:
                 self.paintBrushSize += 3
                 self.renderCursorOverlay(self._lastMousePositionInScene, self.paintBrushSize)
+        if self._isErasing:
+            if event.key() == Qt.Key_Shift:
+                self._shiftPressed = True
+            if event.key() == Qt.Key_BracketLeft:
+                self.eraserBrushSize -= 3
+                if self.eraserBrushSize < 1:
+                    self.eraserBrushSize = 1
+                self.renderCursorOverlay(self._lastMousePositionInScene, self.eraserBrushSize)
+            elif event.key() == Qt.Key_BracketRight:
+                self.eraserBrushSize += 3
+                self.renderCursorOverlay(self._lastMousePositionInScene, self.eraserBrushSize)
         elif self._isCropping:
             if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
                 self.performCrop(event)
@@ -871,16 +895,16 @@ class QtImageViewer(QGraphicsView):
                 self._shiftPressed = True
             if event.key() == Qt.Key_BracketLeft:
                 self.spotsBrushSize -= 3
-                if self.spotsBrushSize < 3:
-                    self.spotsBrushSize = 3
+                if self.spotsBrushSize < 1:
+                    self.spotsBrushSize = 1
                 self.renderCursorOverlay(self._lastMousePositionInScene, self.spotsBrushSize)
             elif event.key() == Qt.Key_BracketRight:
                 self.spotsBrushSize += 3
                 self.renderCursorOverlay(self._lastMousePositionInScene, self.spotsBrushSize)
         elif self._isBlurring:
             if event.key() == Qt.Key_BracketLeft:
-                self.blurBrushSize -= 3
-                if self.blurBrushSize < 3:
+                self.blurBrushSize -= 1
+                if self.blurBrushSize < 1:
                     self.blurBrushSize = 3
                 self.renderCursorOverlay(self._lastMousePositionInScene, self.blurBrushSize)
             elif event.key() == Qt.Key_BracketRight:
@@ -909,13 +933,12 @@ class QtImageViewer(QGraphicsView):
 
     def performPaint(self, event):
         currentPixmap = self.getCurrentLayerLatestPixmap().copy()
-        currentImage = self.QPixmapToImage(currentPixmap)
-        pixelAccess = currentImage.load()
+        currentImage = currentPixmap.toImage()
         scene_pos = self.mapToScene(event.pos())
         x = scene_pos.x()
         y = scene_pos.y()
-        w = currentImage.width
-        h = currentImage.height
+        w = currentImage.width()
+        h = currentImage.height()
 
         brush_size = self.paintBrushSize
         sample_size = 2 * brush_size
@@ -937,14 +960,13 @@ class QtImageViewer(QGraphicsView):
         # For each point, update the pixel by averaging
         for point in pixels:
             i, j = point
-            pixelAccess[i, j] = (int(r), int(g), int(b))
+            currentImage.setPixelColor(i, j, QtGui.QColor(int(r), int(g), int(b), 255))
 
         # Update the pixmap
-        updatedPixmap = self.ImageToQPixmap(currentImage)
-        self.setImage(updatedPixmap, True, "Paint")
+        self.setImage(currentImage, True, "Paint")
 
     def performFill(self, event):
-        currentPixmap = self.getCurrentLayerLatestPixmap()
+        currentPixmap = self.getCurrentLayerLatestPixmap().copy()
         currentImage = self.QPixmapToImage(currentPixmap)
         pixelAccess = currentImage.load()
         scene_pos = self.mapToScene(event.pos())
@@ -969,7 +991,7 @@ class QtImageViewer(QGraphicsView):
 
     def performCrop(self, event):
         # Crop the pixmap
-        cropQPixmap = self.pixmap().copy(self._cropRect.toAlignedRect())
+        cropQPixmap = self.getCurrentLayerLatestPixmap().copy(self._cropRect.toAlignedRect())
 
         # Crop the original image as well
         # self.OriginalImage = self.OriginalImage.copy(self._cropRect.toAlignedRect())
@@ -1002,11 +1024,12 @@ class QtImageViewer(QGraphicsView):
 
         self.path.quadTo(self.selectPoints[-1], self.selectPoints[-1])
 
-        output = QImage(self.pixmap().toImage().size(), QImage.Format_ARGB32)
+        currentImage = self.getCurrentLayerLatestPixmap()
+        output = QImage(currentImage.toImage().size(), QImage.Format_ARGB32)
         output.fill(Qt.transparent)
         painter = QPainter(output)
         painter.setClipPath(self.path)
-        painter.drawImage(QPoint(), self.pixmap().toImage())
+        painter.drawImage(QPoint(), currentImage.toImage())
         painter.end()
         # To avoid useless transparent background you can crop it like that:
         output = output.copy(self.path.boundingRect().toRect())
@@ -1108,7 +1131,7 @@ class QtImageViewer(QGraphicsView):
         return abs(self.Luminance(pixel_a) - self.Luminance(pixel_b)) < threshold
 
     def removeSpots(self, event):
-        currentPixmap = self.getCurrentLayerLatestPixmap()
+        currentPixmap = self.getCurrentLayerLatestPixmap().copy()
         currentImage = self.QPixmapToImage(currentPixmap)
         pixelAccess = currentImage.load()
         scene_pos = self.mapToScene(event.pos())
@@ -1165,7 +1188,7 @@ class QtImageViewer(QGraphicsView):
                 rb = 0
                 if ab > 150:
                     rb = random.randint(-3, 3)
-                pixelAccess[i, j] = (int(ar + rr), int(ag + rg), int(ab + rb))
+                pixelAccess[i, j] = (int(ar + rr), int(ag + rg), int(ab + rb), 255)
 
         # Update the pixmap
         updatedPixmap = self.ImageToQPixmap(currentImage)
@@ -1174,7 +1197,7 @@ class QtImageViewer(QGraphicsView):
         
     def blur(self, event):
         brush_size = self.blurBrushSize
-        currentPixmap = self.getCurrentLayerLatestPixmap()
+        currentPixmap = self.getCurrentLayerLatestPixmap().copy()
         currentImage = self.QPixmapToImage(currentPixmap)
         scene_pos = self.mapToScene(event.pos())
         x = scene_pos.x()
@@ -1197,6 +1220,39 @@ class QtImageViewer(QGraphicsView):
         updatedPixmap = self.ImageToQPixmap(currentImage)
         self.setImage(updatedPixmap, True, "Blur")
         # self.OriginalImage = updatedPixmap
+
+    def performErase(self, event):
+        currentPixmap = self.getCurrentLayerLatestPixmap().copy()
+        currentImage = currentPixmap.toImage()
+        scene_pos = self.mapToScene(event.pos())
+        x = scene_pos.x()
+        y = scene_pos.y()
+        w = currentImage.width()
+        h = currentImage.height()
+
+        brush_size = self.eraserBrushSize
+        sample_size = 2 * brush_size
+
+        # Find neighbor pixels in a circle around (x, y)
+        pixels = []
+        for i in range(int(x - sample_size), int(x + sample_size)):
+            for j in range(int(y - sample_size), int(y + sample_size)):
+                dist = (i - x) * (i - x) + (j - y) * (j - y)
+
+                if dist <= brush_size * brush_size:
+                    # point is inside circle
+
+                    # is the point inside the image?
+                    if i >= 0 and i < w and j >= 0 and j < h:
+                        pixels.append([i, j])
+
+        # For each point, update the pixel by averaging
+        for point in pixels:
+            i, j = point
+            currentImage.setPixelColor(i, j, QtGui.QColor(255, 255, 255, 0))
+
+        # Update the pixmap
+        self.setImage(currentImage, True, "Eraser")
     
     def renderCursorOverlay(self, scenePosition, brushSize):
         pixmap = self.getCurrentLayerLatestPixmap()

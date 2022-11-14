@@ -760,8 +760,7 @@ class QtImageViewer(QGraphicsView):
                 self.updateViewer()
                 self.viewChanged.emit()
         elif self._isPainting:
-            image = self.getCurrentLayerLatestPixmap().copy()
-            self.renderCursorOverlay(image, self._lastMousePositionInScene, self.paintBrushSize)
+            self.renderCursorOverlay(self._lastMousePositionInScene, self.paintBrushSize)
             if self._shiftPressed or self._isLeftMouseButtonPressed:
                 self.performPaint(event)
         elif self._isFilling:
@@ -772,13 +771,11 @@ class QtImageViewer(QGraphicsView):
                 self.selectPoints.append(QPointF(self.mapToScene(event.pos())))
                 self.buildPath()
         elif self._isRemovingSpots:
-            image = self.getCurrentLayerLatestPixmap().copy()
-            self.renderCursorOverlay(image, self._lastMousePositionInScene, self.spotsBrushSize)
+            self.renderCursorOverlay(self._lastMousePositionInScene, self.spotsBrushSize)
             if self._shiftPressed or self._isLeftMouseButtonPressed:
                 self.removeSpots(event)
         elif self._isBlurring:
-            image = self.getCurrentLayerLatestPixmap().copy()
-            self.renderCursorOverlay(image, self._lastMousePositionInScene, self.blurBrushSize)
+            self.renderCursorOverlay(self._lastMousePositionInScene, self.blurBrushSize)
 
         scenePos = self.mapToScene(event.pos())
         if self.sceneRect().contains(scenePos):
@@ -846,10 +843,10 @@ class QtImageViewer(QGraphicsView):
                 self.paintBrushSize -= 3
                 if self.paintBrushSize < 3:
                     self.paintBrushSize = 3
-                self.renderCursorOverlay(self.getCurrentLayerLatestPixmap(), self._lastMousePositionInScene, self.paintBrushSize)
+                self.renderCursorOverlay(self._lastMousePositionInScene, self.paintBrushSize)
             elif event.key() == Qt.Key_BracketRight:
                 self.paintBrushSize += 3
-                self.renderCursorOverlay(self.getCurrentLayerLatestPixmap(), self._lastMousePositionInScene, self.paintBrushSize)
+                self.renderCursorOverlay(self._lastMousePositionInScene, self.paintBrushSize)
         elif self._isCropping:
             if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
                 self.performCrop(event)
@@ -872,19 +869,19 @@ class QtImageViewer(QGraphicsView):
                 self.spotsBrushSize -= 3
                 if self.spotsBrushSize < 3:
                     self.spotsBrushSize = 3
-                self.renderCursorOverlay(self.getCurrentLayerLatestPixmap(), self._lastMousePositionInScene, self.spotsBrushSize)
+                self.renderCursorOverlay(self._lastMousePositionInScene, self.spotsBrushSize)
             elif event.key() == Qt.Key_BracketRight:
                 self.spotsBrushSize += 3
-                self.renderCursorOverlay(self.getCurrentLayerLatestPixmap(), self._lastMousePositionInScene, self.spotsBrushSize)
+                self.renderCursorOverlay(self._lastMousePositionInScene, self.spotsBrushSize)
         elif self._isBlurring:
             if event.key() == Qt.Key_BracketLeft:
                 self.blurBrushSize -= 3
                 if self.blurBrushSize < 3:
                     self.blurBrushSize = 3
-                self.renderCursorOverlay(self.getCurrentLayerLatestPixmap(), self._lastMousePositionInScene, self.blurBrushSize)
+                self.renderCursorOverlay(self._lastMousePositionInScene, self.blurBrushSize)
             elif event.key() == Qt.Key_BracketRight:
                 self.blurBrushSize += 3
-                self.renderCursorOverlay(self.getCurrentLayerLatestPixmap(), self._lastMousePositionInScene, self.blurBrushSize)
+                self.renderCursorOverlay(self._lastMousePositionInScene, self.blurBrushSize)
 
         event.accept()
 
@@ -1198,24 +1195,23 @@ class QtImageViewer(QGraphicsView):
         self.setImage(updatedPixmap, "Blur")
         # self.OriginalImage = updatedPixmap
     
-    def renderCursorOverlay(self, pixmap, scenePosition, brushSize):
-        if not pixmap:
-            pixmap = self.pixmap()
-            # TODO: Set this to None when you're done blurring
+    def renderCursorOverlay(self, scenePosition, brushSize):
+        pixmap = self.getCurrentLayerLatestPixmap()
 
-        pixmapTmp = pixmap.copy()
-        cursorPainter = QPainter()
-        cursorPainter.begin(pixmapTmp)
-        brush = QtGui.QBrush()
-        brush.setColor(QtGui.QColor(255, 0, 0, 127))
-        brush.setStyle(QtCore.Qt.BrushStyle.SolidPattern)
-        pen = QtGui.QPen()
-        pen.setBrush(brush)
-        cursorPainter.setBrush(brush)
-        cursorPainter.setPen(pen)
-        cursorPainter.drawEllipse(scenePosition, brushSize, brushSize)
-        cursorPainter.end() 
-        self.setImage(pixmapTmp, "Cursor Overlay", False)
+        if pixmap:
+            pixmapTmp = pixmap.copy()
+            cursorPainter = QPainter()
+            cursorPainter.begin(pixmapTmp)
+            brush = QtGui.QBrush()
+            brush.setColor(QtGui.QColor(255, 0, 0, 127))
+            brush.setStyle(QtCore.Qt.BrushStyle.SolidPattern)
+            pen = QtGui.QPen()
+            pen.setBrush(brush)
+            cursorPainter.setBrush(brush)
+            cursorPainter.setPen(pen)
+            cursorPainter.drawEllipse(scenePosition, brushSize, brushSize)
+            cursorPainter.end() 
+            self.setImage(pixmapTmp, False, "Cursor Overlay")
 
 class EllipseROI(QGraphicsEllipseItem):
 

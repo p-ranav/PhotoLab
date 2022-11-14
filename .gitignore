@@ -1,7 +1,6 @@
 __pycache__
 .vscode
-u2net.pth
-utnet_human_seg.pth
+models/*.pth
 *.bin
 main.dist
 main.build

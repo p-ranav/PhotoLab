@@ -10,7 +10,7 @@ from torchvision import transforms
 import data_loader, u2net
 import utilities
 
-U2NET_DOWNLOAD_LOCATION = "."
+U2NET_MODEL_LOCATION = "models"
 
 def load_model(model_name: str = "u2net"):
     #hasher = Hasher()
@@ -76,7 +76,7 @@ def load_model(model_name: str = "u2net"):
     #    print("Choose between u2net, u2net_human_seg or u2netp", file=sys.stderr)
 
     net = u2net.U2NET(3, 1)
-    path = model_name + ".pth" # "u2net_human_seg.pth" # "u2net.pth"
+    path = os.path.join(U2NET_MODEL_LOCATION, model_name + ".pth")
 
     try:
         if torch.cuda.is_available():

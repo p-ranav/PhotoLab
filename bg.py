@@ -17,7 +17,7 @@ import utilities
 
 DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-U2NET_MODEL_LOCATION="."
+U2NET_MODEL_LOCATION="models"
 
 class Net(torch.nn.Module):
     def __init__(self, model_name):
@@ -83,7 +83,7 @@ class Net(torch.nn.Module):
         #    print("Choose between u2net, u2net_human_seg or u2netp", file=sys.stderr)
 
         net = u2net.U2NET(3, 1)
-        path = model_name # "u2net_human_seg.pth" # "u2net.pth"
+        path = os.path.join(U2NET_MODEL_LOCATION, model_name)
         net.load_state_dict(torch.load(path, map_location=torch.device(DEVICE)))
         net.to(device=DEVICE, dtype=torch.float32, non_blocking=True)
         net.eval()

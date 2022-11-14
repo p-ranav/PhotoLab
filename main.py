@@ -33,6 +33,9 @@ from queue import Queue
 from PIL import Image, ImageEnhance, ImageFilter
 from PIL.ImageQt import ImageQt
 from FileUtils import merge_files
+import ColorizerUtil
+import ColorizerSiggraph17Model
+import torch
 
 def QImageToCvMat(incomingImage):
     '''  Converts a QImage into an opencv MAT format  '''
@@ -376,6 +379,19 @@ class Gui(QtCore.QObject):
 
         ##############################################################################################
         ##############################################################################################
+        # Colorizer Tool
+        ##############################################################################################
+        ##############################################################################################
+
+        self.ColorizerToolButton = QToolButton(self.MainWindow)
+        self.ColorizerToolButton.setText("&Colorizer")
+        self.ColorizerToolButton.setToolTip("Colorizer")
+        self.ColorizerToolButton.setIcon(QtGui.QIcon("icons/background_removal.svg"))
+        self.ColorizerToolButton.setCheckable(True)
+        self.ColorizerToolButton.toggled.connect(self.OnColorizerToolButton)
+
+        ##############################################################################################
+        ##############################################################################################
         # Eraser Tool
         ##############################################################################################
         ##############################################################################################
@@ -431,6 +447,10 @@ class Gui(QtCore.QObject):
                 "tool": "HumanSegmentationToolButton",
                 "var": '_isSegmentingHuman'
             },
+            "colorizer": {
+                "tool": "ColorizerToolButton",
+                "var": '_isColorizing'
+            },
             "eraser": {
                 "tool": "EraserToolButton",
                 "var": '_isErasing'
@@ -450,7 +470,7 @@ class Gui(QtCore.QObject):
         tool_buttons = [
             self.CursorToolButton, self.ColorPickerToolButton, self.PaintToolButton, self.EraserToolButton, 
             self.FillToolButton, self.CropToolButton, self.SelectToolButton, self.SpotRemovalToolButton, 
-            self.BlurToolButton, self.BackgroundRemovalToolButton, self.HumanSegmentationToolButton            
+            self.BlurToolButton, self.BackgroundRemovalToolButton, self.HumanSegmentationToolButton, self.ColorizerToolButton        
         ]
 
         for button in tool_buttons:
@@ -657,6 +677,41 @@ class Gui(QtCore.QObject):
             QApplication.restoreOverrideCursor()
 
         self.HumanSegmentationToolButton.setChecked(False)
+
+    def OnColorizerToolButton(self, checked):
+        if checked:
+            # Set cursor to wait
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+            
+            self.EnableTool("colorizer") if checked else self.DisableTool("colorizer")
+
+            useGpu = torch.cuda.is_available()
+
+            # Load colorizer
+            colorizer_siggraph17 = ColorizerSiggraph17Model.siggraph17(pretrained=True).eval()
+            if(useGpu):
+                colorizer_siggraph17.cuda()
+
+            # Load current image
+            currentPixmap = self.getCurrentLayerLatestPixmap()
+            image = self.QPixmapToImage(currentPixmap)
+            image = ColorizerUtil.load_img(image)
+
+            (tens_l_orig, tens_l_rs) = ColorizerUtil.preprocess_img(image, HW=(256,256))
+            if(useGpu):
+                tens_l_rs = tens_l_rs.cuda()
+
+            # colorizer outputs 256x256 ab map
+            # resize and concatenate to original L channel
+            img_bw = ColorizerUtil.postprocess_tens(tens_l_orig, torch.cat((0*tens_l_orig,0*tens_l_orig),dim=1))
+            out_img_siggraph17 = ColorizerUtil.postprocess_tens(tens_l_orig, colorizer_siggraph17(tens_l_rs).cpu())
+
+            self.image_viewer.setImage(out_img_siggraph17, True, "Human Segmentation")
+
+            # Restore cursor
+            QApplication.restoreOverrideCursor()
+
+        self.ColorizerToolButton.setChecked(False)
 
     def OnEraserToolButton(self, checked):
         self.EnableTool("eraser") if checked else self.DisableTool("eraser")

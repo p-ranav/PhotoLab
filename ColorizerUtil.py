@@ -5,8 +5,8 @@ from skimage import color
 import torch
 import torch.nn.functional as F
 
-def load_img(img_path):
-	out_np = np.asarray(Image.open(img_path))
+def load_img(PILImage):
+	out_np = np.asarray(PILImage)
 	if(out_np.ndim==2):
 		out_np = np.tile(out_np[:,:,None],3)
 	return out_np

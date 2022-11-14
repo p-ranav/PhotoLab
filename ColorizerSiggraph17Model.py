@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 
 from ColorizerBaseColor import BaseColor
+from FileUtils import merge_files
+import os
 
 class SIGGRAPHGenerator(BaseColor):
     def __init__(self, norm_layer=nn.BatchNorm2d, classes=529):
@@ -161,11 +163,11 @@ class SIGGRAPHGenerator(BaseColor):
 
 def siggraph17(pretrained=True):
     model = SIGGRAPHGenerator()
-    # model.load("siggraph17-df00044c.pth")
     import torch.utils.model_zoo as model_zoo
-    model.load_state_dict(model_zoo.load_url("siggraph17-df00044c.pth", map_location='cpu', check_hash=True))
-    # if(pretrained):
-    #     import torch.utils.model_zoo as model_zoo
-    #     model.load_state_dict(model_zoo.load_url("siggraph17-df00044c.pth", map_location='cpu', check_hash=True))
+    # Merge model part files to make full .pth model file if missing
+    if not os.path.exists("models/siggraph17-df00044c.pth"):
+        merge_files("siggraph17-df00044c.pth", "models")
+
+    model.load_state_dict(model_zoo.load_url("models/siggraph17-df00044c.pth", map_location='cpu', check_hash=True))
     return model
 

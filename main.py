@@ -32,6 +32,7 @@ from threading import Thread
 from queue import Queue
 from PIL import Image, ImageEnhance, ImageFilter
 from PIL.ImageQt import ImageQt
+from FUtils import merge_files
 
 def QImageToCvMat(incomingImage):
     '''  Converts a QImage into an opencv MAT format  '''
@@ -764,6 +765,14 @@ class Gui(QtCore.QObject):
             self.updateColorPicker()
 
 def main():
+
+    # Merge NN model files into pth file if not exists
+    if not os.path.exists("models/u2net.pth"):
+        merge_files("u2net.pth", "models")
+
+    if not os.path.exists("models/u2net_human_seg.pth"):
+        merge_files("u2net_human_seg.pth", "models")
+
     app = QApplication(sys.argv)
 
     ## setup stylesheet

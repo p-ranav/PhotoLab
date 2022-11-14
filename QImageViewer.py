@@ -374,10 +374,10 @@ class QtImageViewer(QGraphicsView):
         original = pixmap.copy()
         painter = QPainter(pixmap)
 
-        gridSize = 10
         x = y = 0
         width = pixmap.width()
         height = pixmap.height()
+        gridSize = 10
 
         box = QRect(0, 0, width, height)
         painter.fillRect(box, QtGui.QColor(255, 255, 255, 255))

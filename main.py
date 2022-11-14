@@ -29,6 +29,8 @@ import os
 from QFlowLayout import QFlowLayout
 import utilities
 from bg import remove2
+from threading import Thread
+from queue import Queue
 
 def QImageToCvMat(incomingImage):
     '''  Converts a QImage into an opencv MAT format  '''
@@ -197,7 +199,14 @@ class Gui(QtCore.QObject):
         # State of filter sliders
         self.GaussianBlurRadius = 0
 
-        self.SliderTimerId = -1
+        #self.SliderTimerId = -1
+        ## create the shared queue
+        #self.sliderQueue = Queue()
+
+        #self.sliderQueueConsumeTimer = QtCore.QTimer()
+        #self.sliderQueueConsumeTimer.setInterval(2500)
+        #self.sliderQueueConsumeTimer.timeout.connect(self.sliderConsumer)
+        #self.sliderQueueConsumeTimer.start()
 
         ##############################################################################################
         ##############################################################################################
@@ -216,6 +225,9 @@ class Gui(QtCore.QObject):
 
         self.SaveAsShortcut = QtGui.QShortcut(QKeySequence("Ctrl+Shift+S"), self.MainWindow)
         self.SaveAsShortcut.activated.connect(self.OnSaveAs)
+
+        self.UndoShortcut = QtGui.QShortcut(QKeySequence("Ctrl+Z"), self.MainWindow)
+        self.UndoShortcut.activated.connect(self.OnUndo)
 
         ##############################################################################################
         ##############################################################################################
@@ -439,17 +451,11 @@ class Gui(QtCore.QObject):
 
         self.MainWindow.showMaximized()
 
-    def timerEvent(self, event):
-        self.killTimer(self.SliderTimerId)
-        self.SliderTimerId = -1
-        self.UpdateImage()
+    def getCurrentLayerLatestPixmap(self):
+        return self.image_viewer.getCurrentLayerLatestPixmap()
 
-    def UpdateImageWithDelay(self):
-        if self.SliderTimerId != -1:
-            self.killTimer(self.SliderTimerId)
-            
-        # https://stackoverflow.com/questions/43152489/pyqt5-qslider-valuechanged-event-with-delay
-        self.SliderTimerId = self.startTimer(250)
+    def processSliderChange(self, explanationOfChange, typeOfChange, valueOfChange, objectOfChange):
+        self.UpdateImage(explanationOfChange, typeOfChange, valueOfChange, objectOfChange)
 
     def QPixmapToImage(self, pixmap):
         width = pixmap.width()
@@ -485,7 +491,7 @@ class Gui(QtCore.QObject):
 
     def OnColorChanged(self, value):
         self.Color = value
-        self.UpdateImageWithDelay()
+        self.processSliderChange("Saturation", "Slider", value, "ColorSlider")
 
     def AddBrightnessSlider(self, layout):
         self.BrightnessSlider = QSlider(QtCore.Qt.Orientation.Horizontal)
@@ -499,7 +505,7 @@ class Gui(QtCore.QObject):
 
     def OnBrightnessChanged(self, value):
         self.Brightness = value
-        self.UpdateImageWithDelay()
+        self.processSliderChange("Brightness", "Slider", value, "BrightnessSlider")
 
     def AddContrastSlider(self, layout):
         self.ContrastSlider = QSlider(QtCore.Qt.Orientation.Horizontal)
@@ -513,7 +519,7 @@ class Gui(QtCore.QObject):
 
     def OnContrastChanged(self, value):
         self.Contrast = value
-        self.UpdateImageWithDelay()
+        self.processSliderChange("Contrast", "Slider", value, "ContrastSlider")
 
     def AddSharpnessSlider(self, layout):
         self.SharpnessSlider = QSlider(QtCore.Qt.Orientation.Horizontal)
@@ -527,7 +533,7 @@ class Gui(QtCore.QObject):
 
     def OnSharpnessChanged(self, value):
         self.Sharpness = value
-        self.UpdateImageWithDelay()
+        self.processSliderChange("Sharpness", "Slider", value, "SharpnessSlider")
 
     def AddGaussianBlurSlider(self, layout):
         self.GaussianBlurSlider = QSlider(QtCore.Qt.Orientation.Horizontal)
@@ -537,11 +543,7 @@ class Gui(QtCore.QObject):
 
     def OnGaussianBlurChanged(self, value):
         self.GaussianBlurRadius = value
-        self.UpdateImageWithDelay()
-
-    def OnSharpnessChanged(self, value):
-        self.Sharpness = value
-        self.UpdateImageWithDelay()
+        self.processSliderChange("Gaussian Blur", "Slider", value, "GaussianBlurSlider")
 
     def UpdateHistogramPlot(self):
         # Compute image histogram
@@ -562,20 +564,21 @@ class Gui(QtCore.QObject):
         self.ImageHistogramGraphBlue.setData(y=b_histogram)
         self.ImageHistogramGraphLuma.setData(y=luma_histogram)
 
-    def UpdateImage(self):
-        Pixmap = self.image_viewer.OriginalImage
-        Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Color, self.Color)
-        Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Brightness, self.Brightness)
-        Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Contrast, self.Contrast)
-        Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Sharpness, self.Sharpness)
-        if self.GaussianBlurRadius > 0:
-            Pixmap = self.ApplyGaussianBlur(Pixmap, float(self.GaussianBlurRadius / 100))
-        self.image_viewer.setImage(Pixmap)
-        # TODO: Add every adjusted image to a history list
-        # Will help with implementing undo
-        # Will also help with using sliders AND using tools at the same time and
-        # maintaining consistency
-        self.UpdateHistogramPlot()
+    def UpdateImage(self, explanationOfChange, typeOfChange, valueOfChange, objectOfChange):
+        Pixmap = self.image_viewer.getCurrentLayerPixmapBeforeChangeTo(explanationOfChange)
+        if Pixmap:
+            Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Color, self.Color)
+            Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Brightness, self.Brightness)
+            Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Contrast, self.Contrast)
+            Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Sharpness, self.Sharpness)
+            if self.GaussianBlurRadius > 0:
+                Pixmap = self.ApplyGaussianBlur(Pixmap, float(self.GaussianBlurRadius / 100))
+            self.image_viewer.setImage(Pixmap, True, explanationOfChange, typeOfChange, valueOfChange, objectOfChange)
+            # TODO: Add every adjusted image to a history list
+            # Will help with implementing undo
+            # Will also help with using sliders AND using tools at the same time and
+            # maintaining consistency
+            self.UpdateHistogramPlot()
 
     def OnCursorToolButton(self, checked):
         self.EnableTool("cursor") if checked else self.DisableTool("cursor")
@@ -606,10 +609,11 @@ class Gui(QtCore.QObject):
             self.EnableTool("background_removal") if checked else self.DisableTool("background_removal")
 
             # Remove background
-            BackgroundRemovedImage = remove2(self.QPixmapToImage(self.image_viewer.OriginalImage), model_name="u2net")
+            currentPixmap = self.getCurrentLayerLatestPixmap()
+            BackgroundRemovedImage = remove2(self.QPixmapToImage(currentPixmap), model_name="u2net")
             updatedPixmap = self.ImageToQPixmap(BackgroundRemovedImage)
-            self.image_viewer.setImage(updatedPixmap)
-            self.image_viewer.OriginalImage = updatedPixmap
+            self.image_viewer.setImage(updatedPixmap, True, "Background Removal")
+            # self.image_viewer.OriginalImage = updatedPixmap
 
             # Restore cursor
             QApplication.restoreOverrideCursor()
@@ -624,10 +628,11 @@ class Gui(QtCore.QObject):
             self.EnableTool("human_segmentation") if checked else self.DisableTool("human_segmentation")
 
             # Remove background
-            BackgroundRemovedImage = remove2(self.QPixmapToImage(self.image_viewer.OriginalImage), model_name="u2net_human_seg")
+            currentPixmap = self.getCurrentLayerLatestPixmap()
+            BackgroundRemovedImage = remove2(self.QPixmapToImage(currentPixmap), model_name="u2net_human_seg")
             updatedPixmap = self.ImageToQPixmap(BackgroundRemovedImage)
-            self.image_viewer.setImage(updatedPixmap)
-            self.image_viewer.OriginalImage = updatedPixmap
+            self.image_viewer.setImage(updatedPixmap, True, "Human Segmentation")
+            # self.image_viewer.OriginalImage = updatedPixmap
 
             # Restore cursor
             QApplication.restoreOverrideCursor()
@@ -660,7 +665,7 @@ class Gui(QtCore.QObject):
         # Update Histogram
 
         # Compute image histogram
-        img = self.QPixmapToImage(self.image_viewer.OriginalImage)
+        img = self.QPixmapToImage(self.getCurrentLayerLatestPixmap())
         r, g, b, a = img.split()
         r_histogram = r.histogram()
         g_histogram = g.histogram()
@@ -688,9 +693,10 @@ class Gui(QtCore.QObject):
 
     def updateColorPicker(self):
         # Set the RGB in the color picker to the value in the middle of the image
-        pixelAccess = self.QPixmapToImage(self.image_viewer.OriginalImage).load()
-        middle_pixel_x = int(self.image_viewer.OriginalImage.width() / 2)
-        middle_pixel_y = int(self.image_viewer.OriginalImage.height() / 2)
+        currentPixmap = self.getCurrentLayerLatestPixmap()
+        pixelAccess = self.QPixmapToImage(currentPixmap).load()
+        middle_pixel_x = int(currentPixmap.width() / 2)
+        middle_pixel_y = int(currentPixmap.height() / 2)
         r, g, b, a = pixelAccess[middle_pixel_x, middle_pixel_y]
         self.color_picker.setRGB((r, g, b))
 
@@ -700,23 +706,26 @@ class Gui(QtCore.QObject):
         filename = self.image_viewer._current_filename
         filename = os.path.basename(filename)
         self.MainWindow.setWindowTitle(filename)
-        self.image_viewer.OriginalImage = self.image_viewer.pixmap()
+        # self.image_viewer.OriginalImage = self.image_viewer.pixmap()
         self.updateHistogram()
         self.updateColorPicker()
 
     def OnSave(self):
-        self.image_viewer.OriginalImage = self.image_viewer.pixmap()
+        # self.image_viewer.OriginalImage = self.image_viewer.pixmap()
         self.image_viewer.save()
    
     def OnSaveAs(self):
         dialog = QFileDialog()
         dialog.setDefaultSuffix("png")
         name = dialog.getSaveFileName(self.MainWindow, 'Save File', "Untitled.png", "BMP (*.bmp);;Icon (*.ico);;JPEG (*.jpeg *.jpg);;PBM (*.pbm);;PGM (*.pgm);;PNG (*.png);;PPM (*.ppm);;TIF (*.tif *.tiff);;WBMP (*.wbmp);;XBM (*.xbm);;XPM (*.xpm)")
-        self.image_viewer.OriginalImage = self.image_viewer.pixmap()
+        # self.image_viewer.OriginalImage = self.image_viewer.pixmap()
         self.image_viewer.save(name[0])
         filename = self.image_viewer._current_filename
         filename = os.path.basename(filename)
         self.MainWindow.setWindowTitle(filename)
+
+    def OnUndo(self):
+        self.image_viewer.undoCurrentLayerLatestChange()
 
     def OnPaste(self):
         cb = QApplication.clipboard()
@@ -724,10 +733,10 @@ class Gui(QtCore.QObject):
         if md.hasImage():
             img = cb.image()
             self.image_viewer._current_filename = "Untitled.png"
-            self.image_viewer.setImage(img)
+            self.image_viewer.setImage(img, True, "Paste")
             filename = self.image_viewer._current_filename
             self.MainWindow.setWindowTitle(filename)
-            self.image_viewer.OriginalImage = self.image_viewer.pixmap()
+            # self.image_viewer.OriginalImage = self.image_viewer.pixmap()
 
             self.updateHistogram()
             self.updateColorPicker()

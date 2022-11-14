@@ -200,9 +200,20 @@ class QtImageViewer(QGraphicsView):
 
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
-        self.OriginalImage = None
+        # self.OriginalImage = None
 
         self.ColorPicker = None
+
+        ##############################################################################################
+        ##############################################################################################
+        # Layers
+        ##############################################################################################
+        ##############################################################################################
+
+        self.layerHistory = {
+            0: []    
+        }
+        self.currentLayer = 0
 
     def sizeHint(self):
         return QSize(900, 600)
@@ -235,7 +246,94 @@ class QtImageViewer(QGraphicsView):
             return self._image.pixmap().toImage()
         return None
 
-    def setImage(self, image):
+    def getCurrentLayerPixmapBeforeChangeTo(self, changeName):
+        if self.currentLayer in self.layerHistory:
+            history = self.layerHistory[self.currentLayer]
+            for i in range(len(history)):
+                entry = history[-i]
+                if entry["note"] != changeName:
+                    return entry["pixmap"]
+        return None
+
+    def undoCurrentLayerLatestChange(self):
+        if self.currentLayer in self.layerHistory:
+            history = self.layerHistory[self.currentLayer]
+            if len(history) > 1:
+                previous = history[-2]
+                latest = history[-1]
+                self.layerHistory[self.currentLayer] = history[:-2]
+                self.setImage(previous["pixmap"], previous["note"], previous["type"], previous["value"], previous["object"])
+                # Update GUI object value, e.g., slider setting
+                if previous["value"]:
+                    if previous["type"] == "Slider":
+                        slider = getattr(self.parent, previous["object"])
+                        slider.setValue(previous["value"])
+                        setattr(self.parent, previous["object"], slider)
+                
+                if len(self.layerHistory[self.currentLayer]) == 0:
+                    self.layerHistory[self.currentLayer].append(previous)
+
+                # print("Undo", latest, len(self.layerHistory[self.currentLayer]))
+
+    def getCurrentLayerLatestPixmap(self):
+        if self.currentLayer in self.layerHistory:
+            # Layer name checks out
+            history = self.layerHistory[self.currentLayer]
+            
+            # History structure
+            #
+            # List of objects
+            # {
+            #    "note"   : "Crop",
+            #    "pixmap" : QPixmap(...)
+            #    "type"   : "Tool" or "Slider"
+            #    "value"  : None or some value e.g., 10
+            #    "object" : Relevant object, e.g., brightnessSlider <- will be used to update parent.brightnessSlider.setValue(...)
+            # }
+
+            if len(history) > 0:
+                # Get most recent
+                entry = history[-1]
+                if "pixmap" in entry:
+                    return entry["pixmap"]
+        return None
+
+    def getCurrentLayerLatestPixmapBeforeSliderChange(self):
+        if self.currentLayer in self.layerHistory:
+            # Layer name checks out
+            history = self.layerHistory[self.currentLayer]
+            
+            # History structure
+            #
+            # List of objects
+            # {
+            #    "note"   : "Crop",
+            #    "pixmap" : QPixmap(...)
+            #    "Type"   : "Tool" or "Slider"
+            #    "value"  : None or some value e.g., 10
+            #    "object" : Relevant object, e.g., brightnessSlider <- will be used to update parent.brightnessSlider.setValue(...)
+            # }
+
+            slidersList = ["Saturation", "Brightness", "Contrast", "Sharpness", "Gaussian Blur"]
+
+            for i in range(len(history)):
+                # Get most recent
+                entry = history[-i]
+                if "pixmap" in entry and entry["note"] not in slidersList:
+                    return entry["pixmap"]
+        return None
+
+    def addToHistory(self, pixmap, explanationOfChange, typeOfChange, valueOfChange, objectOfChange):
+        self.layerHistory[self.currentLayer].append({
+            "note": explanationOfChange,
+            "pixmap": pixmap,
+            "type": typeOfChange,
+            "value": valueOfChange,
+            "object": objectOfChange
+        })
+        # print(explanationOfChange, self.layerHistory[self.currentLayer][-1])
+
+    def setImage(self, image, addToHistory=True, explanationOfChange="", typeOfChange=None, valueOfChange=None, objectOfChange=None):
         """ Set the scene's current image pixmap to the input QImage or QPixmap.
         Raises a RuntimeError if the input image has type other than QImage or QPixmap.
         :type image: QImage | QPixmap
@@ -262,10 +360,38 @@ class QtImageViewer(QGraphicsView):
                 pixmap = QPixmap.fromImage(qimage)
         else:
             raise RuntimeError("ImageViewer.setImage: Argument must be a QImage, QPixmap, or numpy.ndarray.")
+        
+        #original = pixmap.copy()
+        #painter = QPainter(pixmap)
+
+        #gridSize = 10
+        #x = y = 0
+        #width = pixmap.width()
+        #height = pixmap.height()
+
+        #box = QRect(0, 0, width, height)
+        #painter.fillRect(box, QtGui.QColor(255, 255, 255, 255))
+        #while y <= height:
+        #    # draw horizontal lines
+        #    painter.drawLine(0, y, width, y)
+        #    y += gridSize
+        #while x <= width:
+        #    # draw vertical lines
+        #    painter.drawLine(x, 0, x, height)
+        #    x += gridSize
+
+        #painter.drawPixmap(QPoint(), original)
+
+        #painter.end()
+        
         if self.hasImage():
             self._image.setPixmap(pixmap)
         else:
             self._image = self.scene.addPixmap(pixmap)
+
+        # Add to layer history
+        if addToHistory:
+            self.addToHistory(pixmap, explanationOfChange, typeOfChange, valueOfChange, objectOfChange)
 
         # Better quality pixmap scaling?
         # !!! This will distort actual pixel data when zoomed way in.
@@ -285,7 +411,7 @@ class QtImageViewer(QGraphicsView):
         if len(filepath) and os.path.isfile(filepath):
             self._current_filename = filepath
             image = QImage(filepath)
-            self.setImage(image)
+            self.setImage(image, "Open")
 
     def save(self, filepath=None):
         path = self._current_filename
@@ -293,7 +419,8 @@ class QtImageViewer(QGraphicsView):
             path = filepath
             self._current_filename = path
 
-        self.OriginalImage.save(path, None, 100)
+        self.getCurrentLayerLatestPixmap().save(path, None, 100)
+        # self.OriginalImage.save(path, None, 100)
 
     def updateViewer(self):
         """ Show current zoom (if showing entire image, apply current aspect ratio mode).
@@ -633,7 +760,7 @@ class QtImageViewer(QGraphicsView):
                 self.updateViewer()
                 self.viewChanged.emit()
         elif self._isPainting:
-            image = self.OriginalImage.copy()
+            image = self.getCurrentLayerLatestPixmap().copy()
             self.renderCursorOverlay(image, self._lastMousePositionInScene, self.paintBrushSize)
             if self._shiftPressed or self._isLeftMouseButtonPressed:
                 self.performPaint(event)
@@ -645,12 +772,12 @@ class QtImageViewer(QGraphicsView):
                 self.selectPoints.append(QPointF(self.mapToScene(event.pos())))
                 self.buildPath()
         elif self._isRemovingSpots:
-            image = self.OriginalImage.copy()
+            image = self.getCurrentLayerLatestPixmap().copy()
             self.renderCursorOverlay(image, self._lastMousePositionInScene, self.spotsBrushSize)
             if self._shiftPressed or self._isLeftMouseButtonPressed:
                 self.removeSpots(event)
         elif self._isBlurring:
-            image = self.OriginalImage.copy()
+            image = self.getCurrentLayerLatestPixmap().copy()
             self.renderCursorOverlay(image, self._lastMousePositionInScene, self.blurBrushSize)
 
         scenePos = self.mapToScene(event.pos())
@@ -719,10 +846,10 @@ class QtImageViewer(QGraphicsView):
                 self.paintBrushSize -= 3
                 if self.paintBrushSize < 3:
                     self.paintBrushSize = 3
-                self.renderCursorOverlay(self.OriginalImage, self._lastMousePositionInScene, self.paintBrushSize)
+                self.renderCursorOverlay(self.getCurrentLayerLatestPixmap(), self._lastMousePositionInScene, self.paintBrushSize)
             elif event.key() == Qt.Key_BracketRight:
                 self.paintBrushSize += 3
-                self.renderCursorOverlay(self.OriginalImage, self._lastMousePositionInScene, self.paintBrushSize)
+                self.renderCursorOverlay(self.getCurrentLayerLatestPixmap(), self._lastMousePositionInScene, self.paintBrushSize)
         elif self._isCropping:
             if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
                 self.performCrop(event)
@@ -745,19 +872,19 @@ class QtImageViewer(QGraphicsView):
                 self.spotsBrushSize -= 3
                 if self.spotsBrushSize < 3:
                     self.spotsBrushSize = 3
-                self.renderCursorOverlay(self.OriginalImage, self._lastMousePositionInScene, self.spotsBrushSize)
+                self.renderCursorOverlay(self.getCurrentLayerLatestPixmap(), self._lastMousePositionInScene, self.spotsBrushSize)
             elif event.key() == Qt.Key_BracketRight:
                 self.spotsBrushSize += 3
-                self.renderCursorOverlay(self.OriginalImage, self._lastMousePositionInScene, self.spotsBrushSize)
+                self.renderCursorOverlay(self.getCurrentLayerLatestPixmap(), self._lastMousePositionInScene, self.spotsBrushSize)
         elif self._isBlurring:
             if event.key() == Qt.Key_BracketLeft:
                 self.blurBrushSize -= 3
                 if self.blurBrushSize < 3:
                     self.blurBrushSize = 3
-                self.renderCursorOverlay(self.OriginalImage, self._lastMousePositionInScene, self.blurBrushSize)
+                self.renderCursorOverlay(self.getCurrentLayerLatestPixmap(), self._lastMousePositionInScene, self.blurBrushSize)
             elif event.key() == Qt.Key_BracketRight:
                 self.blurBrushSize += 3
-                self.renderCursorOverlay(self.OriginalImage, self._lastMousePositionInScene, self.blurBrushSize)
+                self.renderCursorOverlay(self.getCurrentLayerLatestPixmap(), self._lastMousePositionInScene, self.blurBrushSize)
 
         event.accept()
 
@@ -770,7 +897,7 @@ class QtImageViewer(QGraphicsView):
                 self._shiftPressed = False
 
     def performColorPick(self, event):
-        currentPixmap = self.OriginalImage
+        currentPixmap = self.getCurrentLayerLatestPixmap()
         currentImage = self.QPixmapToImage(currentPixmap)
         pixelAccess = currentImage.load()
         scene_pos = self.mapToScene(event.pos())
@@ -780,7 +907,7 @@ class QtImageViewer(QGraphicsView):
         self.ColorPicker.setRGB((r, g, b))
 
     def performPaint(self, event):
-        currentPixmap = self.OriginalImage
+        currentPixmap = self.getCurrentLayerLatestPixmap()
         currentImage = self.QPixmapToImage(currentPixmap)
         pixelAccess = currentImage.load()
         scene_pos = self.mapToScene(event.pos())
@@ -813,11 +940,11 @@ class QtImageViewer(QGraphicsView):
 
         # Update the pixmap
         updatedPixmap = self.ImageToQPixmap(currentImage)
-        self.setImage(updatedPixmap)
-        self.OriginalImage = updatedPixmap
+        self.setImage(updatedPixmap, "Paint")
+        # self.OriginalImage = updatedPixmap
 
     def performFill(self, event):
-        currentPixmap = self.OriginalImage
+        currentPixmap = self.getCurrentLayerLatestPixmap()
         currentImage = self.QPixmapToImage(currentPixmap)
         pixelAccess = currentImage.load()
         scene_pos = self.mapToScene(event.pos())
@@ -837,17 +964,17 @@ class QtImageViewer(QGraphicsView):
         p.end()
 
         # Update the pixmap
-        self.setImage(currentPixmap)
-        self.OriginalImage = currentPixmap
+        self.setImage(currentPixmap, "Fill")
+        # self.OriginalImage = currentPixmap
 
     def performCrop(self, event):
         # Crop the pixmap
         cropQPixmap = self.pixmap().copy(self._cropRect.toAlignedRect())
 
         # Crop the original image as well
-        self.OriginalImage = self.OriginalImage.copy(self._cropRect.toAlignedRect())
+        # self.OriginalImage = self.OriginalImage.copy(self._cropRect.toAlignedRect())
 
-        self.setImage(cropQPixmap)
+        self.setImage(cropQPixmap, "Crop")
 
         # Remove crop item
         if self._cropItem:
@@ -883,9 +1010,9 @@ class QtImageViewer(QGraphicsView):
         painter.end()
         # To avoid useless transparent background you can crop it like that:
         output = output.copy(self.path.boundingRect().toRect())
-        self.setImage(output)
-        # Crop the original image as well
-        self.OriginalImage = QPixmap(output)
+        self.setImage(output, "Select")
+        ## Crop the original image as well
+        #self.OriginalImage = QPixmap(output)
 
         self.selectPoints = []
 
@@ -981,7 +1108,7 @@ class QtImageViewer(QGraphicsView):
         return abs(self.Luminance(pixel_a) - self.Luminance(pixel_b)) < threshold
 
     def removeSpots(self, event):
-        currentPixmap = self.OriginalImage
+        currentPixmap = self.getCurrentLayerLatestPixmap()
         currentImage = self.QPixmapToImage(currentPixmap)
         pixelAccess = currentImage.load()
         scene_pos = self.mapToScene(event.pos())
@@ -1042,12 +1169,12 @@ class QtImageViewer(QGraphicsView):
 
         # Update the pixmap
         updatedPixmap = self.ImageToQPixmap(currentImage)
-        self.setImage(updatedPixmap)
-        self.OriginalImage = updatedPixmap
+        self.setImage(updatedPixmap, "Spot Removal")
+        # self.OriginalImage = updatedPixmap
         
     def blur(self, event):
         brush_size = self.blurBrushSize
-        currentPixmap = self.OriginalImage
+        currentPixmap = self.getCurrentLayerLatestPixmap()
         currentImage = self.QPixmapToImage(currentPixmap)
         scene_pos = self.mapToScene(event.pos())
         x = scene_pos.x()
@@ -1068,8 +1195,8 @@ class QtImageViewer(QGraphicsView):
 
         # Update the pixmap
         updatedPixmap = self.ImageToQPixmap(currentImage)
-        self.setImage(updatedPixmap)
-        self.OriginalImage = updatedPixmap
+        self.setImage(updatedPixmap, "Blur")
+        # self.OriginalImage = updatedPixmap
     
     def renderCursorOverlay(self, pixmap, scenePosition, brushSize):
         if not pixmap:
@@ -1088,7 +1215,7 @@ class QtImageViewer(QGraphicsView):
         cursorPainter.setPen(pen)
         cursorPainter.drawEllipse(scenePosition, brushSize, brushSize)
         cursorPainter.end() 
-        self.setImage(pixmapTmp)
+        self.setImage(pixmapTmp, "Cursor Overlay", False)
 
 class EllipseROI(QGraphicsEllipseItem):
 

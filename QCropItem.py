@@ -13,7 +13,7 @@ class HandleItem(QGraphicsRectItem):
         self._positionFlags = position_flags
 
         self.setBrush(QBrush(QColor(81, 168, 220, 200)))
-        self.setPen(QPen(QColor(0, 0, 0, 255), 1.0, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+        self.setPen(QPen(QColor(0, 0, 0, 255), 1.0, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
         self.setFlag(self.GraphicsItemFlag.ItemIsMovable)
         self.setFlag(self.GraphicsItemFlag.ItemSendsGeometryChanges)
 
@@ -112,8 +112,8 @@ class SizeGripItem(QGraphicsItem):
             return QRectF(0, 0, 0, 0)
 
     def paint(self, painter, option, widget):
-        painter.setRenderHint(QPainter.Antialiasing)
-        painter.setPen(QPen(QColor(127, 127, 127), 2.0, Qt.DashLine))
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setPen(QPen(QColor(127, 127, 127), 2.0, Qt.PenStyle.DashLine))
         painter.drawRect(self._rect)
 
     def doResize(self):
@@ -184,7 +184,7 @@ class QCropItem(QGraphicsPathItem):
         self.extern_rect = parent.boundingRect()
         self.intern_rect = cropRect
         self.setBrush(QColor(10, 100, 100, 100))
-        self.setPen(QPen(Qt.NoPen))
+        self.setPen(QPen(Qt.PenStyle.NoPen))
         SizeGripItem(self)
         self.create_path()
 

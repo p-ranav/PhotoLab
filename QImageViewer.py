@@ -382,7 +382,7 @@ class QtImageViewer(QGraphicsView):
         box = QRect(0, 0, width, height)
         painter.fillRect(box, QtGui.QColor(255, 255, 255, 255))
 
-        pen = QPen(QtGui.QColor("#a9a9a9"), 1, Qt.SolidLine, Qt.FlatCap, Qt.RoundJoin)
+        pen = QPen(QtGui.QColor("#a9a9a9"), 1, Qt.PenStyle.SolidLine, Qt.PenCapStyle.FlatCap, Qt.PenJoinStyle.RoundJoin)
         painter.setPen(pen)
 
         while y <= height:
@@ -849,51 +849,51 @@ class QtImageViewer(QGraphicsView):
 
     def keyPressEvent(self, event):
         if self._isPainting:
-            if event.key() == Qt.Key_BracketLeft:
+            if event.key() == Qt.Key.Key_BracketLeft:
                 self.paintBrushSize -= 3
                 if self.paintBrushSize < 1:
                     self.paintBrushSize = 1
                 self.renderCursorOverlay(self._lastMousePositionInScene, self.paintBrushSize)
-            elif event.key() == Qt.Key_BracketRight:
+            elif event.key() == Qt.Key.Key_BracketRight:
                 self.paintBrushSize += 3
                 self.renderCursorOverlay(self._lastMousePositionInScene, self.paintBrushSize)
         if self._isErasing:
-            if event.key() == Qt.Key_BracketLeft:
+            if event.key() == Qt.Key.Key_BracketLeft:
                 self.eraserBrushSize -= 3
                 if self.eraserBrushSize < 1:
                     self.eraserBrushSize = 1
                 self.renderCursorOverlay(self._lastMousePositionInScene, self.eraserBrushSize)
-            elif event.key() == Qt.Key_BracketRight:
+            elif event.key() == Qt.Key.Key_BracketRight:
                 self.eraserBrushSize += 3
                 self.renderCursorOverlay(self._lastMousePositionInScene, self.eraserBrushSize)
         elif self._isCropping:
-            if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
+            if event.key() == Qt.Key.Key_Enter or event.key() == Qt.Key.Key_Return:
                 self.performCrop(event)
 
-            elif event.key() == Qt.Key_Escape:
+            elif event.key() == Qt.Key.Key_Escape:
                 self.exitCrop()
 
         elif self._isSelecting:
-            if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
+            if event.key() == Qt.Key.Key_Enter or event.key() == Qt.Key.Key_Return:
                 self.performSelect(event)
-            elif event.key() == Qt.Key_Escape:
+            elif event.key() == Qt.Key.Key_Escape:
                 self.exitSelect()
         elif self._isRemovingSpots:
-            if event.key() == Qt.Key_BracketLeft:
+            if event.key() == Qt.Key.Key_BracketLeft:
                 self.spotsBrushSize -= 3
                 if self.spotsBrushSize < 1:
                     self.spotsBrushSize = 1
                 self.renderCursorOverlay(self._lastMousePositionInScene, self.spotsBrushSize)
-            elif event.key() == Qt.Key_BracketRight:
+            elif event.key() == Qt.Key.Key_BracketRight:
                 self.spotsBrushSize += 3
                 self.renderCursorOverlay(self._lastMousePositionInScene, self.spotsBrushSize)
         elif self._isBlurring:
-            if event.key() == Qt.Key_BracketLeft:
+            if event.key() == Qt.Key.Key_BracketLeft:
                 self.blurBrushSize -= 1
                 if self.blurBrushSize < 1:
                     self.blurBrushSize = 3
                 self.renderCursorOverlay(self._lastMousePositionInScene, self.blurBrushSize)
-            elif event.key() == Qt.Key_BracketRight:
+            elif event.key() == Qt.Key.Key_BracketRight:
                 self.blurBrushSize += 3
                 self.renderCursorOverlay(self._lastMousePositionInScene, self.blurBrushSize)
 

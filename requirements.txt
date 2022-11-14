@@ -7,7 +7,6 @@ numpy==1.23.3
 opencv_python==4.6.0.66
 Pillow==9.3.0
 pymatting==1.1.8
-PyQt5==5.15.7
 PyQt6==6.4.0
 pyqtgraph==0.13.1
 QDarkStyle==3.1

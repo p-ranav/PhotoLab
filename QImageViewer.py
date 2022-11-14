@@ -262,7 +262,7 @@ class QtImageViewer(QGraphicsView):
                 previous = history[-2]
                 latest = history[-1]
                 self.layerHistory[self.currentLayer] = history[:-2]
-                self.setImage(previous["pixmap"], previous["note"], previous["type"], previous["value"], previous["object"])
+                self.setImage(previous["pixmap"], True, previous["note"], previous["type"], previous["value"], previous["object"])
                 # Update GUI object value, e.g., slider setting
                 if previous["value"]:
                     if previous["type"] == "Slider":
@@ -361,28 +361,32 @@ class QtImageViewer(QGraphicsView):
         else:
             raise RuntimeError("ImageViewer.setImage: Argument must be a QImage, QPixmap, or numpy.ndarray.")
         
-        #original = pixmap.copy()
-        #painter = QPainter(pixmap)
+        original = pixmap.copy()
+        painter = QPainter(pixmap)
 
-        #gridSize = 10
-        #x = y = 0
-        #width = pixmap.width()
-        #height = pixmap.height()
+        gridSize = 10
+        x = y = 0
+        width = pixmap.width()
+        height = pixmap.height()
 
-        #box = QRect(0, 0, width, height)
-        #painter.fillRect(box, QtGui.QColor(255, 255, 255, 255))
-        #while y <= height:
-        #    # draw horizontal lines
-        #    painter.drawLine(0, y, width, y)
-        #    y += gridSize
-        #while x <= width:
-        #    # draw vertical lines
-        #    painter.drawLine(x, 0, x, height)
-        #    x += gridSize
+        box = QRect(0, 0, width, height)
+        painter.fillRect(box, QtGui.QColor(255, 255, 255, 255))
 
-        #painter.drawPixmap(QPoint(), original)
+        pen = QPen(QtGui.QColor("#a9a9a9"), 1, Qt.SolidLine, Qt.FlatCap, Qt.RoundJoin)
+        painter.setPen(pen)
 
-        #painter.end()
+        while y <= height:
+            # draw horizontal lines
+            painter.drawLine(0, y, width, y)
+            y += gridSize
+        while x <= width:
+            # draw vertical lines
+            painter.drawLine(x, 0, x, height)
+            x += gridSize
+
+        painter.drawPixmap(QPoint(), original)
+
+        painter.end()
         
         if self.hasImage():
             self._image.setPixmap(pixmap)
@@ -411,7 +415,7 @@ class QtImageViewer(QGraphicsView):
         if len(filepath) and os.path.isfile(filepath):
             self._current_filename = filepath
             image = QImage(filepath)
-            self.setImage(image, "Open")
+            self.setImage(image, True, "Open")
 
     def save(self, filepath=None):
         path = self._current_filename
@@ -904,7 +908,7 @@ class QtImageViewer(QGraphicsView):
         self.ColorPicker.setRGB((r, g, b))
 
     def performPaint(self, event):
-        currentPixmap = self.getCurrentLayerLatestPixmap()
+        currentPixmap = self.getCurrentLayerLatestPixmap().copy()
         currentImage = self.QPixmapToImage(currentPixmap)
         pixelAccess = currentImage.load()
         scene_pos = self.mapToScene(event.pos())
@@ -937,8 +941,7 @@ class QtImageViewer(QGraphicsView):
 
         # Update the pixmap
         updatedPixmap = self.ImageToQPixmap(currentImage)
-        self.setImage(updatedPixmap, "Paint")
-        # self.OriginalImage = updatedPixmap
+        self.setImage(updatedPixmap, True, "Paint")
 
     def performFill(self, event):
         currentPixmap = self.getCurrentLayerLatestPixmap()
@@ -961,7 +964,7 @@ class QtImageViewer(QGraphicsView):
         p.end()
 
         # Update the pixmap
-        self.setImage(currentPixmap, "Fill")
+        self.setImage(currentPixmap, True, "Fill")
         # self.OriginalImage = currentPixmap
 
     def performCrop(self, event):
@@ -971,7 +974,7 @@ class QtImageViewer(QGraphicsView):
         # Crop the original image as well
         # self.OriginalImage = self.OriginalImage.copy(self._cropRect.toAlignedRect())
 
-        self.setImage(cropQPixmap, "Crop")
+        self.setImage(cropQPixmap, True, "Crop")
 
         # Remove crop item
         if self._cropItem:
@@ -1007,7 +1010,7 @@ class QtImageViewer(QGraphicsView):
         painter.end()
         # To avoid useless transparent background you can crop it like that:
         output = output.copy(self.path.boundingRect().toRect())
-        self.setImage(output, "Select")
+        self.setImage(output, True, "Select")
         ## Crop the original image as well
         #self.OriginalImage = QPixmap(output)
 
@@ -1166,7 +1169,7 @@ class QtImageViewer(QGraphicsView):
 
         # Update the pixmap
         updatedPixmap = self.ImageToQPixmap(currentImage)
-        self.setImage(updatedPixmap, "Spot Removal")
+        self.setImage(updatedPixmap, True, "Spot Removal")
         # self.OriginalImage = updatedPixmap
         
     def blur(self, event):
@@ -1192,7 +1195,7 @@ class QtImageViewer(QGraphicsView):
 
         # Update the pixmap
         updatedPixmap = self.ImageToQPixmap(currentImage)
-        self.setImage(updatedPixmap, "Blur")
+        self.setImage(updatedPixmap, True, "Blur")
         # self.OriginalImage = updatedPixmap
     
     def renderCursorOverlay(self, scenePosition, brushSize):

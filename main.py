@@ -32,7 +32,7 @@ from threading import Thread
 from queue import Queue
 from PIL import Image, ImageEnhance, ImageFilter
 from PIL.ImageQt import ImageQt
-from FUtils import merge_files
+from FileUtils import merge_files
 
 def QImageToCvMat(incomingImage):
     '''  Converts a QImage into an opencv MAT format  '''

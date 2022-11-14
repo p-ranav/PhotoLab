@@ -172,7 +172,6 @@ class QtImageViewer(QGraphicsView):
         self.selectPoints = []
         self.path = None
         self.selectPainterPaths = []
-        self._shiftPressed = False
 
         # Flags for spot removal tool
         self._isRemovingSpots = False
@@ -774,22 +773,18 @@ class QtImageViewer(QGraphicsView):
                 self.viewChanged.emit()
         elif self._isPainting:
             self.renderCursorOverlay(self._lastMousePositionInScene, self.paintBrushSize)
-            if self._shiftPressed or self._isLeftMouseButtonPressed:
+            if self._isLeftMouseButtonPressed:
                 self.performPaint(event)
         elif self._isErasing:
             self.renderCursorOverlay(self._lastMousePositionInScene, self.eraserBrushSize)
-            if self._shiftPressed or self._isLeftMouseButtonPressed:
+            if self._isLeftMouseButtonPressed:
                 self.performErase(event)
         elif self._isFilling:
             pass
             # TODO: Change cursor to a paint bucket?
-        elif self._isSelecting:
-            if self._shiftPressed:
-                self.selectPoints.append(QPointF(self.mapToScene(event.pos())))
-                self.buildPath()
         elif self._isRemovingSpots:
             self.renderCursorOverlay(self._lastMousePositionInScene, self.spotsBrushSize)
-            if self._shiftPressed or self._isLeftMouseButtonPressed:
+            if self._isLeftMouseButtonPressed:
                 self.removeSpots(event)
         elif self._isBlurring:
             self.renderCursorOverlay(self._lastMousePositionInScene, self.blurBrushSize)
@@ -854,8 +849,6 @@ class QtImageViewer(QGraphicsView):
 
     def keyPressEvent(self, event):
         if self._isPainting:
-            if event.key() == Qt.Key_Shift:
-                self._shiftPressed = True
             if event.key() == Qt.Key_BracketLeft:
                 self.paintBrushSize -= 3
                 if self.paintBrushSize < 1:
@@ -865,8 +858,6 @@ class QtImageViewer(QGraphicsView):
                 self.paintBrushSize += 3
                 self.renderCursorOverlay(self._lastMousePositionInScene, self.paintBrushSize)
         if self._isErasing:
-            if event.key() == Qt.Key_Shift:
-                self._shiftPressed = True
             if event.key() == Qt.Key_BracketLeft:
                 self.eraserBrushSize -= 3
                 if self.eraserBrushSize < 1:
@@ -883,16 +874,11 @@ class QtImageViewer(QGraphicsView):
                 self.exitCrop()
 
         elif self._isSelecting:
-            if event.key() == Qt.Key_Shift:
-                self._shiftPressed = True
-
             if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
                 self.performSelect(event)
             elif event.key() == Qt.Key_Escape:
                 self.exitSelect()
         elif self._isRemovingSpots:
-            if event.key() == Qt.Key_Shift:
-                self._shiftPressed = True
             if event.key() == Qt.Key_BracketLeft:
                 self.spotsBrushSize -= 3
                 if self.spotsBrushSize < 1:
@@ -912,14 +898,6 @@ class QtImageViewer(QGraphicsView):
                 self.renderCursorOverlay(self._lastMousePositionInScene, self.blurBrushSize)
 
         event.accept()
-
-    def keyReleaseEvent(self, event):
-        if self._isSelecting:
-            if event.key() == Qt.Key_Shift:
-                self._shiftPressed = False
-        if self._isRemovingSpots:
-            if event.key() == Qt.Key_Shift:
-                self._shiftPressed = False
 
     def performColorPick(self, event):
         currentPixmap = self.getCurrentLayerLatestPixmap()

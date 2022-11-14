@@ -694,10 +694,14 @@ class Gui(QtCore.QObject):
 
             # Load current image
             currentPixmap = self.getCurrentLayerLatestPixmap()
+            w = currentPixmap.width
+            h = currentPixmap.height
             image = self.QPixmapToImage(currentPixmap)
             image = ColorizerUtil.load_img(image)
+            print(image.shape)
+            image_without_alpha = image[:,:,:3]
 
-            (tens_l_orig, tens_l_rs) = ColorizerUtil.preprocess_img(image, HW=(256,256))
+            (tens_l_orig, tens_l_rs) = ColorizerUtil.preprocess_img(image_without_alpha, HW=(256,256))
             if(useGpu):
                 tens_l_rs = tens_l_rs.cuda()
 
@@ -705,8 +709,11 @@ class Gui(QtCore.QObject):
             # resize and concatenate to original L channel
             img_bw = ColorizerUtil.postprocess_tens(tens_l_orig, torch.cat((0*tens_l_orig,0*tens_l_orig),dim=1))
             out_img_siggraph17 = ColorizerUtil.postprocess_tens(tens_l_orig, colorizer_siggraph17(tens_l_rs).cpu())
+            print(type(out_img_siggraph17), out_img_siggraph17.shape)
+            # out_img_siggraph17 = out_img_siggraph17.reshape((w, h, 3))
 
-            self.image_viewer.setImage(out_img_siggraph17, True, "Human Segmentation")
+            output = Image.fromarray((out_img_siggraph17 * 255).astype(np.uint8))
+            self.image_viewer.setImage(self.ImageToQPixmap(output), True, "Colorizer")
 
             # Restore cursor
             QApplication.restoreOverrideCursor()

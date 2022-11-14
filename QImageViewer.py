@@ -356,7 +356,7 @@ class QtImageViewer(QGraphicsView):
                 image[image > 255] = 255
                 image[image < 0] = 0
                 image = image.astype(np.uint8)
-                height, width = image.shape
+                height, width, _ = image.shape
                 bytes = image.tobytes()
                 qimage = QImage(bytes, width, height, QImage.Format.Format_Grayscale8)
                 pixmap = QPixmap.fromImage(qimage)

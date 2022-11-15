@@ -1,11 +1,8 @@
 from PyQt6 import QtWidgets, QtCore, QtGui
-from PyQt6.QtCore import Qt, pyqtSlot, QPointF
+from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QApplication,
     QLabel,
-    QGroupBox,
-    QVBoxLayout,
-    QFormLayout,
     QSlider,
     QToolBar,
     QToolButton,
@@ -15,21 +12,15 @@ from PyQt6.QtGui import QPixmap
 import sys
 import qdarkstyle
 
-from functools import partial
 from QImageViewer import QtImageViewer
-from QCropItem import QCropItem
 from PyQt6.QtGui import QKeySequence
 import pyqtgraph as pg
 import cv2
-from matplotlib import pyplot as plt
 import numpy as np
 from QColorPicker import QColorPicker
 import os
 from QFlowLayout import QFlowLayout
-import utilities
-from bg import remove2
-from threading import Thread
-from queue import Queue
+from BackgroundRemoval import remove2
 from PIL import Image, ImageEnhance, ImageFilter
 from PIL.ImageQt import ImageQt
 from FileUtils import merge_files

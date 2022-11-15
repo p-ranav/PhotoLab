@@ -6,7 +6,7 @@ import time
 import ffmpeg
 import numpy as np
 import torch
-from bg import DEVICE, Net, iter_frames, remove_many
+from BackgroundRemoval import DEVICE, Net, iter_frames, remove_many
 import shlex
 import tempfile
 import requests

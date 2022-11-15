@@ -162,12 +162,15 @@ class SIGGRAPHGenerator(BaseColor):
         return self.unnormalize_ab(out_reg)
 
 def siggraph17(pretrained=True):
+    MODEL_PATH = "models/colorization_siggraph17_df00044c.pth"
+    MODEL_NAME = "colorization_siggraph17_df00044c.pth"
     model = SIGGRAPHGenerator()
-    import torch.utils.model_zoo as model_zoo
-    # Merge model part files to make full .pth model file if missing
-    if not os.path.exists("models/siggraph17-df00044c.pth"):
-        merge_files("siggraph17-df00044c.pth", "models")
 
-    model.load_state_dict(model_zoo.load_url("models/siggraph17-df00044c.pth", map_location='cpu', check_hash=True))
+    # Merge model part files to make full .pth model file if missing
+    if not os.path.exists(MODEL_PATH):
+        merge_files(MODEL_NAME, "models")
+
+    torch_model = torch.load(MODEL_PATH, map_location='cpu')
+    model.load_state_dict(torch_model)
     return model
 

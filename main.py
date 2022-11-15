@@ -492,6 +492,20 @@ class Gui(QtCore.QObject):
         # to take up all the space in the window by default.
         self.MainWindow.setCentralWidget(self.image_viewer)
 
+    def resetSliderValues(self):
+        # State of enhance sliders
+        self.Color = 100
+        self.Brightness = 100
+        self.Contrast = 100
+        self.Sharpness = 100
+        self.GaussianBlurRadius = 0
+
+        self.ColorSlider.setValue(self.Color)        
+        self.BrightnessSlider.setValue(self.Brightness)
+        self.ContrastSlider.setValue(self.Contrast)
+        self.SharpnessSlider.setValue(self.Sharpness)
+        self.GaussianBlurSlider.setValue(self.GaussianBlurRadius)
+
     def getCurrentLayerLatestPixmap(self):
         return self.image_viewer.getCurrentLayerLatestPixmap()
 
@@ -795,6 +809,7 @@ class Gui(QtCore.QObject):
         # self.image_viewer.OriginalImage = self.image_viewer.pixmap()
         self.updateHistogram()
         self.updateColorPicker()
+        self.resetSliderValues()
 
     def OnSave(self):
         # self.image_viewer.OriginalImage = self.image_viewer.pixmap()
@@ -828,6 +843,7 @@ class Gui(QtCore.QObject):
 
             self.updateHistogram()
             self.updateColorPicker()
+            self.resetSliderValues()
 
 def main():
 

@@ -251,10 +251,12 @@ class QtImageViewer(QGraphicsView):
     def getCurrentLayerPixmapBeforeChangeTo(self, changeName):
         if self.currentLayer in self.layerHistory:
             history = self.layerHistory[self.currentLayer]
-            for i in range(len(history)):
-                entry = history[-i]
+            i = len(history)
+            while i > 0:
+                entry = history[i - 1]
                 if entry["note"] != changeName:
                     return entry["pixmap"]
+                i -= 1
         return None
 
     def undoCurrentLayerLatestChange(self):

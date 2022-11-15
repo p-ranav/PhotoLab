@@ -55,39 +55,6 @@ class Gui(QtCore.QObject):
         super().__init__()
         self.MainWindow = MainWindow
 
-        self.image_viewer = QtImageViewer(self)
-
-        # Set viewer's aspect ratio mode.
-        # !!! ONLY applies to full image view.
-        # !!! Aspect ratio always ignored when zoomed.
-        #   Qt.AspectRatioMode.IgnoreAspectRatio: Fit to viewport.
-        #   Qt.AspectRatioMode.KeepAspectRatio: Fit in viewport using aspect ratio.
-        #   Qt.AspectRatioMode.KeepAspectRatioByExpanding: Fill viewport using aspect ratio.
-        self.image_viewer.aspectRatioMode = Qt.AspectRatioMode.KeepAspectRatio
-    
-        # Set the viewer's scroll bar behaviour.
-        #   Qt.ScrollBarPolicy.ScrollBarAlwaysOff: Never show scroll bar.
-        #   Qt.ScrollBarPolicy.ScrollBarAlwaysOn: Always show scroll bar.
-        #   Qt.ScrollBarPolicy.ScrollBarAsNeeded: Show scroll bar only when zoomed.
-        self.image_viewer.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.image_viewer.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-    
-        # Allow zooming by draggin a zoom box with the left mouse button.
-        # !!! This will still emit a leftMouseButtonReleased signal if no dragging occured,
-        #     so you can still handle left mouse button clicks in this way.
-        #     If you absolutely need to handle a left click upon press, then
-        #     either disable region zooming or set it to the middle or right button.
-        self.image_viewer.regionZoomButton = Qt.MouseButton.LeftButton  # set to None to disable
-    
-        # Pop end of zoom stack (double click clears zoom stack).
-        self.image_viewer.zoomOutButton = Qt.MouseButton.RightButton  # set to None to disable
-    
-        # Mouse wheel zooming.
-        self.image_viewer.wheelZoomFactor = 1.25  # Set to None or 1 to disable
-    
-        # Allow panning with the middle mouse button.
-        self.image_viewer.panButton = Qt.MouseButton.MiddleButton  # set to None to disable
-
         ##############################################################################################
         ##############################################################################################
         # Create Histogram
@@ -136,10 +103,6 @@ class Gui(QtCore.QObject):
 
         HistogramLayout.addWidget(self.ImageHistogramPlot)
 
-        # Set the central widget of the Window. Widget will expand
-        # to take up all the space in the window by default.
-        self.MainWindow.setCentralWidget(self.image_viewer)
-
         ##############################################################################################
         ##############################################################################################
         # Color Picker
@@ -160,7 +123,6 @@ class Gui(QtCore.QObject):
 
         self.color_picker = QColorPicker(content, rgb=(173, 36, 207))
         ColorPickerLayout.addWidget(self.color_picker)
-        self.image_viewer.ColorPicker = self.color_picker
 
         ##############################################################################################
         ##############################################################################################
@@ -169,7 +131,6 @@ class Gui(QtCore.QObject):
         ##############################################################################################
 
         dock = QtWidgets.QDockWidget("")
-        # dock.setMinimumSize(100, self.image_viewer.height())
         MainWindow.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, dock)
 
         scroll = QtWidgets.QScrollArea()
@@ -386,7 +347,7 @@ class Gui(QtCore.QObject):
         self.ColorizerToolButton = QToolButton(self.MainWindow)
         self.ColorizerToolButton.setText("&Colorizer")
         self.ColorizerToolButton.setToolTip("Colorizer")
-        self.ColorizerToolButton.setIcon(QtGui.QIcon("icons/background_removal.svg"))
+        self.ColorizerToolButton.setIcon(QtGui.QIcon("icons/colorizer.svg"))
         self.ColorizerToolButton.setCheckable(True)
         self.ColorizerToolButton.toggled.connect(self.OnColorizerToolButton)
 
@@ -488,7 +449,48 @@ class Gui(QtCore.QObject):
         ##############################################################################################
         ##############################################################################################
 
+        self.initImageViewer()
         self.MainWindow.showMaximized()
+
+    def initImageViewer(self):
+        self.image_viewer = QtImageViewer(self)
+
+        # Set viewer's aspect ratio mode.
+        # !!! ONLY applies to full image view.
+        # !!! Aspect ratio always ignored when zoomed.
+        #   Qt.AspectRatioMode.IgnoreAspectRatio: Fit to viewport.
+        #   Qt.AspectRatioMode.KeepAspectRatio: Fit in viewport using aspect ratio.
+        #   Qt.AspectRatioMode.KeepAspectRatioByExpanding: Fill viewport using aspect ratio.
+        self.image_viewer.aspectRatioMode = Qt.AspectRatioMode.KeepAspectRatio
+    
+        # Set the viewer's scroll bar behaviour.
+        #   Qt.ScrollBarPolicy.ScrollBarAlwaysOff: Never show scroll bar.
+        #   Qt.ScrollBarPolicy.ScrollBarAlwaysOn: Always show scroll bar.
+        #   Qt.ScrollBarPolicy.ScrollBarAsNeeded: Show scroll bar only when zoomed.
+        self.image_viewer.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.image_viewer.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+    
+        # Allow zooming by draggin a zoom box with the left mouse button.
+        # !!! This will still emit a leftMouseButtonReleased signal if no dragging occured,
+        #     so you can still handle left mouse button clicks in this way.
+        #     If you absolutely need to handle a left click upon press, then
+        #     either disable region zooming or set it to the middle or right button.
+        self.image_viewer.regionZoomButton = Qt.MouseButton.LeftButton  # set to None to disable
+    
+        # Pop end of zoom stack (double click clears zoom stack).
+        self.image_viewer.zoomOutButton = Qt.MouseButton.RightButton  # set to None to disable
+    
+        # Mouse wheel zooming.
+        self.image_viewer.wheelZoomFactor = 1.25  # Set to None or 1 to disable
+    
+        # Allow panning with the middle mouse button.
+        self.image_viewer.panButton = Qt.MouseButton.MiddleButton  # set to None to disable
+
+        self.image_viewer.ColorPicker = self.color_picker
+
+        # Set the central widget of the Window. Widget will expand
+        # to take up all the space in the window by default.
+        self.MainWindow.setCentralWidget(self.image_viewer)
 
     def getCurrentLayerLatestPixmap(self):
         return self.image_viewer.getCurrentLayerLatestPixmap()
@@ -694,25 +696,26 @@ class Gui(QtCore.QObject):
 
             # Load current image
             currentPixmap = self.getCurrentLayerLatestPixmap()
-            w = currentPixmap.width
-            h = currentPixmap.height
             image = self.QPixmapToImage(currentPixmap)
             image = ColorizerUtil.load_img(image)
-            image_without_alpha = image[:,:,:3]
+            b, g, r, a = cv2.split(image)
 
-            (tens_l_orig, tens_l_rs) = ColorizerUtil.preprocess_img(image_without_alpha, HW=(256,256))
+            (tens_l_orig, tens_l_rs) = ColorizerUtil.preprocess_img(np.dstack((b, g, r)), HW=(256,256))
             if(useGpu):
                 tens_l_rs = tens_l_rs.cuda()
 
             # colorizer outputs 256x256 ab map
             # resize and concatenate to original L channel
             img_bw = ColorizerUtil.postprocess_tens(tens_l_orig, torch.cat((0*tens_l_orig,0*tens_l_orig),dim=1))
-            out_img_siggraph17 = ColorizerUtil.postprocess_tens(tens_l_orig, colorizer_siggraph17(tens_l_rs).cpu())
+            output = ColorizerUtil.postprocess_tens(tens_l_orig, colorizer_siggraph17(tens_l_rs).cpu())
 
-            # TODO recover alpha channel that was lost here
+            # Fix RGB channels and recover the alpha channel that was lost earlier
+            output = np.dstack((output * 255, a)).astype(np.uint8)
 
-            output = Image.fromarray((out_img_siggraph17 * 255).astype(np.uint8))
-            self.image_viewer.setImage(self.ImageToQPixmap(output), True, "Colorizer")
+            # Save new pixmap
+            output = Image.fromarray(output)
+            updatedPixmap = self.ImageToQPixmap(output)
+            self.image_viewer.setImage(updatedPixmap, True, "Colorizer")
 
             # Restore cursor
             QApplication.restoreOverrideCursor()
@@ -816,6 +819,7 @@ class Gui(QtCore.QObject):
         md = cb.mimeData()
         if md.hasImage():
             img = cb.image()
+            self.initImageViewer()
             self.image_viewer._current_filename = "Untitled.png"
             self.image_viewer.setImage(img, True, "Paste")
             filename = self.image_viewer._current_filename

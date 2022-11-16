@@ -309,7 +309,7 @@ def upscale_image_and_save(img, model, result_path, device, tiles_resolution):
     reverse_split(tiles, num_tiles_applied, num_tiles_applied, result_path, True, False)
     print("Done upscale_image_and_save")
 
-def upscale_image(img, model, device, tiles_resolution):
+def upscale_image(img, model, device, tiles_resolution, progressSignal):
     multiplier_num_tiles = 3
 
     img_tmp          = np.asarray(img)
@@ -317,10 +317,14 @@ def upscale_image(img, model, device, tiles_resolution):
     num_tiles        = image_resolution/tiles_resolution
 
     if num_tiles <= 1:
+        progressSignal.emit(55, "Adapting image for deep learning")
         img_adapted  = adapt_image_for_deeplearning(img, device)
         with torch.no_grad():
+            progressSignal.emit(60, "Scaling the quality...")
             img_upscaled_tensor = model(img_adapted)
+            progressSignal.emit(90, "Upscaling completed")
             img_upscaled = tensor_to_uint(img_upscaled_tensor)
+            progressSignal.emit(95, "Postprocessing image...")
         return Image.fromarray(img_upscaled)
     else:
         num_tiles = round(num_tiles)
@@ -330,6 +334,8 @@ def upscale_image(img, model, device, tiles_resolution):
         num_tiles_applied = int(num_tiles/2)
         how_many_tiles = int(pow(num_tiles/2, 2))
 
+        progressSignal.emit(55, "Splitting image into " + str(how_many_tiles) + " tiles")
+
         # Build a list of tiles from image
         tiles = split_image(img, num_tiles_applied, num_tiles_applied)
 
@@ -338,11 +344,19 @@ def upscale_image(img, model, device, tiles_resolution):
 
         upscaled_tiles = []
 
+        currentProgress = 60
+        progressPerTile = 40 / len(tiles)
+        i = 0
+
         with torch.no_grad():
             for tile in tiles:
+                progressSignal.emit(currentProgress, "Upscaling tile {}/{}".format(i + 1, len(tiles)))
                 tile_adapted  = adapt_image_for_deeplearning(tile, device)
                 tile_upscaled = tensor_to_uint(model(tile_adapted))
                 upscaled_tiles.append(tile_upscaled)
+
+                i += 1
+                currentProgress += int(progressPerTile)
 
         upscaled_tiles = [Image.fromarray(arr) for arr in upscaled_tiles]
 

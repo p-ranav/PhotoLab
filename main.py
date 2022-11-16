@@ -833,43 +833,72 @@ class Gui(QtCore.QObject):
                 self.progressBarThread.taskFunction = self.performColorization
                 self.progressBarThread.start()
 
-    def OnSuperResolutionToolButton(self, checked):
-        if checked:
-            # Set cursor to wait
-            QApplication.setOverrideCursor(Qt.WaitCursor)
+    @QtCore.pyqtSlot()
+    def onSuperResolutionCompleted(self):
+        output = self.progressBarThread.taskFunctionOutput
+
+        # Save new pixmap
+        output = Image.fromarray(output)
+        updatedPixmap = self.ImageToQPixmap(output)
+        self.image_viewer.setImage(updatedPixmap, True, "Super-Resolution")
+
+        self.progressBar.setValue(100)
+        self.progressWidget.hide()
+
+        self.progressBarThread.completeSignal.disconnect(self.onSuperResolutionCompleted)
+        self.progressBarThread.progressSignal.disconnect(self.updateProgressBar)
+
+    def performSuperResolution(self, progressSignal):
+        progressSignal.emit(10, "Loading current pixmap")
+
+        currentPixmap = self.getCurrentLayerLatestPixmap()
+        image = self.QPixmapToImage(currentPixmap)
+        w = image.width
+        h = image.height
+        image = ColorizerUtil.load_img(image)
+        b, g, r, a = cv2.split(image)
+        image_np = np.dstack((b, g, r))
+
+        progressSignal.emit(20, "Checking CUDA availability")
             
+        useGpu = torch.cuda.is_available()
+        device = "cuda" if useGpu else "cpu"
+
+        progressSignal.emit(30, "Setting up torch autograd")
+
+        QualityScaler.optimize_torch()
+
+        model = "BSRGANx4"
+        progressSignal.emit(40, "Loading model " + model + " on " + device)
+
+        model = QualityScaler.prepare_AI_model(model, device)
+        tiles_resolution = 700 # If the image is smaller than this on both sides, it'll be upscaled without any tiling
+
+        progressSignal.emit(50, "Setting tile resolution " + str(tiles_resolution))
+
+        upscaled = QualityScaler.upscale_image(image_np, model, device, tiles_resolution, progressSignal)
+
+        alpha = np.full((upscaled.height, upscaled.width), 255)
+        upscaled_np = np.asarray(upscaled)
+        upscaled_rgba = np.dstack((upscaled_np, alpha)).astype(np.uint8)
+
+        return upscaled_rgba
+
+    def OnSuperResolutionToolButton(self, checked):
+
+        if checked:
             self.EnableTool("super_resolution") if checked else self.DisableTool("super_resolution")
 
-            # Load current image
-            currentPixmap = self.getCurrentLayerLatestPixmap()
-            image = self.QPixmapToImage(currentPixmap)
-            image = ColorizerUtil.load_img(image)
-            b, g, r, a = cv2.split(image)
-            image_np = np.dstack((b, g, r))
-            
-            useGpu = torch.cuda.is_available()
-            device = "cuda" if useGpu else "cpu"
+            self.progressWidget.setWindowTitle("Perform Super-Resolution Quality Scaling...")
+            self.progressBarLabel.setText("Starting")
+            self.progressWidget.show()
 
-            QualityScaler.optimize_torch()
-
-            model = QualityScaler.prepare_AI_model("BSRGANx4", device)
-            tiles_resolution = 700
-
-            upscaled = QualityScaler.upscale_image(image_np, model, device, tiles_resolution)
-
-            alpha = np.full((upscaled.height, upscaled.width), 255)
-            upscaled_np = np.asarray(upscaled)
-            upscaled_rgba = np.dstack((upscaled_np, alpha)).astype(np.uint8)
-
-            # Save new pixmap
-            output = Image.fromarray(upscaled_rgba)
-            updatedPixmap = self.ImageToQPixmap(output)
-            self.image_viewer.setImage(updatedPixmap, True, "Super-Resolution")
-
-            # Restore cursor
-            QApplication.restoreOverrideCursor()
-
-        self.ColorizerToolButton.setChecked(False)
+            if not self.progressBarThread.isRunning():
+                self.progressBarThread.maxRange = 1000
+                self.progressBarThread.completeSignal.connect(self.onSuperResolutionCompleted)
+                self.progressBarThread.progressSignal.connect(self.updateProgressBar)
+                self.progressBarThread.taskFunction = self.performSuperResolution
+                self.progressBarThread.start()
 
     def OnEraserToolButton(self, checked):
         self.EnableTool("eraser") if checked else self.DisableTool("eraser")

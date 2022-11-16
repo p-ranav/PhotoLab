@@ -654,7 +654,16 @@ class Gui(QtCore.QObject):
         self.ImageHistogramGraphBlue.setData(y=b_histogram)
         self.ImageHistogramGraphLuma.setData(y=luma_histogram)
 
-    def UpdateImage(self, explanationOfChange, typeOfChange, valueOfChange, objectOfChange):
+    @QtCore.pyqtSlot()
+    def onUpdateImageCompleted(self):
+        Pixmap, explanationOfChange, typeOfChange, valueOfChange, objectOfChange = self.progressBarThread.taskFunctionOutput
+        if Pixmap:
+            self.image_viewer.setImage(Pixmap, True, explanationOfChange, typeOfChange, valueOfChange, objectOfChange)
+            self.UpdateHistogramPlot()
+        self.progressBarThread.taskFunctionArgs = []
+
+    def performUpdateImage(self, _, args):
+        explanationOfChange, typeOfChange, valueOfChange, objectOfChange = args
         Pixmap = self.image_viewer.getCurrentLayerLatestPixmapBeforeSliderChange()
         if Pixmap:
             Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Color, self.Color)
@@ -663,12 +672,21 @@ class Gui(QtCore.QObject):
             Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Sharpness, self.Sharpness)
             if self.GaussianBlurRadius > 0:
                 Pixmap = self.ApplyGaussianBlur(Pixmap, float(self.GaussianBlurRadius / 100))
-            self.image_viewer.setImage(Pixmap, True, explanationOfChange, typeOfChange, valueOfChange, objectOfChange)
-            # TODO: Add every adjusted image to a history list
-            # Will help with implementing undo
-            # Will also help with using sliders AND using tools at the same time and
-            # maintaining consistency
-            self.UpdateHistogramPlot()
+
+        return [Pixmap, explanationOfChange, typeOfChange, valueOfChange, objectOfChange]
+
+    def UpdateImage(self, explanationOfChange, typeOfChange, valueOfChange, objectOfChange):
+        if not self.progressBarThread.isRunning():
+            self.progressBarThread.maxRange = 1000
+            self.progressBarThread.completeSignal.connect(self.onUpdateImageCompleted)
+            self.progressBarThread.progressSignal.connect(self.updateProgressBar)
+            self.progressBarThread.taskFunction = self.performUpdateImage
+            self.progressBarThread.taskFunctionArgs = [
+                explanationOfChange, 
+                typeOfChange, 
+                valueOfChange, 
+                objectOfChange]
+            self.progressBarThread.start()
 
     def OnCursorToolButton(self, checked):
         self.EnableTool("cursor") if checked else self.DisableTool("cursor")

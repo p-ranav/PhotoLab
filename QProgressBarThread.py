@@ -10,8 +10,12 @@ class QProgressBarThread(QtCore.QThread):
         # You can change variables defined here after initialization - but before calling start()
         self.maxRange = 100
         self.taskFunction = None
+        self.taskFunctionArgs = []
         self.taskFunctionOutput = None
 
     def run(self):
-        self.taskFunctionOutput = self.taskFunction(self.progressSignal)
+        if len(self.taskFunctionArgs) > 0:
+            self.taskFunctionOutput = self.taskFunction(self.progressSignal, self.taskFunctionArgs)
+        else:
+            self.taskFunctionOutput = self.taskFunction(self.progressSignal)
         self.completeSignal.emit()

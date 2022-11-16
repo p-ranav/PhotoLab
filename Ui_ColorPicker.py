@@ -37,8 +37,8 @@ class Ui_ColorPicker(object):
 "    border-radius: 5px;\n"
 "    selection-color: rgb(16, 16, 16);\n"
 "    selection-background-color: rgb(221, 51, 34);\n"
-"    font-family: Segoe UI;\n"
-"    font-size: 11pt;\n"
+# "    font-family: Segoe UI;\n"
+# "    font-size: 11pt;\n"
 "}\n"
 "QLineEdit::focus{\n"
 "    border-color: #aaaaaa;\n"
@@ -127,9 +127,9 @@ class Ui_ColorPicker(object):
         self.editfields.setMinimumSize(QtCore.QSize(120, 200))
         self.editfields.setMaximumSize(QtCore.QSize(120, 200))
         self.editfields.setStyleSheet("QLabel{\n"
-"    font-family: Segoe UI;\n"
-"font-weight: bold;\n"
-"    font-size: 11pt;\n"
+#"    font-family: Segoe UI;\n"
+#"font-weight: bold;\n"
+#"    font-size: 11pt;\n"
 "    color: #aaaaaa;\n"
 "    border-radius: 5px;\n"
 "}\n"

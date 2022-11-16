@@ -655,7 +655,7 @@ class Gui(QtCore.QObject):
         self.ImageHistogramGraphLuma.setData(y=luma_histogram)
 
     def UpdateImage(self, explanationOfChange, typeOfChange, valueOfChange, objectOfChange):
-        Pixmap = self.image_viewer.getCurrentLayerPixmapBeforeChangeTo(explanationOfChange)
+        Pixmap = self.image_viewer.getCurrentLayerLatestPixmapBeforeSliderChange()
         if Pixmap:
             Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Color, self.Color)
             Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Brightness, self.Brightness)

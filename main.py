@@ -471,15 +471,15 @@ class Gui(QtCore.QObject):
         # self.progressBarLayout = QtWidgets.QVBoxLayout()
         self.progressBar = QtWidgets.QProgressBar()
         self.progressBar.setRange(0, 100)
-        self.progressBar.setMinimumWidth(400)
-        self.progressBar.setMinimumHeight(100)
+        self.progressBar.setMinimumWidth(300)
+        self.progressBar.setMinimumHeight(50)
         self.progressWidgetLayout.addWidget(self.progressBarLabel)
         self.progressWidgetLayout.addWidget(self.progressBar)
 
         self.progressWidget.setLayout(self.progressWidgetLayout)
         self.progressWidget.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)
 
-        #Initialize the thread
+        # Initialize the thread
         self.progressBarThread = QProgressBarThread()
 
     @QtCore.pyqtSlot(int, str)
@@ -710,27 +710,43 @@ class Gui(QtCore.QObject):
 
         self.BackgroundRemovalToolButton.setChecked(False)
 
+    @QtCore.pyqtSlot()
+    def onHumanSegmentationCompleted(self):
+        output = self.progressBarThread.taskFunctionOutput
+
+        # Save new pixmap
+        updatedPixmap = self.ImageToQPixmap(output)
+        self.image_viewer.setImage(updatedPixmap, True, "Human Segmentation")
+
+        self.progressBar.setValue(100)
+        self.progressWidget.hide()
+
+        self.progressBarThread.completeSignal.disconnect(self.onHumanSegmentationCompleted)
+        self.progressBarThread.progressSignal.disconnect(self.updateProgressBar)
+
+    def performHumanSegmentation(self, progressSignal):
+        progressSignal.emit(10, "Loading current pixmap")
+        currentPixmap = self.getCurrentLayerLatestPixmap()
+        return remove2(self.QPixmapToImage(currentPixmap), progressSignal, model_name="u2net_human_seg")
+
     def OnHumanSegmentationToolButton(self, checked):
+
         if checked:
-            # Set cursor to wait
-            QApplication.setOverrideCursor(Qt.WaitCursor)
-            
             self.EnableTool("human_segmentation") if checked else self.DisableTool("human_segmentation")
 
-            # Remove background
-            currentPixmap = self.getCurrentLayerLatestPixmap()
-            BackgroundRemovedImage = remove2(self.QPixmapToImage(currentPixmap), model_name="u2net_human_seg")
-            updatedPixmap = self.ImageToQPixmap(BackgroundRemovedImage)
-            self.image_viewer.setImage(updatedPixmap, True, "Human Segmentation")
-            # self.image_viewer.OriginalImage = updatedPixmap
+            self.progressWidget.setWindowTitle("Performing Human Segmentation...")
+            self.progressBarLabel.setText("Starting...")
+            self.progressWidget.show()
 
-            # Restore cursor
-            QApplication.restoreOverrideCursor()
+            if not self.progressBarThread.isRunning():
+                self.progressBarThread.maxRange = 1000
+                self.progressBarThread.completeSignal.connect(self.onHumanSegmentationCompleted)
+                self.progressBarThread.progressSignal.connect(self.updateProgressBar)
+                self.progressBarThread.taskFunction = self.performHumanSegmentation
+                self.progressBarThread.start()
 
-        self.HumanSegmentationToolButton.setChecked(False)
-
-    @QtCore.pyqtSlot(str)
-    def onColorizationCompleted(self, e):
+    @QtCore.pyqtSlot()
+    def onColorizationCompleted(self):
         output = self.progressBarThread.taskFunctionOutput
 
         # Save new pixmap
@@ -740,6 +756,9 @@ class Gui(QtCore.QObject):
 
         self.progressBar.setValue(100)
         self.progressWidget.hide()
+
+        self.progressBarThread.completeSignal.disconnect(self.onColorizationCompleted)
+        self.progressBarThread.progressSignal.disconnect(self.updateProgressBar)
 
     def performColorization(self, progressSignal):
         progressSignal.emit(10, "Checking CUDA availability")
@@ -788,16 +807,16 @@ class Gui(QtCore.QObject):
         if checked:
             self.EnableTool("colorizer") if checked else self.DisableTool("colorizer")
 
-        self.progressWidget.setWindowTitle("Colorizing...")
-        self.progressBarLabel.setText("Starting colorization")
-        self.progressWidget.show()
-        if not self.progressBarThread.isRunning():
-            self.progressBarThread.maxRange = 1000
-            self.progressBarThread.completionMessage = "Colorization Completed"
-            self.progressBarThread.completeSignal.connect(self.onColorizationCompleted)
-            self.progressBarThread.progressSignal.connect(self.updateProgressBar)
-            self.progressBarThread.taskFunction = self.performColorization
-            self.progressBarThread.start()
+            self.progressWidget.setWindowTitle("Colorizing...")
+            self.progressBarLabel.setText("Starting colorization")
+            self.progressWidget.show()
+
+            if not self.progressBarThread.isRunning():
+                self.progressBarThread.maxRange = 1000
+                self.progressBarThread.completeSignal.connect(self.onColorizationCompleted)
+                self.progressBarThread.progressSignal.connect(self.updateProgressBar)
+                self.progressBarThread.taskFunction = self.performColorization
+                self.progressBarThread.start()
 
     def OnSuperResolutionToolButton(self, checked):
         if checked:

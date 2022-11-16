@@ -91,6 +91,8 @@ def adapt_image_for_deeplearning(img, device):
         backend = torch.device('cpu')
     elif 'dml' in device:
         backend = torch.device('dml')
+    elif 'cuda' in device:
+        backend = torch.device('cuda')
 
     img = image_to_uint(img, n_channels=3)
     img = uint_to_tensor4(img)

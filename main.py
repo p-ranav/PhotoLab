@@ -705,6 +705,8 @@ class Gui(QtCore.QObject):
         self.progressBarThread.completeSignal.disconnect(self.onBackgroundRemovalCompleted)
         self.progressBarThread.progressSignal.disconnect(self.updateProgressBar)
 
+        self.BackgroundRemovalToolButton.setChecked(False)
+
     def performBackgroundRemoval(self, progressSignal):
         progressSignal.emit(10, "Loading current pixmap")
         currentPixmap = self.getCurrentLayerLatestPixmap()
@@ -738,6 +740,8 @@ class Gui(QtCore.QObject):
 
         self.progressBarThread.completeSignal.disconnect(self.onHumanSegmentationCompleted)
         self.progressBarThread.progressSignal.disconnect(self.updateProgressBar)
+
+        self.HumanSegmentationToolButton.setChecked(False)
 
     def performHumanSegmentation(self, progressSignal):
         progressSignal.emit(10, "Loading current pixmap")
@@ -775,6 +779,8 @@ class Gui(QtCore.QObject):
         self.progressBarThread.completeSignal.disconnect(self.onColorizationCompleted)
         self.progressBarThread.progressSignal.disconnect(self.updateProgressBar)
 
+        self.ColorizerToolButton.setChecked(False)
+
     def performColorization(self, progressSignal):
         progressSignal.emit(10, "Checking CUDA availability")
 
@@ -801,7 +807,7 @@ class Gui(QtCore.QObject):
         if(useGpu):
             tens_l_rs = tens_l_rs.cuda()
 
-        progressSignal.emit(50, "Running colorizer")
+        progressSignal.emit(50, "Running colorizer on " + "cuda" if useGpu else "cpu")
 
         # colorizer outputs 256x256 ab map
         # resize and concatenate to original L channel
@@ -847,6 +853,8 @@ class Gui(QtCore.QObject):
 
         self.progressBarThread.completeSignal.disconnect(self.onSuperResolutionCompleted)
         self.progressBarThread.progressSignal.disconnect(self.updateProgressBar)
+
+        self.SuperResolutionToolButton.setChecked(False)
 
     def performSuperResolution(self, progressSignal):
         progressSignal.emit(10, "Loading current pixmap")

@@ -662,6 +662,13 @@ class Gui(QtCore.QObject):
             self.UpdateHistogramPlot()
         self.progressBarThread.taskFunctionArgs = []
 
+        self.progressBarThread.completeSignal.disconnect(self.onUpdateImageCompleted)
+        self.progressBarThread.progressSignal.disconnect(self.updateProgressBar)
+
+        # Clean up CUDA resources
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
     def performUpdateImage(self, _, args):
         explanationOfChange, typeOfChange, valueOfChange, objectOfChange = args
         Pixmap = self.image_viewer.getCurrentLayerLatestPixmapBeforeSliderChange()
@@ -725,6 +732,10 @@ class Gui(QtCore.QObject):
 
         self.BackgroundRemovalToolButton.setChecked(False)
 
+        # Clean up CUDA resources
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
     def performBackgroundRemoval(self, progressSignal):
         progressSignal.emit(10, "Loading current pixmap")
         currentPixmap = self.getCurrentLayerLatestPixmap()
@@ -760,6 +771,10 @@ class Gui(QtCore.QObject):
         self.progressBarThread.progressSignal.disconnect(self.updateProgressBar)
 
         self.HumanSegmentationToolButton.setChecked(False)
+
+        # Clean up CUDA resources
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
     def performHumanSegmentation(self, progressSignal):
         progressSignal.emit(10, "Loading current pixmap")
@@ -798,6 +813,10 @@ class Gui(QtCore.QObject):
         self.progressBarThread.progressSignal.disconnect(self.updateProgressBar)
 
         self.ColorizerToolButton.setChecked(False)
+
+        # Clean up CUDA resources
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
     def performColorization(self, progressSignal):
         progressSignal.emit(10, "Checking CUDA availability")
@@ -873,6 +892,10 @@ class Gui(QtCore.QObject):
         self.progressBarThread.progressSignal.disconnect(self.updateProgressBar)
 
         self.SuperResolutionToolButton.setChecked(False)
+
+        # Clean up CUDA resources
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
     def performSuperResolution(self, progressSignal):
         progressSignal.emit(10, "Loading current pixmap")
@@ -1006,10 +1029,11 @@ class Gui(QtCore.QObject):
         self.image_viewer.save()
    
     def OnSaveAs(self):
+        name, ext = os.path.splitext(self.image_viewer._current_filename)
         dialog = QFileDialog()
-        dialog.setDefaultSuffix("png")
-        extension_filter = "Default (*.png);;BMP (*.bmp);;Icon (*.ico);;JPEG (*.jpeg *.jpg);;PBM (*.pbm);;PGM (*.pgm);;PNG (*.png);;PPM (*.ppm);;TIF (*.tif *.tiff);;WBMP (*.wbmp);;XBM (*.xbm);;XPM (*.xpm)"
-        name = dialog.getSaveFileName(self.MainWindow, 'Save File', "Untitled.png", extension_filter)
+        dialog.setDefaultSuffix("jpg")
+        extension_filter = "Default (*.jpg);;BMP (*.bmp);;Icon (*.ico);;JPEG (*.jpeg *.jpg);;PBM (*.pbm);;PGM (*.pgm);;PNG (*.png);;PPM (*.ppm);;TIF (*.tif *.tiff);;WBMP (*.wbmp);;XBM (*.xbm);;XPM (*.xpm)"
+        name = dialog.getSaveFileName(self.MainWindow, 'Save File', name + " EDITED" + ".jpg", extension_filter)
         # self.image_viewer.OriginalImage = self.image_viewer.pixmap()
         self.image_viewer.save(name[0])
         filename = self.image_viewer._current_filename
@@ -1036,6 +1060,10 @@ class Gui(QtCore.QObject):
             self.resetSliderValues()
 
 def main():
+
+    # Clean up CUDA resources
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
 
     # Merge NN model files into pth file if not exists
     if not os.path.exists("models/u2net.pth"):

@@ -347,7 +347,7 @@ def upscale_image(img, model, device, tiles_resolution, progressSignal):
         upscaled_tiles = []
 
         currentProgress = 60
-        progressPerTile = 40 / len(tiles)
+        progressPerTile = float(40) / len(tiles)
         i = 0
 
         with torch.no_grad():
@@ -358,7 +358,7 @@ def upscale_image(img, model, device, tiles_resolution, progressSignal):
                 upscaled_tiles.append(tile_upscaled)
 
                 i += 1
-                currentProgress += int(progressPerTile)
+                currentProgress = int(currentProgress + progressPerTile)
 
         upscaled_tiles = [Image.fromarray(arr) for arr in upscaled_tiles]
 

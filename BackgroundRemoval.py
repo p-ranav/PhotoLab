@@ -140,6 +140,7 @@ def remove(
 
 def remove2(
     img,
+    progressSignal,
     model_name="u2net",
     alpha_matting=False,
     alpha_matting_foreground_threshold=240,
@@ -147,8 +148,13 @@ def remove2(
     alpha_matting_erode_structure_size=10,
     alpha_matting_base_size=1000,
 ):
+    progressSignal.emit(20, "Loading model")
     model = get_model(model_name)
+
+    progressSignal.emit(30, "Performing prediction")
     mask = BackgroundRemovalDetect.predict(model, np.array(img)).convert("L")
+
+    progressSignal.emit(40, "Generated mask")
 
     if alpha_matting:
         cutout = alpha_matting_cutout(
@@ -162,10 +168,14 @@ def remove2(
     else:
         cutout = naive_cutout(img, mask)
 
+    progressSignal.emit(50, "Removing background")
+
     bio = io.BytesIO()
     cutout.save(bio, "PNG")
 
-    return Image.open(bio)#'RGB', (img.width, img.height), bio.getvalue())
+    progressSignal.emit(60, "Saving output")
+
+    return Image.open(bio)
 
 
 def iter_frames(path):

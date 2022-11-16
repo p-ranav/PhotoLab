@@ -691,24 +691,39 @@ class Gui(QtCore.QObject):
     def OnSpotRemovalToolButton(self, checked):
         self.EnableTool("spot_removal") if checked else self.DisableTool("spot_removal")
 
+    @QtCore.pyqtSlot()
+    def onBackgroundRemovalCompleted(self):
+        output = self.progressBarThread.taskFunctionOutput
+
+        # Save new pixmap
+        updatedPixmap = self.ImageToQPixmap(output)
+        self.image_viewer.setImage(updatedPixmap, True, "Background Removal")
+
+        self.progressBar.setValue(100)
+        self.progressWidget.hide()
+
+        self.progressBarThread.completeSignal.disconnect(self.onBackgroundRemovalCompleted)
+        self.progressBarThread.progressSignal.disconnect(self.updateProgressBar)
+
+    def performBackgroundRemoval(self, progressSignal):
+        progressSignal.emit(10, "Loading current pixmap")
+        currentPixmap = self.getCurrentLayerLatestPixmap()
+        return remove2(self.QPixmapToImage(currentPixmap), progressSignal, model_name="u2net")
+
     def OnBackgroundRemovalToolButton(self, checked):
         if checked:
-            # Set cursor to wait
-            QApplication.setOverrideCursor(Qt.WaitCursor)
-            
             self.EnableTool("background_removal") if checked else self.DisableTool("background_removal")
 
-            # Remove background
-            currentPixmap = self.getCurrentLayerLatestPixmap()
-            BackgroundRemovedImage = remove2(self.QPixmapToImage(currentPixmap), model_name="u2net")
-            updatedPixmap = self.ImageToQPixmap(BackgroundRemovedImage)
-            self.image_viewer.setImage(updatedPixmap, True, "Background Removal")
-            # self.image_viewer.OriginalImage = updatedPixmap
+            self.progressWidget.setWindowTitle("Performing Background Removal...")
+            self.progressBarLabel.setText("Starting...")
+            self.progressWidget.show()
 
-            # Restore cursor
-            QApplication.restoreOverrideCursor()
-
-        self.BackgroundRemovalToolButton.setChecked(False)
+            if not self.progressBarThread.isRunning():
+                self.progressBarThread.maxRange = 1000
+                self.progressBarThread.completeSignal.connect(self.onBackgroundRemovalCompleted)
+                self.progressBarThread.progressSignal.connect(self.updateProgressBar)
+                self.progressBarThread.taskFunction = self.performBackgroundRemoval
+                self.progressBarThread.start()
 
     @QtCore.pyqtSlot()
     def onHumanSegmentationCompleted(self):

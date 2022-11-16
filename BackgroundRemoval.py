@@ -148,10 +148,10 @@ def remove2(
     alpha_matting_erode_structure_size=10,
     alpha_matting_base_size=1000,
 ):
-    progressSignal.emit(20, "Loading model")
+    progressSignal.emit(20, "Loading model " + model_name)
     model = get_model(model_name)
 
-    progressSignal.emit(30, "Performing prediction")
+    progressSignal.emit(30, "Performing prediction with " + model_name)
     mask = BackgroundRemovalDetect.predict(model, np.array(img)).convert("L")
 
     progressSignal.emit(40, "Generated mask")

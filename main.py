@@ -6,7 +6,8 @@ from PyQt6.QtWidgets import (
     QSlider,
     QToolBar,
     QToolButton,
-    QFileDialog
+    QFileDialog,
+    QProgressDialog
 )
 from PyQt6.QtGui import QPixmap
 import sys
@@ -27,6 +28,7 @@ from FileUtils import merge_files
 import ColorizerUtil
 import ColorizerSiggraph17Model
 import torch
+import QualityScaler
 
 def QImageToCvMat(incomingImage):
     '''  Converts a QImage into an opencv MAT format  '''
@@ -344,6 +346,19 @@ class Gui(QtCore.QObject):
 
         ##############################################################################################
         ##############################################################################################
+        # Super-Resolution Tool
+        ##############################################################################################
+        ##############################################################################################
+
+        self.SuperResolutionToolButton = QToolButton(self.MainWindow)
+        self.SuperResolutionToolButton.setText("&Super Resolution")
+        self.SuperResolutionToolButton.setToolTip("Super-Resolution")
+        self.SuperResolutionToolButton.setIcon(QtGui.QIcon("icons/super_resolution.svg"))
+        self.SuperResolutionToolButton.setCheckable(True)
+        self.SuperResolutionToolButton.toggled.connect(self.OnSuperResolutionToolButton)
+
+        ##############################################################################################
+        ##############################################################################################
         # Eraser Tool
         ##############################################################################################
         ##############################################################################################
@@ -403,6 +418,10 @@ class Gui(QtCore.QObject):
                 "tool": "ColorizerToolButton",
                 "var": '_isColorizing'
             },
+            "super_resolution": {
+                "tool": "SuperResolutionToolButton",
+                "var": '_isUpscaling'
+            },
             "eraser": {
                 "tool": "EraserToolButton",
                 "var": '_isErasing'
@@ -422,7 +441,8 @@ class Gui(QtCore.QObject):
         tool_buttons = [
             self.CursorToolButton, self.ColorPickerToolButton, self.PaintToolButton, self.EraserToolButton, 
             self.FillToolButton, self.CropToolButton, self.SelectToolButton, self.SpotRemovalToolButton, 
-            self.BlurToolButton, self.BackgroundRemovalToolButton, self.HumanSegmentationToolButton, self.ColorizerToolButton        
+            self.BlurToolButton, self.BackgroundRemovalToolButton, self.HumanSegmentationToolButton, self.ColorizerToolButton,
+            self.SuperResolutionToolButton
         ]
 
         for button in tool_buttons:
@@ -721,6 +741,44 @@ class Gui(QtCore.QObject):
             output = Image.fromarray(output)
             updatedPixmap = self.ImageToQPixmap(output)
             self.image_viewer.setImage(updatedPixmap, True, "Colorizer")
+
+            # Restore cursor
+            QApplication.restoreOverrideCursor()
+
+        self.ColorizerToolButton.setChecked(False)
+
+    def OnSuperResolutionToolButton(self, checked):
+        if checked:
+            # Set cursor to wait
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+            
+            self.EnableTool("super_resolution") if checked else self.DisableTool("super_resolution")
+
+            # Load current image
+            currentPixmap = self.getCurrentLayerLatestPixmap()
+            image = self.QPixmapToImage(currentPixmap)
+            image = ColorizerUtil.load_img(image)
+            b, g, r, a = cv2.split(image)
+            image_np = np.dstack((b, g, r))
+            
+            useGpu = torch.cuda.is_available()
+            device = "cuda" if useGpu else "cpu"
+
+            QualityScaler.optimize_torch()
+
+            model = QualityScaler.prepare_AI_model("BSRGANx4", device)
+            tiles_resolution = 700
+
+            upscaled = QualityScaler.upscale_image(image_np, model, device, tiles_resolution)
+
+            alpha = np.full((upscaled.height, upscaled.width), 255)
+            upscaled_np = np.asarray(upscaled)
+            upscaled_rgba = np.dstack((upscaled_np, alpha)).astype(np.uint8)
+
+            # Save new pixmap
+            output = Image.fromarray(upscaled_rgba)
+            updatedPixmap = self.ImageToQPixmap(output)
+            self.image_viewer.setImage(updatedPixmap, True, "Super-Resolution")
 
             # Restore cursor
             QApplication.restoreOverrideCursor()

@@ -139,12 +139,18 @@ class Gui(QtCore.QObject):
         lay.addWidget(filter_label)
         
         # Enhance sliders
+        self.AddRedColorSlider(lay)
+        self.AddGreenColorSlider(lay)
+        self.AddBlueColorSlider(lay)
         self.AddColorSlider(lay)
         self.AddBrightnessSlider(lay)
         self.AddContrastSlider(lay)
         self.AddSharpnessSlider(lay)
 
         # State of enhance sliders
+        self.RedFactor = 100
+        self.GreenFactor = 100
+        self.BlueFactor = 100
         self.Color = 100
         self.Brightness = 100
         self.Contrast = 100
@@ -529,12 +535,18 @@ class Gui(QtCore.QObject):
 
     def resetSliderValues(self):
         # State of enhance sliders
+        self.RedFactor = 100
+        self.BlueFactor = 100
+        self.GreenFactor = 100
         self.Color = 100
         self.Brightness = 100
         self.Contrast = 100
         self.Sharpness = 100
         self.GaussianBlurRadius = 0
 
+        self.RedColorSlider.setValue(self.RedFactor)        
+        self.GreenColorSlider.setValue(self.GreenFactor)        
+        self.BlueColorSlider.setValue(self.BlueFactor)        
         self.ColorSlider.setValue(self.Color)        
         self.BrightnessSlider.setValue(self.Brightness)
         self.ContrastSlider.setValue(self.Contrast)
@@ -568,6 +580,90 @@ class Gui(QtCore.QObject):
         CurrentImage = self.QPixmapToImage(Pixmap)
         AdjustedImage = CurrentImage.filter(ImageFilter.GaussianBlur(radius=float(self.GaussianBlurRadius / 100)))
         return self.ImageToQPixmap(AdjustedImage)
+
+    def UpdateReds(self, Pixmap, value):
+        CurrentImage = self.QPixmapToImage(Pixmap)
+
+        # Split into channels
+        r, g, b, a = CurrentImage.split()
+
+        # Increase Reds
+        r = r.point(lambda i: i * value)
+
+        # Recombine back to RGB image
+        AdjustedImage = Image.merge('RGBA', (r, g, b, a))
+
+        return self.ImageToQPixmap(AdjustedImage)
+
+    def AddRedColorSlider(self, layout):
+        self.RedColorSlider = QSlider(QtCore.Qt.Orientation.Horizontal)
+        self.RedColorSlider.setRange(0, 200) # 1 is original image, 0 is black image
+        layout.addRow("Red", self.RedColorSlider)
+
+        # Default value of the Color slider
+        self.RedColorSlider.setValue(100) 
+
+        self.RedColorSlider.valueChanged.connect(self.OnRedColorChanged)
+
+    def OnRedColorChanged(self, value):
+        self.RedFactor = value
+        self.processSliderChange("Red", "Slider", value, "RedColorSlider")
+
+    def UpdateGreens(self, Pixmap, value):
+        CurrentImage = self.QPixmapToImage(Pixmap)
+
+        # Split into channels
+        r, g, b, a = CurrentImage.split()
+
+        # Increase Greens
+        g = g.point(lambda i: i * value)
+
+        # Recombine back to RGB image
+        AdjustedImage = Image.merge('RGBA', (r, g, b, a))
+
+        return self.ImageToQPixmap(AdjustedImage)
+
+    def AddGreenColorSlider(self, layout):
+        self.GreenColorSlider = QSlider(QtCore.Qt.Orientation.Horizontal)
+        self.GreenColorSlider.setRange(0, 200) # 1 is original image, 0 is black image
+        layout.addRow("Green", self.GreenColorSlider)
+
+        # Default value of the Color slider
+        self.GreenColorSlider.setValue(100) 
+
+        self.GreenColorSlider.valueChanged.connect(self.OnGreenColorChanged)
+
+    def OnGreenColorChanged(self, value):
+        self.GreenFactor = value
+        self.processSliderChange("Green", "Slider", value, "GreenColorSlider")
+
+    def UpdateBlues(self, Pixmap, value):
+        CurrentImage = self.QPixmapToImage(Pixmap)
+
+        # Split into channels
+        r, g, b, a = CurrentImage.split()
+
+        # Increase Blues
+        b = b.point(lambda i: i * value)
+
+        # Recombine back to RGB image
+        AdjustedImage = Image.merge('RGBA', (r, g, b, a))
+
+        return self.ImageToQPixmap(AdjustedImage)
+
+    def AddBlueColorSlider(self, layout):
+        self.BlueColorSlider = QSlider(QtCore.Qt.Orientation.Horizontal)
+        self.BlueColorSlider.setRange(0, 200) # 1 is original image, 0 is black image
+        layout.addRow("Blue", self.BlueColorSlider)
+
+        # Default value of the Color slider
+        self.BlueColorSlider.setValue(100) 
+
+        self.BlueColorSlider.valueChanged.connect(self.OnBlueColorChanged)
+
+    def OnBlueColorChanged(self, value):
+        self.BlueFactor = value
+        self.processSliderChange("Blue", "Slider", value, "BlueColorSlider")
 
     def AddColorSlider(self, layout):
         self.ColorSlider = QSlider(QtCore.Qt.Orientation.Horizontal)
@@ -673,6 +769,9 @@ class Gui(QtCore.QObject):
         explanationOfChange, typeOfChange, valueOfChange, objectOfChange = args
         Pixmap = self.image_viewer.getCurrentLayerLatestPixmapBeforeSliderChange()
         if Pixmap:
+            Pixmap = self.UpdateReds(Pixmap, float(self.RedFactor / 100))
+            Pixmap = self.UpdateGreens(Pixmap, float(self.GreenFactor / 100))
+            Pixmap = self.UpdateBlues(Pixmap, float(self.BlueFactor / 100))
             Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Color, self.Color)
             Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Brightness, self.Brightness)
             Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Contrast, self.Contrast)

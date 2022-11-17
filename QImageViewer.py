@@ -318,12 +318,10 @@ class QtImageViewer(QGraphicsView):
             #    "object" : Relevant object, e.g., brightnessSlider <- will be used to update parent.brightnessSlider.setValue(...)
             # }
 
-            slidersList = ["Saturation", "Brightness", "Contrast", "Sharpness", "Gaussian Blur"]
-
             i = len(history)
             while i > 0:
                 entry = history[i - 1]
-                if "pixmap" in entry and entry["note"] not in slidersList:
+                if "pixmap" in entry and entry["type"] != "Slider":
                     return entry["pixmap"]
                 i -= 1
 

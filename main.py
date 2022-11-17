@@ -782,17 +782,20 @@ class Gui(QtCore.QObject):
         return [Pixmap, explanationOfChange, typeOfChange, valueOfChange, objectOfChange]
 
     def UpdateImage(self, explanationOfChange, typeOfChange, valueOfChange, objectOfChange):
-        if not self.progressBarThread.isRunning():
-            self.progressBarThread.maxRange = 1000
-            self.progressBarThread.completeSignal.connect(self.onUpdateImageCompleted)
-            self.progressBarThread.progressSignal.connect(self.updateProgressBar)
-            self.progressBarThread.taskFunction = self.performUpdateImage
-            self.progressBarThread.taskFunctionArgs = [
-                explanationOfChange, 
-                typeOfChange, 
-                valueOfChange, 
-                objectOfChange]
-            self.progressBarThread.start()
+        # if not self.progressBarThread.isRunning():
+        # TODO: Figure out how to correctly do this when lots of slider changes are made 
+        # in quick succession
+
+        self.progressBarThread.maxRange = 1000
+        self.progressBarThread.completeSignal.connect(self.onUpdateImageCompleted)
+        self.progressBarThread.progressSignal.connect(self.updateProgressBar)
+        self.progressBarThread.taskFunction = self.performUpdateImage
+        self.progressBarThread.taskFunctionArgs = [
+            explanationOfChange, 
+            typeOfChange, 
+            valueOfChange, 
+            objectOfChange]
+        self.progressBarThread.start()
 
     def OnCursorToolButton(self, checked):
         self.EnableTool("cursor") if checked else self.DisableTool("cursor")
@@ -1113,6 +1116,10 @@ class Gui(QtCore.QObject):
         self.color_picker.setRGB((r, g, b))
 
     def OnOpen(self):
+        # Clean up CUDA resources
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
         # Load an image file to be displayed (will popup a file dialog).
         self.image_viewer.open()
         filename = self.image_viewer._current_filename
@@ -1143,6 +1150,10 @@ class Gui(QtCore.QObject):
         self.image_viewer.undoCurrentLayerLatestChange()
 
     def OnPaste(self):
+        # Clean up CUDA resources
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
         cb = QApplication.clipboard()
         md = cb.mimeData()
         if md.hasImage():

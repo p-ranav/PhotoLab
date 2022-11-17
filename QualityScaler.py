@@ -355,6 +355,9 @@ def upscale_image(img, model, device, tiles_resolution, progressSignal):
                 progressSignal.emit(currentProgress, "Upscaling tile {}/{}".format(i + 1, len(tiles)))
                 tile_adapted  = adapt_image_for_deeplearning(tile, device)
                 tile_upscaled = tensor_to_uint(model(tile_adapted))
+                # Clean up CUDA resources
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
                 upscaled_tiles.append(tile_upscaled)
 
                 i += 1

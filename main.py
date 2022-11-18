@@ -31,6 +31,9 @@ import torch
 import QualityScaler
 from QProgressBarThread import QProgressBarThread
 
+from torchvision.transforms.functional import to_tensor, to_pil_image
+from AnimeGANv2Model import Generator as AnimeGanV2Generator
+
 def QImageToCvMat(incomingImage):
     '''  Converts a QImage into an opencv MAT format  '''
 
@@ -366,6 +369,20 @@ class Gui(QtCore.QObject):
 
         ##############################################################################################
         ##############################################################################################
+        # Anime GAN v2 Tool
+        # https://github.com/bryandlee/animegan2-pytorch
+        ##############################################################################################
+        ##############################################################################################
+
+        self.AnimeGanV2ToolButton = QToolButton(self.MainWindow)
+        self.AnimeGanV2ToolButton.setText("&Anime GAN v2")
+        self.AnimeGanV2ToolButton.setToolTip("Anime")
+        self.AnimeGanV2ToolButton.setIcon(QtGui.QIcon("icons/anime.svg"))
+        self.AnimeGanV2ToolButton.setCheckable(True)
+        self.AnimeGanV2ToolButton.toggled.connect(self.OnAnimeGanV2ToolButton)
+
+        ##############################################################################################
+        ##############################################################################################
         # Eraser Tool
         ##############################################################################################
         ##############################################################################################
@@ -449,7 +466,7 @@ class Gui(QtCore.QObject):
             self.CursorToolButton, self.ColorPickerToolButton, self.PaintToolButton, self.EraserToolButton, 
             self.FillToolButton, self.CropToolButton, self.SelectToolButton, self.SpotRemovalToolButton, 
             self.BlurToolButton, self.BackgroundRemovalToolButton, self.HumanSegmentationToolButton, self.ColorizerToolButton,
-            self.SuperResolutionToolButton
+            self.SuperResolutionToolButton, self.AnimeGanV2ToolButton
         ]
 
         for button in tool_buttons:
@@ -1049,6 +1066,84 @@ class Gui(QtCore.QObject):
                 self.progressBarThread.completeSignal.connect(self.onSuperResolutionCompleted)
                 self.progressBarThread.progressSignal.connect(self.updateProgressBar)
                 self.progressBarThread.taskFunction = self.performSuperResolution
+                self.progressBarThread.start()
+
+    @QtCore.pyqtSlot()
+    def onAnimeGanV2Completed(self):
+        output = self.progressBarThread.taskFunctionOutput
+
+        if output:
+            # Save new pixmap
+             updatedPixmap = self.ImageToQPixmap(output)
+             self.image_viewer.setImage(updatedPixmap, True, "Anime GAN v2")
+
+        self.progressBar.setValue(100)
+        self.progressWidget.hide()
+
+        self.progressBarThread.completeSignal.disconnect(self.onAnimeGanV2Completed)
+        self.progressBarThread.progressSignal.disconnect(self.updateProgressBar)
+
+        self.AnimeGanV2ToolButton.setChecked(False)
+
+        # Clean up CUDA resources
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
+    def performAnimeGanV2(self, progressSignal):
+        progressSignal.emit(10, "Checking CUDA capability")
+        useGpu = torch.cuda.is_available()
+        device = "cuda" if useGpu else "cpu"
+
+        progressSignal.emit(20, "Loading model")
+ 
+        net = AnimeGanV2Generator()
+        net.load_state_dict(torch.load("models/face_paint_512_v2.pt", map_location=device))
+        net.to(device).eval()
+
+        progressSignal.emit(30, "Loading current pixmap")
+
+        currentPixmap = self.getCurrentLayerLatestPixmap()
+        image = self.QPixmapToImage(currentPixmap)
+
+        progressSignal.emit(40, "Preprocessing image")
+
+        b, g, r, _ = cv2.split(np.asarray(image))
+        image_np = np.dstack((b, g, r))
+        image_pil = Image.fromarray(image_np)
+
+        with torch.no_grad():
+            progressSignal.emit(50, "Converting to tensor")
+            image_tensor = to_tensor(image_pil).unsqueeze(0) * 2 - 1
+
+            progressSignal.emit(60, "Running the model")
+
+            out = net(image_tensor.to(device), False # <-- upsample_align (Align corners in decoder upsampling layers)
+                      ).cpu()
+            out = out.squeeze(0).clip(-1, 1) * 0.5 + 0.5
+
+            progressSignal.emit(70, "Postprocessing output")
+
+            out = to_pil_image(out)
+
+            # Add alpha channel back
+            alpha = np.full((out.height, out.width), 255)
+            out_np = np.dstack((np.asarray(out), alpha)).astype(np.uint8)
+
+            return Image.fromarray(out_np)
+
+    def OnAnimeGanV2ToolButton(self, checked):
+        if checked:
+            self.EnableTool("anime") if checked else self.DisableTool("anime")
+
+            self.progressWidget.setWindowTitle("Anime GAN v2...")
+            self.progressBarLabel.setText("Starting")
+            self.progressWidget.show()
+
+            if not self.progressBarThread.isRunning():
+                self.progressBarThread.maxRange = 1000
+                self.progressBarThread.completeSignal.connect(self.onAnimeGanV2Completed)
+                self.progressBarThread.progressSignal.connect(self.updateProgressBar)
+                self.progressBarThread.taskFunction = self.performAnimeGanV2
                 self.progressBarThread.start()
 
     def OnEraserToolButton(self, checked):

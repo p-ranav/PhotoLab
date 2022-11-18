@@ -161,6 +161,7 @@ class QtImageViewer(QGraphicsView):
         self.selectPoints = []
         self.path = None
         self.selectPainterPaths = []
+        self.pathItem = None
 
         # Flags for spot removal tool
         self._isRemovingSpots = False
@@ -1106,23 +1107,36 @@ class QtImageViewer(QGraphicsView):
         if len(self.selectPoints) > 1:
             self.path.quadTo(self.selectPoints[-2], self.selectPoints[-1])
         '''
-      
-        
-        self.pathItem = self.scene.addPath(self.path)
-        self.selectPainterPaths.append(self.pathItem)
 
         penWidth = int(5 / self.zoomLevel)
+        
+        if len(self.selectPainterPaths):
+            # Hide previous pen and brush
+
+            self.selectPainterPaths[-1].setPen(
+                QtGui.QPen(
+                    QtGui.QColor(255, 255, 255, 0),
+                    penWidth if penWidth > 0 else 1,
+                    QtCore.Qt.SolidLine,
+                    QtCore.Qt.RoundCap,
+                    QtCore.Qt.RoundJoin,
+                )
+            )
+            self.selectPainterPaths[-1].setBrush(QtGui.QColor(255, 0, 0, 0))
+
+        self.pathItem = self.scene.addPath(self.path)
+        self.selectPainterPaths.append(self.pathItem)
 
         self.pathItem.setPen(
             QtGui.QPen(
                 QtGui.QColor(255, 255, 255, 127),
                 penWidth if penWidth > 0 else 1,
-                QtCore.Qt.SolidLine,
+                QtCore.Qt.DashLine,
                 QtCore.Qt.RoundCap,
                 QtCore.Qt.RoundJoin,
             )
         )
-        self.pathItem.setBrush(QtGui.QColor(255, 0, 0, 10))
+        self.pathItem.setBrush(QtGui.QColor(255, 0, 0, 100))
 
     def Luminance(self, pixel):
         return (0.299 * pixel[0] + 0.587 * pixel[1] + 0.114 * pixel[2])

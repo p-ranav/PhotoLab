@@ -47,6 +47,23 @@ def QImageToCvMat(incomingImage):
     arr = np.frombuffer(ptr, np.uint8).reshape((height, width, 4))
     return arr
 
+import torch
+from GPUtil import showUtilization as gpu_usage
+from numba import cuda
+
+def free_gpu_cache():
+    print("Initial GPU Usage")
+    gpu_usage()                             
+
+    torch.cuda.empty_cache()
+
+    #cuda.select_device(0)
+    #cuda.close()
+    #cuda.select_device(0)
+
+    print("GPU Usage after emptying the cache")
+    gpu_usage()
+
 class Gui(QtCore.QObject):
     def __init__(self, MainWindow):
         super().__init__()
@@ -376,8 +393,8 @@ class Gui(QtCore.QObject):
 
         self.AnimeGanV2ToolButton = QToolButton(self.MainWindow)
         self.AnimeGanV2ToolButton.setText("&Anime GAN v2")
-        self.AnimeGanV2ToolButton.setToolTip("Anime")
-        self.AnimeGanV2ToolButton.setIcon(QtGui.QIcon("icons/anime.svg"))
+        self.AnimeGanV2ToolButton.setToolTip("Anime GAN v2")
+        self.AnimeGanV2ToolButton.setIcon(QtGui.QIcon("icons/painting.svg"))
         self.AnimeGanV2ToolButton.setCheckable(True)
         self.AnimeGanV2ToolButton.toggled.connect(self.OnAnimeGanV2ToolButton)
 
@@ -780,7 +797,7 @@ class Gui(QtCore.QObject):
 
         # Clean up CUDA resources
         if torch.cuda.is_available():
-            torch.cuda.empty_cache()
+            free_gpu_cache()
 
     def performUpdateImage(self, _, args):
         explanationOfChange, typeOfChange, valueOfChange, objectOfChange = args
@@ -853,7 +870,7 @@ class Gui(QtCore.QObject):
 
         # Clean up CUDA resources
         if torch.cuda.is_available():
-            torch.cuda.empty_cache()
+            free_gpu_cache()
 
     def performBackgroundRemoval(self, progressSignal):
         progressSignal.emit(10, "Loading current pixmap")
@@ -893,7 +910,7 @@ class Gui(QtCore.QObject):
 
         # Clean up CUDA resources
         if torch.cuda.is_available():
-            torch.cuda.empty_cache()
+            free_gpu_cache()
 
     def performHumanSegmentation(self, progressSignal):
         progressSignal.emit(10, "Loading current pixmap")
@@ -935,7 +952,7 @@ class Gui(QtCore.QObject):
 
         # Clean up CUDA resources
         if torch.cuda.is_available():
-            torch.cuda.empty_cache()
+            free_gpu_cache()
 
     def performColorization(self, progressSignal):
         progressSignal.emit(10, "Checking CUDA availability")
@@ -969,6 +986,11 @@ class Gui(QtCore.QObject):
         # resize and concatenate to original L channel
         img_bw = ColorizerUtil.postprocess_tens(tens_l_orig, torch.cat((0*tens_l_orig,0*tens_l_orig),dim=1))
         output = ColorizerUtil.postprocess_tens(tens_l_orig, colorizer_siggraph17(tens_l_rs).cpu())
+
+        del image
+        del tens_l_rs
+        del tens_l_orig
+        del img_bw
 
         progressSignal.emit(80, "Postprocessing output")
 
@@ -1014,7 +1036,7 @@ class Gui(QtCore.QObject):
 
         # Clean up CUDA resources
         if torch.cuda.is_available():
-            torch.cuda.empty_cache()
+            free_gpu_cache()
 
     def performSuperResolution(self, progressSignal):
         progressSignal.emit(10, "Loading current pixmap")
@@ -1032,25 +1054,43 @@ class Gui(QtCore.QObject):
         useGpu = torch.cuda.is_available()
         device = "cuda" if useGpu else "cpu"
 
-        progressSignal.emit(30, "Setting up torch autograd")
+        i = 0
+        max_attempts = 2 # once on CUDA, once on CPU
 
-        QualityScaler.optimize_torch()
+        while i < max_attempts:
+            try:
 
-        model = "BSRGANx4"
-        progressSignal.emit(40, "Loading model " + model + " on " + device)
+                progressSignal.emit(30, "Setting up torch autograd")
 
-        model = QualityScaler.prepare_AI_model(model, device)
-        tiles_resolution = 700 # If the image is smaller than this on both sides, it'll be upscaled without any tiling
+                QualityScaler.optimize_torch()
 
-        progressSignal.emit(50, "Setting tile resolution " + str(tiles_resolution))
+                model = "BSRGANx4"
+                progressSignal.emit(40, "Loading model " + model + " on " + device)
 
-        upscaled = QualityScaler.upscale_image(image_np, model, device, tiles_resolution, progressSignal)
+                model = QualityScaler.prepare_AI_model(model, device)
+                tiles_resolution = 700 # If the image is smaller than this on both sides, it'll be upscaled without any tiling
 
-        alpha = np.full((upscaled.height, upscaled.width), 255)
-        upscaled_np = np.asarray(upscaled)
-        upscaled_rgba = np.dstack((upscaled_np, alpha)).astype(np.uint8)
+                progressSignal.emit(50, "Setting tile resolution " + str(tiles_resolution))
 
-        return upscaled_rgba
+                upscaled = QualityScaler.upscale_image(image_np, model, device, tiles_resolution, progressSignal)
+
+                alpha = np.full((upscaled.height, upscaled.width), 255)
+                upscaled_np = np.asarray(upscaled)
+                upscaled_rgba = np.dstack((upscaled_np, alpha)).astype(np.uint8)
+
+                i += 1
+
+                return upscaled_rgba
+
+            except RuntimeError as e:
+                i += 1
+                print(e)
+                if device == "cuda":
+                    # Retry on CPU
+                    progressSignal.emit(10, "Failed to run on CUDA device. Retrying on CPU")
+                    device = "cpu"
+                    free_gpu_cache()
+                    print("Retrying on CPU")
 
     def OnSuperResolutionToolButton(self, checked):
 
@@ -1087,49 +1127,74 @@ class Gui(QtCore.QObject):
 
         # Clean up CUDA resources
         if torch.cuda.is_available():
-            torch.cuda.empty_cache()
+            free_gpu_cache()
 
     def performAnimeGanV2(self, progressSignal):
+        # Clean up CUDA resources
+        if torch.cuda.is_available():
+            free_gpu_cache()
+
         progressSignal.emit(10, "Checking CUDA capability")
         useGpu = torch.cuda.is_available()
         device = "cuda" if useGpu else "cpu"
 
-        progressSignal.emit(20, "Loading model")
+        i = 0
+        max_attempts = 2 # once on CUDA, once on CPU
+
+        while i < max_attempts:
+            try:
+                progressSignal.emit(20, "Loading model")
  
-        net = AnimeGanV2Generator()
-        net.load_state_dict(torch.load("models/face_paint_512_v2.pt", map_location=device))
-        net.to(device).eval()
+                net = AnimeGanV2Generator()
+                net.load_state_dict(torch.load("models/face_paint_512_v2.pt", map_location=device))
+                net.to(device).eval()
 
-        progressSignal.emit(30, "Loading current pixmap")
+                progressSignal.emit(30, "Loading current pixmap")
 
-        currentPixmap = self.getCurrentLayerLatestPixmap()
-        image = self.QPixmapToImage(currentPixmap)
+                currentPixmap = self.getCurrentLayerLatestPixmap()
+                image = self.QPixmapToImage(currentPixmap)
 
-        progressSignal.emit(40, "Preprocessing image")
+                progressSignal.emit(40, "Preprocessing image")
 
-        b, g, r, _ = cv2.split(np.asarray(image))
-        image_np = np.dstack((b, g, r))
-        image_pil = Image.fromarray(image_np)
+                b, g, r, _ = cv2.split(np.asarray(image))
+                image_np = np.dstack((b, g, r))
+                image_pil = Image.fromarray(image_np)
 
-        with torch.no_grad():
-            progressSignal.emit(50, "Converting to tensor")
-            image_tensor = to_tensor(image_pil).unsqueeze(0) * 2 - 1
+                with torch.no_grad():
+                    progressSignal.emit(50, "Converting to tensor")
+                    image_tensor = to_tensor(image_pil).unsqueeze(0) * 2 - 1
 
-            progressSignal.emit(60, "Running the model")
+                    progressSignal.emit(60, "Running the model on " + device)
 
-            out = net(image_tensor.to(device), False # <-- upsample_align (Align corners in decoder upsampling layers)
-                      ).cpu()
-            out = out.squeeze(0).clip(-1, 1) * 0.5 + 0.5
+                    out = net(image_tensor.to(device), False # <-- upsample_align (Align corners in decoder upsampling layers)
+                              ).cpu()
+                    out = out.squeeze(0).clip(-1, 1) * 0.5 + 0.5
 
-            progressSignal.emit(70, "Postprocessing output")
+                    progressSignal.emit(70, "Postprocessing output")
 
-            out = to_pil_image(out)
+                    out = to_pil_image(out)
 
-            # Add alpha channel back
-            alpha = np.full((out.height, out.width), 255)
-            out_np = np.dstack((np.asarray(out), alpha)).astype(np.uint8)
+                    # Add alpha channel back
+                    alpha = np.full((out.height, out.width), 255)
+                    out_np = np.dstack((np.asarray(out), alpha)).astype(np.uint8)
 
-            return Image.fromarray(out_np)
+                    del image_tensor
+                    del net
+                    del out
+
+                    i += 1
+
+                    return Image.fromarray(out_np)
+
+            except RuntimeError as e:
+                i += 1
+                print(e)
+                if device == "cuda":
+                    # Retry on CPU
+                    progressSignal.emit(10, "Failed to run on CUDA device. Retrying on CPU")
+                    device = "cpu"
+                    free_gpu_cache()
+                    print("Retrying on CPU")
 
     def OnAnimeGanV2ToolButton(self, checked):
         if checked:
@@ -1213,7 +1278,7 @@ class Gui(QtCore.QObject):
     def OnOpen(self):
         # Clean up CUDA resources
         if torch.cuda.is_available():
-            torch.cuda.empty_cache()
+            free_gpu_cache()
 
         # Load an image file to be displayed (will popup a file dialog).
         self.image_viewer.open()
@@ -1247,7 +1312,7 @@ class Gui(QtCore.QObject):
     def OnPaste(self):
         # Clean up CUDA resources
         if torch.cuda.is_available():
-            torch.cuda.empty_cache()
+            free_gpu_cache()
 
         cb = QApplication.clipboard()
         md = cb.mimeData()
@@ -1268,7 +1333,7 @@ def main():
 
     # Clean up CUDA resources
     if torch.cuda.is_available():
-        torch.cuda.empty_cache()
+        free_gpu_cache()
 
     # Merge NN model files into pth file if not exists
     if not os.path.exists("models/u2net.pth"):

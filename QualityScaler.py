@@ -324,8 +324,10 @@ def upscale_image(img, model, device, tiles_resolution, progressSignal):
         with torch.no_grad():
             progressSignal.emit(60, "Scaling the quality...")
             img_upscaled_tensor = model(img_adapted)
+            del img_adapted
             progressSignal.emit(90, "Upscaling completed")
             img_upscaled = tensor_to_uint(img_upscaled_tensor)
+            del img_upscaled_tensor
             progressSignal.emit(95, "Postprocessing image...")
         return Image.fromarray(img_upscaled)
     else:
@@ -355,6 +357,8 @@ def upscale_image(img, model, device, tiles_resolution, progressSignal):
                 progressSignal.emit(currentProgress, "Upscaling tile {}/{}".format(i + 1, len(tiles)))
                 tile_adapted  = adapt_image_for_deeplearning(tile, device)
                 tile_upscaled = tensor_to_uint(model(tile_adapted))
+                del tile
+                del tile_adapted
                 # Clean up CUDA resources
                 if torch.cuda.is_available():
                     torch.cuda.empty_cache()
@@ -362,6 +366,8 @@ def upscale_image(img, model, device, tiles_resolution, progressSignal):
 
                 i += 1
                 currentProgress = int(currentProgress + progressPerTile)
+
+        del tiles
 
         upscaled_tiles = [Image.fromarray(arr) for arr in upscaled_tiles]
 

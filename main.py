@@ -16,13 +16,10 @@ import qdarkstyle
 from QImageViewer import QtImageViewer
 from PyQt6.QtGui import QKeySequence
 import pyqtgraph as pg
-import numpy as np
 from QColorPicker import QColorPicker
 import os
 from QFlowLayout import QFlowLayout
 from PIL import Image, ImageEnhance, ImageFilter
-from PIL.ImageQt import ImageQt
-from FileUtils import merge_files
 from QProgressBarThread import QProgressBarThread
 
 def free_gpu_cache():
@@ -581,6 +578,7 @@ class Gui(QtCore.QObject):
         return Image.frombuffer('RGBA', (width, height), data, 'raw', 'BGRA', 0, 1)
 
     def ImageToQPixmap(self, image):
+        from PIL.ImageQt import ImageQt
         return QPixmap.fromImage(ImageQt(image))
 
     def EnhanceImage(self, Pixmap, Property, value):
@@ -856,6 +854,7 @@ class Gui(QtCore.QObject):
 
     def performBackgroundRemoval(self, progressSignal):
         from BackgroundRemoval import remove2
+        from FileUtils import merge_files
 
         # Merge NN model files into pth file if not exists
         if not os.path.exists("models/u2net.pth"):
@@ -904,6 +903,7 @@ class Gui(QtCore.QObject):
 
     def performHumanSegmentation(self, progressSignal):
         from BackgroundRemoval import remove2
+        from FileUtils import merge_files
 
         if not os.path.exists("models/u2net_human_seg.pth"):
             merge_files("u2net_human_seg.pth", "models")
@@ -956,6 +956,7 @@ class Gui(QtCore.QObject):
         import ColorizerSiggraph17Model
         import torch
         import cv2
+        import numpy as np
 
         progressSignal.emit(10, "Checking CUDA availability")
 
@@ -1047,6 +1048,7 @@ class Gui(QtCore.QObject):
         import QualityScaler
         import ColorizerUtil
         import cv2
+        import numpy as np
 
         progressSignal.emit(10, "Loading current pixmap")
 
@@ -1145,6 +1147,7 @@ class Gui(QtCore.QObject):
         from AnimeGANv2Model import Generator as AnimeGanV2Generator
         import torch
         import cv2
+        import numpy as np
 
         # Clean up CUDA resources
         if torch.cuda.is_available():

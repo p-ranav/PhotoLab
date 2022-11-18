@@ -3,20 +3,11 @@
 
 import os.path
 
-try:
-    from PyQt6 import QtCore, QtGui, QtWidgets
-    from PyQt6.QtCore import Qt, QRect, QRectF, QPoint, QPointF, pyqtSignal, QEvent, QSize
-    from PyQt6.QtGui import QImage, QPixmap, QPainterPath, QMouseEvent, QPainter, QPen
-    from PyQt6.QtWidgets import QGraphicsView, QGraphicsScene, QFileDialog, QSizePolicy, \
-        QGraphicsItem, QGraphicsEllipseItem, QGraphicsRectItem, QGraphicsLineItem, QGraphicsPolygonItem
-except ImportError:
-    try:
-        from PyQt5.QtCore import Qt, QRect, QRectF, QPoint, QPointF, pyqtSignal, QEvent, QSize
-        from PyQt5.QtGui import QImage, QPixmap, QPainterPath, QMouseEvent, QPainter, QPen
-        from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QFileDialog, QSizePolicy, \
-            QGraphicsItem, QGraphicsEllipseItem, QGraphicsRectItem, QGraphicsLineItem, QGraphicsPolygonItem
-    except ImportError:
-        raise ImportError("Requires PyQt (version 5 or 6)")
+from PyQt6 import QtCore, QtGui, QtWidgets
+from PyQt6.QtCore import Qt, QRect, QRectF, QPoint, QPointF, pyqtSignal, QEvent, QSize
+from PyQt6.QtGui import QImage, QPixmap, QPainterPath, QMouseEvent, QPainter, QPen
+from PyQt6.QtWidgets import QGraphicsView, QGraphicsScene, QFileDialog, QSizePolicy, \
+    QGraphicsItem, QGraphicsEllipseItem, QGraphicsRectItem, QGraphicsLineItem, QGraphicsPolygonItem
 
 # numpy is optional: only needed if you want to display numpy 2d arrays as images.
 try:
@@ -37,9 +28,6 @@ __author__ = "Marcel Goldschen-Ohm <marcel.goldschen@gmail.com>"
 __version__ = '2.0.0'
 
 from QCropItem import QCropItem
-from math import sin, radians
-from QColorPicker import QColorPicker
-import cv2
 import random
 from PIL import Image, ImageFilter, ImageDraw
 from PIL.ImageQt import ImageQt

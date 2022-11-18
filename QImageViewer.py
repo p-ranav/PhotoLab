@@ -535,11 +535,12 @@ class QtImageViewer(QGraphicsView):
             if not self._isCroppingStarted:
                 # Start dragging a region crop box?
                 if (self.regionZoomButton is not None) and (event.button() == self.regionZoomButton):
+                    self._isCroppingStarted = True
+                    
                     self._pixelPosition = event.pos()  # store pixel position
                     self.setDragMode(QGraphicsView.DragMode.RubberBandDrag)
                     QGraphicsView.mousePressEvent(self, event)
                     event.accept()
-                    self._isCroppingStarted = True
                     return
         elif self._isSelecting:
             # TODO: https://stackoverflow.com/questions/63568214/qpainter-delete-previously-drawn-shapes
@@ -644,21 +645,28 @@ class QtImageViewer(QGraphicsView):
                         event.accept()
                         self._isZooming = False
                         return
-        elif self._isCropping and self._isCroppingStarted:
-            # Finish dragging a region crop box?
-            if (self.regionZoomButton is not None) and (event.button() == self.regionZoomButton):
-                QGraphicsView.mouseReleaseEvent(self, event)
-                self._cropRect = self.scene.selectionArea().boundingRect().intersected(self.sceneRect())
-                # Clear current selection area (i.e. rubberband rect).
-                self.scene.setSelectionArea(QPainterPath())
-                self.setDragMode(QGraphicsView.DragMode.NoDrag)
-                # If zoom box is 3x3 screen pixels or smaller, do not zoom and proceed to process as a click release.
-                zoomPixelWidth = abs(event.pos().x() - self._pixelPosition.x())
-                zoomPixelHeight = abs(event.pos().y() - self._pixelPosition.y())
-                if zoomPixelWidth > 3 and zoomPixelHeight > 3:
-                    if self._cropRect.isValid() and (self._cropRect != self.sceneRect()):
-                        # Create a new crop item using user-drawn rectangle
-                        self._cropItem = QCropItem(self._image, self._cropRect)
+        elif self._isCropping:
+            if self._isCroppingStarted:
+                # Finish dragging a region crop box?
+                if (self.regionZoomButton is not None) and (event.button() == self.regionZoomButton):
+                    QGraphicsView.mouseReleaseEvent(self, event)
+                    if self._cropItem:
+                        self._cropRect = self._cropItem.rect()
+                    else:
+                        self._cropRect = self.scene.selectionArea().boundingRect().intersected(self.sceneRect())
+                    # Clear current selection area (i.e. rubberband rect).
+                    self.scene.setSelectionArea(QPainterPath())
+                    self.setDragMode(QGraphicsView.DragMode.NoDrag)
+                    # If zoom box is 3x3 screen pixels or smaller, do not zoom and proceed to process as a click release.
+                    zoomPixelWidth = abs(event.pos().x() - self._pixelPosition.x())
+                    zoomPixelHeight = abs(event.pos().y() - self._pixelPosition.y())
+                    if zoomPixelWidth > 3 and zoomPixelHeight > 3:
+                        if self._cropRect.isValid() and (self._cropRect != self.sceneRect()):
+                            # Create a new crop item using user-drawn rectangle
+                            pixmap = self.getCurrentLayerLatestPixmap()
+                            if self._cropItem:
+                                self.exitCrop()
+                            self._cropItem = QCropItem(self._image, self._cropRect, (pixmap.width(), pixmap.height()))
 
         # Finish panning?
         if (self.panButton is not None) and (event.button() == self.panButton):
@@ -876,14 +884,15 @@ class QtImageViewer(QGraphicsView):
             elif event.key() == Qt.Key.Key_BracketRight:
                 self.eraserBrushSize += 3
                 self.renderCursorOverlay(self._lastMousePositionInScene, self.eraserBrushSize)
-        elif self._isCropping and self._isCroppingStarted:
-            if event.key() == Qt.Key.Key_Enter or event.key() == Qt.Key.Key_Return:
-                self.performCrop(event)
+        elif self._isCropping:
+            if self._isCroppingStarted:
                 self._isCroppingStarted = False
+                if self._cropItem:
+                    if event.key() == Qt.Key.Key_Enter or event.key() == Qt.Key.Key_Return:
+                        self.performCrop(event)
 
-            elif event.key() == Qt.Key.Key_Escape:
-                self.exitCrop()
-                self._isCroppingStarted = False
+                    elif event.key() == Qt.Key.Key_Escape:
+                        self.exitCrop()
 
         elif self._isSelecting:
             if event.key() == Qt.Key.Key_Enter or event.key() == Qt.Key.Key_Return:
@@ -992,6 +1001,7 @@ class QtImageViewer(QGraphicsView):
         # self.OriginalImage = currentPixmap
 
     def performCrop(self, event):
+        rect = self._cropRect.toAlignedRect()
         # Crop the pixmap
         cropQPixmap = self.getCurrentLayerLatestPixmap().copy(self._cropRect.toAlignedRect())
 

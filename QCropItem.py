@@ -8,8 +8,15 @@ from PyQt6.QtWidgets import QGraphicsRectItem, QGraphicsItem, QGraphicsPathItem,
 
 
 class HandleItem(QGraphicsRectItem):
-    def __init__(self, position_flags, parent):
-        QGraphicsRectItem.__init__(self, -10, -10, 20, 20, parent)
+    def __init__(self, position_flags, parent, imageSize):
+        w = imageSize[0]
+        h = imageSize[1]
+        max_dim = max(w, h)
+        handleItemSize = int(max_dim / 50)
+        if handleItemSize < 4:
+            handleItemSize = 4
+        start = -1 * int(handleItemSize / 2)
+        QGraphicsRectItem.__init__(self, start, start, handleItemSize, handleItemSize, parent)
         self._positionFlags = position_flags
 
         self.setBrush(QBrush(QColor(81, 168, 220, 200)))
@@ -89,9 +96,10 @@ class SizeGripItem(QGraphicsItem):
         BottomRight: Qt.CursorShape.SizeFDiagCursor,
     }
 
-    def __init__(self, parent):
+    def __init__(self, parent, imageSize):
         QGraphicsItem.__init__(self, parent)
         self._handleItems = []
+        self.imageSize = imageSize
 
         self._rect = QRectF(0, 0, 0, 0)
         if self.parentItem():
@@ -99,7 +107,7 @@ class SizeGripItem(QGraphicsItem):
 
         for flag in (self.TopLeft, self.Top, self.TopRight, self.Right,
                      self.BottomRight, self.Bottom, self.BottomLeft, self.Left):
-            handle = HandleItem(flag, self)
+            handle = HandleItem(flag, self, imageSize)
             handle.setCursor(self.handleCursors[flag])
             self._handleItems.append(handle)
 
@@ -179,13 +187,13 @@ class SizeGripItem(QGraphicsItem):
         self.doResize()
 
 class QCropItem(QGraphicsPathItem):
-    def __init__(self, parent, cropRect):
+    def __init__(self, parent, cropRect, imageSize):
         QGraphicsPathItem.__init__(self, parent)
         self.extern_rect = parent.boundingRect()
         self.intern_rect = cropRect
         self.setBrush(QColor(10, 100, 100, 100))
         self.setPen(QPen(Qt.PenStyle.NoPen))
-        SizeGripItem(self)
+        SizeGripItem(self, imageSize)
         self.create_path()
 
     def create_path(self):

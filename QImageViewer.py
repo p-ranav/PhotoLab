@@ -163,6 +163,7 @@ class QtImageViewer(QGraphicsView):
         # Flags for active cropping
         # Set to true when using the crop tool with toolbar
         self._isCropping = False
+        self._isCroppingStarted = False
         self._cropItem = None
         self._cropRect = None
 
@@ -531,18 +532,15 @@ class QtImageViewer(QGraphicsView):
             if (self.regionZoomButton is not None) and (event.button() == self.regionZoomButton):
                 self.performFill(event)
         elif self._isCropping:
-            # Start dragging a region crop box?
-            if (self.regionZoomButton is not None) and (event.button() == self.regionZoomButton):
-                self._pixelPosition = event.pos()  # store pixel position
-                self.setDragMode(QGraphicsView.DragMode.RubberBandDrag)
-                QGraphicsView.mousePressEvent(self, event)
-                event.accept()
-                
-                # Remove previous crop
-                if self._cropItem:
-                    self.scene.removeItem(self._cropItem)
-
-                return
+            if not self._isCroppingStarted:
+                # Start dragging a region crop box?
+                if (self.regionZoomButton is not None) and (event.button() == self.regionZoomButton):
+                    self._pixelPosition = event.pos()  # store pixel position
+                    self.setDragMode(QGraphicsView.DragMode.RubberBandDrag)
+                    QGraphicsView.mousePressEvent(self, event)
+                    event.accept()
+                    self._isCroppingStarted = True
+                    return
         elif self._isSelecting:
             # TODO: https://stackoverflow.com/questions/63568214/qpainter-delete-previously-drawn-shapes
             #
@@ -646,7 +644,7 @@ class QtImageViewer(QGraphicsView):
                         event.accept()
                         self._isZooming = False
                         return
-        else:
+        elif self._isCropping and self._isCroppingStarted:
             # Finish dragging a region crop box?
             if (self.regionZoomButton is not None) and (event.button() == self.regionZoomButton):
                 QGraphicsView.mouseReleaseEvent(self, event)
@@ -878,12 +876,14 @@ class QtImageViewer(QGraphicsView):
             elif event.key() == Qt.Key.Key_BracketRight:
                 self.eraserBrushSize += 3
                 self.renderCursorOverlay(self._lastMousePositionInScene, self.eraserBrushSize)
-        elif self._isCropping:
+        elif self._isCropping and self._isCroppingStarted:
             if event.key() == Qt.Key.Key_Enter or event.key() == Qt.Key.Key_Return:
                 self.performCrop(event)
+                self._isCroppingStarted = False
 
             elif event.key() == Qt.Key.Key_Escape:
                 self.exitCrop()
+                self._isCroppingStarted = False
 
         elif self._isSelecting:
             if event.key() == Qt.Key.Key_Enter or event.key() == Qt.Key.Key_Return:

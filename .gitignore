@@ -5,3 +5,4 @@ models/*.pth
 main.dist
 main.build
 main.onefile-build
+.vs/

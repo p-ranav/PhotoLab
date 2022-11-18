@@ -394,7 +394,7 @@ class Gui(QtCore.QObject):
         self.AnimeGanV2ToolButton = QToolButton(self.MainWindow)
         self.AnimeGanV2ToolButton.setText("&Anime GAN v2")
         self.AnimeGanV2ToolButton.setToolTip("Anime GAN v2")
-        self.AnimeGanV2ToolButton.setIcon(QtGui.QIcon("icons/painting.svg"))
+        self.AnimeGanV2ToolButton.setIcon(QtGui.QIcon("icons/anime.svg"))
         self.AnimeGanV2ToolButton.setCheckable(True)
         self.AnimeGanV2ToolButton.toggled.connect(self.OnAnimeGanV2ToolButton)
 
@@ -487,7 +487,7 @@ class Gui(QtCore.QObject):
         ]
 
         for button in tool_buttons:
-            button.setIconSize(QtCore.QSize(20, 20))
+            button.setIconSize(QtCore.QSize(30, 30))
             ToolbarLayout.addWidget(button)
 
         ToolbarContent.setLayout(ToolbarLayout)

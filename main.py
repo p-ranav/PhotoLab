@@ -16,42 +16,20 @@ import qdarkstyle
 from QImageViewer import QtImageViewer
 from PyQt6.QtGui import QKeySequence
 import pyqtgraph as pg
-import cv2
 import numpy as np
 from QColorPicker import QColorPicker
 import os
 from QFlowLayout import QFlowLayout
-from BackgroundRemoval import remove2
 from PIL import Image, ImageEnhance, ImageFilter
 from PIL.ImageQt import ImageQt
 from FileUtils import merge_files
-import ColorizerUtil
-import ColorizerSiggraph17Model
-import torch
-import QualityScaler
 from QProgressBarThread import QProgressBarThread
 
-from torchvision.transforms.functional import to_tensor, to_pil_image
-from AnimeGANv2Model import Generator as AnimeGanV2Generator
-
-def QImageToCvMat(incomingImage):
-    '''  Converts a QImage into an opencv MAT format  '''
-
-    incomingImage = incomingImage.convertToFormat(QtGui.QImage.Format.Format_RGBA8888)
-
-    width = incomingImage.width()
-    height = incomingImage.height()
-
-    ptr = incomingImage.bits()
-    ptr.setsize(height * width * 4)
-    arr = np.frombuffer(ptr, np.uint8).reshape((height, width, 4))
-    return arr
-
-import torch
-from GPUtil import showUtilization as gpu_usage
-from numba import cuda
-
 def free_gpu_cache():
+    import torch
+    from GPUtil import showUtilization as gpu_usage
+    from numba import cuda
+
     print("Initial GPU Usage")
     gpu_usage()                             
 
@@ -786,6 +764,8 @@ class Gui(QtCore.QObject):
 
     @QtCore.pyqtSlot()
     def onUpdateImageCompleted(self):
+        import torch
+
         Pixmap, explanationOfChange, typeOfChange, valueOfChange, objectOfChange = self.progressBarThread.taskFunctionOutput
         if Pixmap:
             self.image_viewer.setImage(Pixmap, True, explanationOfChange, typeOfChange, valueOfChange, objectOfChange)
@@ -854,6 +834,8 @@ class Gui(QtCore.QObject):
 
     @QtCore.pyqtSlot()
     def onBackgroundRemovalCompleted(self):
+        import torch
+
         output = self.progressBarThread.taskFunctionOutput
 
         # Save new pixmap
@@ -873,6 +855,12 @@ class Gui(QtCore.QObject):
             free_gpu_cache()
 
     def performBackgroundRemoval(self, progressSignal):
+        from BackgroundRemoval import remove2
+
+        # Merge NN model files into pth file if not exists
+        if not os.path.exists("models/u2net.pth"):
+            merge_files("u2net.pth", "models")
+
         progressSignal.emit(10, "Loading current pixmap")
         currentPixmap = self.getCurrentLayerLatestPixmap()
         return remove2(self.QPixmapToImage(currentPixmap), progressSignal, model_name="u2net")
@@ -894,6 +882,8 @@ class Gui(QtCore.QObject):
 
     @QtCore.pyqtSlot()
     def onHumanSegmentationCompleted(self):
+        import torch
+
         output = self.progressBarThread.taskFunctionOutput
 
         # Save new pixmap
@@ -913,6 +903,11 @@ class Gui(QtCore.QObject):
             free_gpu_cache()
 
     def performHumanSegmentation(self, progressSignal):
+        from BackgroundRemoval import remove2
+
+        if not os.path.exists("models/u2net_human_seg.pth"):
+            merge_files("u2net_human_seg.pth", "models")
+
         progressSignal.emit(10, "Loading current pixmap")
         currentPixmap = self.getCurrentLayerLatestPixmap()
         return remove2(self.QPixmapToImage(currentPixmap), progressSignal, model_name="u2net_human_seg")
@@ -935,6 +930,8 @@ class Gui(QtCore.QObject):
 
     @QtCore.pyqtSlot()
     def onColorizationCompleted(self):
+        import torch
+
         output = self.progressBarThread.taskFunctionOutput
 
         # Save new pixmap
@@ -955,6 +952,11 @@ class Gui(QtCore.QObject):
             free_gpu_cache()
 
     def performColorization(self, progressSignal):
+        import ColorizerUtil
+        import ColorizerSiggraph17Model
+        import torch
+        import cv2
+
         progressSignal.emit(10, "Checking CUDA availability")
 
         useGpu = torch.cuda.is_available()
@@ -1019,6 +1021,8 @@ class Gui(QtCore.QObject):
 
     @QtCore.pyqtSlot()
     def onSuperResolutionCompleted(self):
+        import torch
+
         output = self.progressBarThread.taskFunctionOutput
 
         # Save new pixmap
@@ -1039,6 +1043,11 @@ class Gui(QtCore.QObject):
             free_gpu_cache()
 
     def performSuperResolution(self, progressSignal):
+        import torch
+        import QualityScaler
+        import ColorizerUtil
+        import cv2
+
         progressSignal.emit(10, "Loading current pixmap")
 
         currentPixmap = self.getCurrentLayerLatestPixmap()
@@ -1110,6 +1119,8 @@ class Gui(QtCore.QObject):
 
     @QtCore.pyqtSlot()
     def onAnimeGanV2Completed(self):
+        import torch
+
         output = self.progressBarThread.taskFunctionOutput
 
         if output:
@@ -1130,6 +1141,11 @@ class Gui(QtCore.QObject):
             free_gpu_cache()
 
     def performAnimeGanV2(self, progressSignal):
+        from torchvision.transforms.functional import to_tensor, to_pil_image
+        from AnimeGANv2Model import Generator as AnimeGanV2Generator
+        import torch
+        import cv2
+
         # Clean up CUDA resources
         if torch.cuda.is_available():
             free_gpu_cache()
@@ -1276,10 +1292,6 @@ class Gui(QtCore.QObject):
         self.color_picker.setRGB((r, g, b))
 
     def OnOpen(self):
-        # Clean up CUDA resources
-        if torch.cuda.is_available():
-            free_gpu_cache()
-
         # Load an image file to be displayed (will popup a file dialog).
         self.image_viewer.open()
         filename = self.image_viewer._current_filename
@@ -1310,10 +1322,6 @@ class Gui(QtCore.QObject):
         self.image_viewer.undoCurrentLayerLatestChange()
 
     def OnPaste(self):
-        # Clean up CUDA resources
-        if torch.cuda.is_available():
-            free_gpu_cache()
-
         cb = QApplication.clipboard()
         md = cb.mimeData()
         if md.hasImage():
@@ -1330,18 +1338,6 @@ class Gui(QtCore.QObject):
             self.resetSliderValues()
 
 def main():
-
-    # Clean up CUDA resources
-    if torch.cuda.is_available():
-        free_gpu_cache()
-
-    # Merge NN model files into pth file if not exists
-    if not os.path.exists("models/u2net.pth"):
-        merge_files("u2net.pth", "models")
-
-    if not os.path.exists("models/u2net_human_seg.pth"):
-        merge_files("u2net_human_seg.pth", "models")
-
     app = QApplication(sys.argv)
 
     ## setup stylesheet

@@ -958,102 +958,26 @@ class Gui(QtWidgets.QMainWindow):
 
     @QtCore.pyqtSlot()
     def onSuperResolutionCompleted(self):
-        import torch
+        output = self.currentTool.output
+        if output is not None:
+            # Save new pixmap
+            output = Image.fromarray(output)
+            updatedPixmap = self.ImageToQPixmap(output)
+            self.image_viewer.setImage(updatedPixmap, True, "Anime GAN v2")
 
-        output = self.progressBarThread.taskFunctionOutput
-
-        # Save new pixmap
-        output = Image.fromarray(output)
-        updatedPixmap = self.ImageToQPixmap(output)
-        self.image_viewer.setImage(updatedPixmap, True, "Super-Resolution")
-
-        self.progressBar.setValue(100)
-        self.progressWidget.hide()
-
-        self.progressBarThread.completeSignal.disconnect(self.onSuperResolutionCompleted)
-        self.progressBarThread.progressSignal.disconnect(self.updateProgressBar)
-
-        self.SuperResolutionToolButton.setChecked(False)
-
-        # Clean up CUDA resources
-        if torch.cuda.is_available():
-            free_gpu_cache()
-
-    def performSuperResolution(self, progressSignal):
-        import torch
-        import QualityScaler
-        import ColorizerUtil
-        import cv2
-        import numpy as np
-
-        progressSignal.emit(10, "Loading current pixmap")
-
-        currentPixmap = self.getCurrentLayerLatestPixmap()
-        image = self.QPixmapToImage(currentPixmap)
-        w = image.width
-        h = image.height
-        image = ColorizerUtil.load_img(image)
-        b, g, r, a = cv2.split(image)
-        image_np = np.dstack((b, g, r))
-
-        progressSignal.emit(20, "Checking CUDA availability")
-            
-        useGpu = torch.cuda.is_available()
-        device = "cuda" if useGpu else "cpu"
-
-        i = 0
-        max_attempts = 2 # once on CUDA, once on CPU
-
-        while i < max_attempts:
-            try:
-
-                progressSignal.emit(30, "Setting up torch autograd")
-
-                QualityScaler.optimize_torch()
-
-                model = "BSRGANx4"
-                progressSignal.emit(40, "Loading model " + model + " on " + device)
-
-                model = QualityScaler.prepare_AI_model(model, device)
-                tiles_resolution = 700 # If the image is smaller than this on both sides, it'll be upscaled without any tiling
-
-                progressSignal.emit(50, "Setting tile resolution " + str(tiles_resolution))
-
-                upscaled = QualityScaler.upscale_image(image_np, model, device, tiles_resolution, progressSignal)
-
-                alpha = np.full((upscaled.height, upscaled.width), 255)
-                upscaled_np = np.asarray(upscaled)
-                upscaled_rgba = np.dstack((upscaled_np, alpha)).astype(np.uint8)
-
-                i += 1
-
-                return upscaled_rgba
-
-            except RuntimeError as e:
-                i += 1
-                print(e)
-                if device == "cuda":
-                    # Retry on CPU
-                    progressSignal.emit(10, "Failed to run on CUDA device. Retrying on CPU")
-                    device = "cpu"
-                    free_gpu_cache()
-                    print("Retrying on CPU")
+        self.AnimeGanV2ToolButton.setChecked(False)
+        del self.currentTool
+        self.currentTool = None
 
     def OnSuperResolutionToolButton(self, checked):
+        if checked and not self.currentTool:
+            currentPixmap = self.getCurrentLayerLatestPixmap()
+            image = self.QPixmapToImage(currentPixmap)
 
-        if checked:
-            self.EnableTool("super_resolution") if checked else self.DisableTool("super_resolution")
-
-            self.progressWidget.setWindowTitle("Perform Super-Resolution Quality Scaling...")
-            self.progressBarLabel.setText("Starting")
-            self.progressWidget.show()
-
-            if not self.progressBarThread.isRunning():
-                self.progressBarThread.maxRange = 1000
-                self.progressBarThread.completeSignal.connect(self.onSuperResolutionCompleted)
-                self.progressBarThread.progressSignal.connect(self.updateProgressBar)
-                self.progressBarThread.taskFunction = self.performSuperResolution
-                self.progressBarThread.start()
+            from QToolSuperResolution import QToolSuperResolution
+            self.currentTool = QToolSuperResolution(None, image, self.onSuperResolutionCompleted)
+            self.currentTool.setWindowModality(Qt.ApplicationModal)
+            self.currentTool.show()
 
     @QtCore.pyqtSlot()
     def OnAnimeGanV2Completed(self):

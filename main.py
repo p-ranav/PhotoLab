@@ -7,7 +7,6 @@ from PyQt6.QtWidgets import (
     QToolBar,
     QToolButton,
     QFileDialog,
-    QProgressDialog
 )
 from PyQt6.QtGui import QPixmap
 import sys
@@ -39,10 +38,10 @@ def free_gpu_cache():
     print("GPU Usage after emptying the cache")
     gpu_usage()
 
-class Gui(QtCore.QObject):
-    def __init__(self, MainWindow):
-        super().__init__()
-        self.MainWindow = MainWindow
+class Gui(QtWidgets.QMainWindow):
+    def __init__(self, parent=None):
+        super(Gui, self).__init__(parent)
+        self.setWindowTitle('Photo Editor')
 
         ##############################################################################################
         ##############################################################################################
@@ -84,7 +83,7 @@ class Gui(QtCore.QObject):
         HistogramDock.setMinimumHeight(220)
         HistogramDock.setMaximumHeight(220)
         HistogramDock.setMaximumWidth(380)
-        MainWindow.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, HistogramDock)
+        self.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, HistogramDock)
 
         content = QtWidgets.QWidget()
         HistogramLayout = QtWidgets.QVBoxLayout(content)
@@ -104,7 +103,7 @@ class Gui(QtCore.QObject):
         ColorPickerDock.setMinimumHeight(100)
         ColorPickerDock.setMaximumHeight(260)
         ColorPickerDock.setMaximumWidth(380)
-        MainWindow.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, ColorPickerDock)
+        self.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, ColorPickerDock)
 
         content = QtWidgets.QWidget()
         ColorPickerLayout = QtWidgets.QVBoxLayout(content)
@@ -120,7 +119,7 @@ class Gui(QtCore.QObject):
         ##############################################################################################
 
         dock = QtWidgets.QDockWidget("")
-        MainWindow.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, dock)
+        self.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, dock)
 
         scroll = QtWidgets.QScrollArea()
         dock.setWidget(scroll)
@@ -175,19 +174,19 @@ class Gui(QtCore.QObject):
         ##############################################################################################
         ##############################################################################################
 
-        self.OpenShortcut = QtGui.QShortcut(QKeySequence("Ctrl+O"), self.MainWindow)
+        self.OpenShortcut = QtGui.QShortcut(QKeySequence("Ctrl+O"), self)
         self.OpenShortcut.activated.connect(self.OnOpen)
 
-        self.PasteShortcut = QtGui.QShortcut(QKeySequence("Ctrl+V"), self.MainWindow)
+        self.PasteShortcut = QtGui.QShortcut(QKeySequence("Ctrl+V"), self)
         self.PasteShortcut.activated.connect(self.OnPaste)
 
-        self.SaveShortcut = QtGui.QShortcut(QKeySequence("Ctrl+S"), self.MainWindow)
+        self.SaveShortcut = QtGui.QShortcut(QKeySequence("Ctrl+S"), self)
         self.SaveShortcut.activated.connect(self.OnSave)
 
-        self.SaveAsShortcut = QtGui.QShortcut(QKeySequence("Ctrl+Shift+S"), self.MainWindow)
+        self.SaveAsShortcut = QtGui.QShortcut(QKeySequence("Ctrl+Shift+S"), self)
         self.SaveAsShortcut.activated.connect(self.OnSaveAs)
 
-        self.UndoShortcut = QtGui.QShortcut(QKeySequence("Ctrl+Z"), self.MainWindow)
+        self.UndoShortcut = QtGui.QShortcut(QKeySequence("Ctrl+Z"), self)
         self.UndoShortcut.activated.connect(self.OnUndo)
 
         ##############################################################################################
@@ -197,7 +196,7 @@ class Gui(QtCore.QObject):
         ##############################################################################################
 
         # Using a QToolBar object and a toolbar area
-        ImageToolBar = QToolBar("Toolbar", self.MainWindow)
+        ImageToolBar = QToolBar("Toolbar", self)
 
         ##############################################################################################
         ##############################################################################################
@@ -205,7 +204,7 @@ class Gui(QtCore.QObject):
         ##############################################################################################
         ##############################################################################################
 
-        self.CursorToolButton = QToolButton(self.MainWindow)
+        self.CursorToolButton = QToolButton(self)
         # self.CursorToolButton.setIconSize(QtCore.QSize(32, 32))
         self.CursorToolButton.setText("&Cursor")
         self.CursorToolButton.setToolTip("Cursor")
@@ -219,7 +218,7 @@ class Gui(QtCore.QObject):
         ##############################################################################################
         ##############################################################################################
 
-        self.ColorPickerToolButton = QToolButton(self.MainWindow)
+        self.ColorPickerToolButton = QToolButton(self)
         self.ColorPickerToolButton.setText("&Color Picker")
         self.ColorPickerToolButton.setToolTip("Color Picker")
         self.ColorPickerToolButton.setIcon(QtGui.QIcon("icons/color_picker.svg"))
@@ -232,7 +231,7 @@ class Gui(QtCore.QObject):
         ##############################################################################################
         ##############################################################################################
 
-        self.PaintToolButton = QToolButton(self.MainWindow)
+        self.PaintToolButton = QToolButton(self)
         self.PaintToolButton.setText("&Paint")
         self.PaintToolButton.setToolTip("Paint")
         self.PaintToolButton.setIcon(QtGui.QIcon("icons/paint.svg"))
@@ -245,7 +244,7 @@ class Gui(QtCore.QObject):
         ##############################################################################################
         ##############################################################################################
 
-        self.FillToolButton = QToolButton(self.MainWindow)
+        self.FillToolButton = QToolButton(self)
         self.FillToolButton.setText("&Fill")
         self.FillToolButton.setToolTip("Fill")
         self.FillToolButton.setIcon(QtGui.QIcon("icons/fill.svg"))
@@ -258,14 +257,14 @@ class Gui(QtCore.QObject):
         ##############################################################################################
         ##############################################################################################
 
-        self.CropToolButton = QToolButton(self.MainWindow)
+        self.CropToolButton = QToolButton(self)
         self.CropToolButton.setText("&Crop")
         self.CropToolButton.setIcon(QtGui.QIcon("icons/crop.svg"))
         self.CropToolButton.setToolTip("Basic Crop")
         self.CropToolButton.setCheckable(True)
         self.CropToolButton.toggled.connect(self.OnCropToolButton)
 
-        self.CropToolShortcut = QtGui.QShortcut(QKeySequence("Ctrl+Shift+Alt+K"), self.MainWindow)
+        self.CropToolShortcut = QtGui.QShortcut(QKeySequence("Ctrl+Shift+Alt+K"), self)
         self.CropToolShortcut.activated.connect(lambda: self.CropToolButton.toggle())
 
         ##############################################################################################
@@ -274,7 +273,7 @@ class Gui(QtCore.QObject):
         ##############################################################################################
         ##############################################################################################
 
-        self.SelectToolButton = QToolButton(self.MainWindow)
+        self.SelectToolButton = QToolButton(self)
         self.SelectToolButton.setText("&Select")
         self.SelectToolButton.setToolTip("Path Crop")
         self.SelectToolButton.setIcon(QtGui.QIcon("icons/select.svg"))
@@ -287,7 +286,7 @@ class Gui(QtCore.QObject):
         ##############################################################################################
         ##############################################################################################
 
-        self.SpotRemovalToolButton = QToolButton(self.MainWindow)
+        self.SpotRemovalToolButton = QToolButton(self)
         self.SpotRemovalToolButton.setText("&Spot Removal")
         self.SpotRemovalToolButton.setToolTip("Spot Removal")
         self.SpotRemovalToolButton.setIcon(QtGui.QIcon("icons/spot_removal.svg"))
@@ -300,7 +299,7 @@ class Gui(QtCore.QObject):
         ##############################################################################################
         ##############################################################################################
 
-        self.BlurToolButton = QToolButton(self.MainWindow)
+        self.BlurToolButton = QToolButton(self)
         self.BlurToolButton.setText("&Blur")
         self.BlurToolButton.setToolTip("Blur")
         self.BlurToolButton.setIcon(QtGui.QIcon("icons/blur.svg"))
@@ -313,7 +312,7 @@ class Gui(QtCore.QObject):
         ##############################################################################################
         ##############################################################################################
 
-        self.BackgroundRemovalToolButton = QToolButton(self.MainWindow)
+        self.BackgroundRemovalToolButton = QToolButton(self)
         self.BackgroundRemovalToolButton.setText("&Background Removal")
         self.BackgroundRemovalToolButton.setToolTip("Background Removal")
         self.BackgroundRemovalToolButton.setIcon(QtGui.QIcon("icons/background_removal.svg"))
@@ -326,7 +325,7 @@ class Gui(QtCore.QObject):
         ##############################################################################################
         ##############################################################################################
 
-        self.HumanSegmentationToolButton = QToolButton(self.MainWindow)
+        self.HumanSegmentationToolButton = QToolButton(self)
         self.HumanSegmentationToolButton.setText("&Human Segmentation")
         self.HumanSegmentationToolButton.setToolTip("Human Segmentation")
         self.HumanSegmentationToolButton.setIcon(QtGui.QIcon("icons/human_segmentation.svg"))
@@ -339,7 +338,7 @@ class Gui(QtCore.QObject):
         ##############################################################################################
         ##############################################################################################
 
-        self.ColorizerToolButton = QToolButton(self.MainWindow)
+        self.ColorizerToolButton = QToolButton(self)
         self.ColorizerToolButton.setText("&Colorizer")
         self.ColorizerToolButton.setToolTip("Colorizer")
         self.ColorizerToolButton.setIcon(QtGui.QIcon("icons/colorizer.svg"))
@@ -352,7 +351,7 @@ class Gui(QtCore.QObject):
         ##############################################################################################
         ##############################################################################################
 
-        self.SuperResolutionToolButton = QToolButton(self.MainWindow)
+        self.SuperResolutionToolButton = QToolButton(self)
         self.SuperResolutionToolButton.setText("&Super Resolution")
         self.SuperResolutionToolButton.setToolTip("Super-Resolution")
         self.SuperResolutionToolButton.setIcon(QtGui.QIcon("icons/super_resolution.svg"))
@@ -366,7 +365,7 @@ class Gui(QtCore.QObject):
         ##############################################################################################
         ##############################################################################################
 
-        self.AnimeGanV2ToolButton = QToolButton(self.MainWindow)
+        self.AnimeGanV2ToolButton = QToolButton(self)
         self.AnimeGanV2ToolButton.setText("&Anime GAN v2")
         self.AnimeGanV2ToolButton.setToolTip("Anime GAN v2")
         self.AnimeGanV2ToolButton.setIcon(QtGui.QIcon("icons/anime.svg"))
@@ -379,7 +378,7 @@ class Gui(QtCore.QObject):
         ##############################################################################################
         ##############################################################################################
 
-        self.EraserToolButton = QToolButton(self.MainWindow)
+        self.EraserToolButton = QToolButton(self)
         self.EraserToolButton.setText("&Eraser")
         self.EraserToolButton.setToolTip("Eraser")
         self.EraserToolButton.setIcon(QtGui.QIcon("icons/eraser.svg"))
@@ -468,7 +467,9 @@ class Gui(QtCore.QObject):
         ToolbarContent.setLayout(ToolbarLayout)
         ToolbarDockWidget.setWidget(ToolbarContent)
 
-        self.MainWindow.addDockWidget(QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, ToolbarDockWidget)
+        self.addDockWidget(QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, ToolbarDockWidget)
+
+        self.currentTool = None
 
         ##############################################################################################
         ##############################################################################################
@@ -477,7 +478,7 @@ class Gui(QtCore.QObject):
         ##############################################################################################
 
         self.initImageViewer()
-        self.MainWindow.showMaximized()
+        self.showMaximized()
 
         self.progressWidgetLayout = QtWidgets.QVBoxLayout()
         self.progressWidget = QtWidgets.QWidget()
@@ -540,7 +541,7 @@ class Gui(QtCore.QObject):
 
         # Set the central widget of the Window. Widget will expand
         # to take up all the space in the window by default.
-        self.MainWindow.setCentralWidget(self.image_viewer)
+        self.setCentralWidget(self.image_viewer)
 
     def resetSliderValues(self):
         # State of enhance sliders
@@ -1120,115 +1121,27 @@ class Gui(QtCore.QObject):
                 self.progressBarThread.start()
 
     @QtCore.pyqtSlot()
-    def onAnimeGanV2Completed(self):
-        import torch
-
-        output = self.progressBarThread.taskFunctionOutput
-
+    def OnAnimeGanV2Completed(self):
+        output = self.currentTool.output
         if output:
             # Save new pixmap
-             updatedPixmap = self.ImageToQPixmap(output)
-             self.image_viewer.setImage(updatedPixmap, True, "Anime GAN v2")
-
-        self.progressBar.setValue(100)
-        self.progressWidget.hide()
-
-        self.progressBarThread.completeSignal.disconnect(self.onAnimeGanV2Completed)
-        self.progressBarThread.progressSignal.disconnect(self.updateProgressBar)
+            updatedPixmap = self.ImageToQPixmap(output)
+            self.image_viewer.setImage(updatedPixmap, True, "Anime GAN v2")
 
         self.AnimeGanV2ToolButton.setChecked(False)
-
-        # Clean up CUDA resources
-        if torch.cuda.is_available():
-            free_gpu_cache()
-
-    def performAnimeGanV2(self, progressSignal):
-        from torchvision.transforms.functional import to_tensor, to_pil_image
-        from AnimeGANv2Model import Generator as AnimeGanV2Generator
-        import torch
-        import cv2
-        import numpy as np
-
-        # Clean up CUDA resources
-        if torch.cuda.is_available():
-            free_gpu_cache()
-
-        progressSignal.emit(10, "Checking CUDA capability")
-        useGpu = torch.cuda.is_available()
-        device = "cuda" if useGpu else "cpu"
-
-        i = 0
-        max_attempts = 2 # once on CUDA, once on CPU
-
-        while i < max_attempts:
-            try:
-                progressSignal.emit(20, "Loading model")
- 
-                net = AnimeGanV2Generator()
-                net.load_state_dict(torch.load("models/face_paint_512_v2.pt", map_location=device))
-                net.to(device).eval()
-
-                progressSignal.emit(30, "Loading current pixmap")
-
-                currentPixmap = self.getCurrentLayerLatestPixmap()
-                image = self.QPixmapToImage(currentPixmap)
-
-                progressSignal.emit(40, "Preprocessing image")
-
-                b, g, r, _ = cv2.split(np.asarray(image))
-                image_np = np.dstack((b, g, r))
-                image_pil = Image.fromarray(image_np)
-
-                with torch.no_grad():
-                    progressSignal.emit(50, "Converting to tensor")
-                    image_tensor = to_tensor(image_pil).unsqueeze(0) * 2 - 1
-
-                    progressSignal.emit(60, "Running the model on " + device)
-
-                    out = net(image_tensor.to(device), False # <-- upsample_align (Align corners in decoder upsampling layers)
-                              ).cpu()
-                    out = out.squeeze(0).clip(-1, 1) * 0.5 + 0.5
-
-                    progressSignal.emit(70, "Postprocessing output")
-
-                    out = to_pil_image(out)
-
-                    # Add alpha channel back
-                    alpha = np.full((out.height, out.width), 255)
-                    out_np = np.dstack((np.asarray(out), alpha)).astype(np.uint8)
-
-                    del image_tensor
-                    del net
-                    del out
-
-                    i += 1
-
-                    return Image.fromarray(out_np)
-
-            except RuntimeError as e:
-                i += 1
-                print(e)
-                if device == "cuda":
-                    # Retry on CPU
-                    progressSignal.emit(10, "Failed to run on CUDA device. Retrying on CPU")
-                    device = "cpu"
-                    free_gpu_cache()
-                    print("Retrying on CPU")
+        del self.currentTool
+        self.currentTool = None
 
     def OnAnimeGanV2ToolButton(self, checked):
-        if checked:
-            self.EnableTool("anime") if checked else self.DisableTool("anime")
+        if checked and not self.currentTool:
+            currentPixmap = self.getCurrentLayerLatestPixmap()
+            image = self.QPixmapToImage(currentPixmap)
 
-            self.progressWidget.setWindowTitle("Anime GAN v2...")
-            self.progressBarLabel.setText("Starting")
-            self.progressWidget.show()
-
-            if not self.progressBarThread.isRunning():
-                self.progressBarThread.maxRange = 1000
-                self.progressBarThread.completeSignal.connect(self.onAnimeGanV2Completed)
-                self.progressBarThread.progressSignal.connect(self.updateProgressBar)
-                self.progressBarThread.taskFunction = self.performAnimeGanV2
-                self.progressBarThread.start()
+            from QAnimeGANv2 import QAnimeGANv2
+            self.currentTool = QAnimeGANv2(None, image, self.OnAnimeGanV2Completed)
+        elif not checked:
+            del self.currentTool
+            self.currentTool = None
 
     def OnEraserToolButton(self, checked):
         self.EnableTool("eraser") if checked else self.DisableTool("eraser")
@@ -1299,7 +1212,7 @@ class Gui(QtCore.QObject):
         self.image_viewer.open()
         filename = self.image_viewer._current_filename
         filename = os.path.basename(filename)
-        self.MainWindow.setWindowTitle(filename)
+        self.setWindowTitle(filename)
         # self.image_viewer.OriginalImage = self.image_viewer.pixmap()
         self.updateHistogram()
         self.updateColorPicker()
@@ -1314,12 +1227,12 @@ class Gui(QtCore.QObject):
         dialog = QFileDialog()
         dialog.setDefaultSuffix("jpg")
         extension_filter = "Default (*.jpg);;BMP (*.bmp);;Icon (*.ico);;JPEG (*.jpeg *.jpg);;PBM (*.pbm);;PGM (*.pgm);;PNG (*.png);;PPM (*.ppm);;TIF (*.tif *.tiff);;WBMP (*.wbmp);;XBM (*.xbm);;XPM (*.xpm)"
-        name = dialog.getSaveFileName(self.MainWindow, 'Save File', name + " EDITED" + ".jpg", extension_filter)
+        name = dialog.getSaveFileName(self, 'Save File', name + " EDITED" + ".jpg", extension_filter)
         # self.image_viewer.OriginalImage = self.image_viewer.pixmap()
         self.image_viewer.save(name[0])
         filename = self.image_viewer._current_filename
         filename = os.path.basename(filename)
-        self.MainWindow.setWindowTitle(filename)
+        self.setWindowTitle(filename)
 
     def OnUndo(self):
         self.image_viewer.undoCurrentLayerLatestChange()
@@ -1333,7 +1246,7 @@ class Gui(QtCore.QObject):
             self.image_viewer._current_filename = "Untitled.png"
             self.image_viewer.setImage(img, True, "Paste")
             filename = self.image_viewer._current_filename
-            self.MainWindow.setWindowTitle(filename)
+            self.setWindowTitle(filename)
             # self.image_viewer.OriginalImage = self.image_viewer.pixmap()
 
             self.updateHistogram()
@@ -1347,9 +1260,7 @@ def main():
     ## the default system in qdarkstyle uses qtpy environment variable
     app.setStyleSheet(qdarkstyle.load_stylesheet())
 
-    MainWindow = QtWidgets.QMainWindow()
-    MainWindow.setWindowTitle('Photo Editor')
-    gui = Gui(MainWindow)
+    gui = Gui()
     sys.exit(app.exec())
 
 if __name__ == '__main__':

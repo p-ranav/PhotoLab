@@ -363,32 +363,32 @@ class QtImageViewer(QGraphicsView):
         # Grid for transparent images
         #########################################################################################
 
-        original = pixmap.copy()
-        painter = QPainter(pixmap)
+        #original = pixmap.copy()
+        #painter = QPainter(pixmap)
 
-        x = y = 0
-        width = pixmap.width()
-        height = pixmap.height()
-        gridSize = 10
+        #x = y = 0
+        #width = pixmap.width()
+        #height = pixmap.height()
+        #gridSize = 10
 
-        box = QRect(0, 0, width, height)
-        painter.fillRect(box, QtGui.QColor(255, 255, 255, 255))
+        #box = QRect(0, 0, width, height)
+        #painter.fillRect(box, QtGui.QColor(255, 255, 255, 255))
 
-        pen = QPen(QtGui.QColor("#a9a9a9"), 1, Qt.PenStyle.SolidLine, Qt.PenCapStyle.FlatCap, Qt.PenJoinStyle.RoundJoin)
-        painter.setPen(pen)
+        #pen = QPen(QtGui.QColor("#a9a9a9"), 1, Qt.PenStyle.SolidLine, Qt.PenCapStyle.FlatCap, Qt.PenJoinStyle.RoundJoin)
+        #painter.setPen(pen)
 
-        while y <= height:
-            # draw horizontal lines
-            painter.drawLine(0, y, width, y)
-            y += gridSize
-        while x <= width:
-            # draw vertical lines
-            painter.drawLine(x, 0, x, height)
-            x += gridSize
+        #while y <= height:
+        #    # draw horizontal lines
+        #    painter.drawLine(0, y, width, y)
+        #    y += gridSize
+        #while x <= width:
+        #    # draw vertical lines
+        #    painter.drawLine(x, 0, x, height)
+        #    x += gridSize
 
-        painter.drawPixmap(QPoint(), original)
+        #painter.drawPixmap(QPoint(), original)
 
-        painter.end()
+        #painter.end()
 
         #########################################################################################
         

@@ -834,52 +834,25 @@ class Gui(QtWidgets.QMainWindow):
 
     @QtCore.pyqtSlot()
     def onBackgroundRemovalCompleted(self):
-        import torch
-
-        output = self.progressBarThread.taskFunctionOutput
-
-        # Save new pixmap
-        updatedPixmap = self.ImageToQPixmap(output)
-        self.image_viewer.setImage(updatedPixmap, True, "Background Removal")
-
-        self.progressBar.setValue(100)
-        self.progressWidget.hide()
-
-        self.progressBarThread.completeSignal.disconnect(self.onBackgroundRemovalCompleted)
-        self.progressBarThread.progressSignal.disconnect(self.updateProgressBar)
+        output = self.currentTool.output
+        if output is not None:
+            # Save new pixmap
+            updatedPixmap = self.ImageToQPixmap(output)
+            self.image_viewer.setImage(updatedPixmap, True, "Anime GAN v2")
 
         self.BackgroundRemovalToolButton.setChecked(False)
-
-        # Clean up CUDA resources
-        if torch.cuda.is_available():
-            free_gpu_cache()
-
-    def performBackgroundRemoval(self, progressSignal):
-        from BackgroundRemoval import remove2
-        from FileUtils import merge_files
-
-        # Merge NN model files into pth file if not exists
-        if not os.path.exists("models/u2net.pth"):
-            merge_files("u2net.pth", "models")
-
-        progressSignal.emit(10, "Loading current pixmap")
-        currentPixmap = self.getCurrentLayerLatestPixmap()
-        return remove2(self.QPixmapToImage(currentPixmap), progressSignal, model_name="u2net")
+        del self.currentTool
+        self.currentTool = None
 
     def OnBackgroundRemovalToolButton(self, checked):
-        if checked:
-            self.EnableTool("background_removal") if checked else self.DisableTool("background_removal")
+        if checked and not self.currentTool:
+            currentPixmap = self.getCurrentLayerLatestPixmap()
+            image = self.QPixmapToImage(currentPixmap)
 
-            self.progressWidget.setWindowTitle("Performing Background Removal...")
-            self.progressBarLabel.setText("Starting...")
-            self.progressWidget.show()
-
-            if not self.progressBarThread.isRunning():
-                self.progressBarThread.maxRange = 1000
-                self.progressBarThread.completeSignal.connect(self.onBackgroundRemovalCompleted)
-                self.progressBarThread.progressSignal.connect(self.updateProgressBar)
-                self.progressBarThread.taskFunction = self.performBackgroundRemoval
-                self.progressBarThread.start()
+            from QToolBackgroundRemoval import QToolBackgroundRemoval
+            self.currentTool = QToolBackgroundRemoval(None, image, self.onBackgroundRemovalCompleted)
+            self.currentTool.setWindowModality(Qt.ApplicationModal)
+            self.currentTool.show()
 
     @QtCore.pyqtSlot()
     def onHumanSegmentationCompleted(self):

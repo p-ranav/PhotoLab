@@ -4,7 +4,7 @@ class QToolColorizer(QTool):
     def __init__(self, parent=None, toolInput=None, onCompleted=None):
         super(QToolColorizer, self).__init__(parent, "Image Colorization", 
                                              "Colorize black and white images with learned deep priors\nhttps://github.com/richzhang/colorization", 
-                                             "images/Colorizer_03.jpg", self.onRun, toolInput, onCompleted)
+                                             "images/Colorizer_04.jpg", self.onRun, toolInput, onCompleted)
 
         self.parent = parent
         self.output = None

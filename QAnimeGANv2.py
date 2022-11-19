@@ -37,8 +37,8 @@ class QAnimeGANv2(QtWidgets.QWidget):
 
         self.toolImageLabel = QtWidgets.QLabel()
         image = QtGui.QImage()
-        image.load("images/AnimeGanV2_02.jpg")
-        image = image.scaled(600, 600, QtCore.Qt.AspectRatioMode.KeepAspectRatio)
+        image.load("images/AnimeGanV2_05.jpg")
+        image = image.scaled(800, 800, QtCore.Qt.AspectRatioMode.KeepAspectRatio)
         pixmap = QtGui.QPixmap.fromImage(image)
         self.toolImageLabel.setPixmap(pixmap)
 

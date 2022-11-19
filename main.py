@@ -1137,8 +1137,8 @@ class Gui(QtWidgets.QMainWindow):
             currentPixmap = self.getCurrentLayerLatestPixmap()
             image = self.QPixmapToImage(currentPixmap)
 
-            from QAnimeGANv2 import QAnimeGANv2
-            self.currentTool = QAnimeGANv2(None, image, self.OnAnimeGanV2Completed)
+            from QToolAnimeGANv2 import QToolAnimeGANv2
+            self.currentTool = QToolAnimeGANv2(None, image, self.OnAnimeGanV2Completed)
             self.currentTool.setWindowModality(Qt.ApplicationModal)
             self.currentTool.show()
         elif not checked:

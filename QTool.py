@@ -5,13 +5,12 @@ class QTool(QtWidgets.QWidget):
 
     completedSignal = QtCore.pyqtSignal()
 
-    def __init__(self, parent=None, name="", demoImagePath=None, onRun=None, toolInput=None, onCompleted=None):
+    def __init__(self, parent=None, name="", description="", demoImagePath=None, onRun=None, toolInput=None, onCompleted=None):
         super(QTool, self).__init__(parent)
 
         self.parent = parent
         self.onRun = onRun
         self.toolInput = toolInput
-        self.onCompleted = onCompleted
 
         self.titleLabel = QtWidgets.QLabel()
         self.titleLabel.setText(name)
@@ -23,7 +22,7 @@ class QTool(QtWidgets.QWidget):
         self.titleLabel.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
 
         self.subTitleLabel = QtWidgets.QLabel()
-        self.subTitleLabel.setText("Transform photos of real-world scenes into anime style images\nhttps://github.com/bryandlee/animegan2-pytorch")
+        self.subTitleLabel.setText(description)
         self.subTitleLabel.setStyleSheet("""
             QLabel {
                 font-size: 20px;
@@ -77,8 +76,7 @@ class QTool(QtWidgets.QWidget):
 
         # Initialize the thread
         self.progressBarThread = QProgressBarThread()
-
-        self.completedSignal.connect(self.onCompleted)
+        self.completedSignal.connect(onCompleted)
 
     @QtCore.pyqtSlot(int, str)
     def updateProgressBar(self, e, label):
@@ -96,6 +94,7 @@ class QTool(QtWidgets.QWidget):
         if not self.progressBarThread.isRunning():
             self.progressBarThread.maxRange = 1000
             self.progressBarThread.progressSignal.connect(self.updateProgressBar)
+            self.progressBarThread.completeSignal.connect(self.stop)
             self.progressBarThread.taskFunction = self.onRun
             if self.toolInput:
                 self.progressBarThread.taskFunctionArgs = [self.toolInput]

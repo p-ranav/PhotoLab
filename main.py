@@ -20,6 +20,7 @@ import os
 from QFlowLayout import QFlowLayout
 from PIL import Image, ImageEnhance, ImageFilter
 from QProgressBarThread import QProgressBarThread
+from QTool import QTool
 
 def free_gpu_cache():
     import torch
@@ -930,96 +931,30 @@ class Gui(QtWidgets.QMainWindow):
                 self.progressBarThread.start()
 
     @QtCore.pyqtSlot()
-    def onColorizationCompleted(self):
-        import torch
+    def OnColorizerCompleted(self):
+        if self.currentTool:
+            output = self.currentTool.output
+            if output is not None:
 
-        output = self.progressBarThread.taskFunctionOutput
+                # Save new pixmap
+                from PIL import Image
+                output = Image.fromarray(output)
+                updatedPixmap = self.ImageToQPixmap(output)
+                self.image_viewer.setImage(updatedPixmap, True, "Colorizer")
 
-        # Save new pixmap
-        output = Image.fromarray(output)
-        updatedPixmap = self.ImageToQPixmap(output)
-        self.image_viewer.setImage(updatedPixmap, True, "Colorizer")
-
-        self.progressBar.setValue(100)
-        self.progressWidget.hide()
-
-        self.progressBarThread.completeSignal.disconnect(self.onColorizationCompleted)
-        self.progressBarThread.progressSignal.disconnect(self.updateProgressBar)
-
-        self.ColorizerToolButton.setChecked(False)
-
-        # Clean up CUDA resources
-        if torch.cuda.is_available():
-            free_gpu_cache()
-
-    def performColorization(self, progressSignal):
-        import ColorizerUtil
-        import ColorizerSiggraph17Model
-        import torch
-        import cv2
-        import numpy as np
-
-        progressSignal.emit(10, "Checking CUDA availability")
-
-        useGpu = torch.cuda.is_available()
-
-        progressSignal.emit(20, "Loading colorizer model")
-
-        # Load colorizer
-        colorizer_siggraph17 = ColorizerSiggraph17Model.siggraph17(pretrained=True).eval()
-        if(useGpu):
-            colorizer_siggraph17.cuda()
-
-        progressSignal.emit(30, "Loading current pixmap")
-
-        # Load current image
-        currentPixmap = self.getCurrentLayerLatestPixmap()
-        image = self.QPixmapToImage(currentPixmap)
-        image = ColorizerUtil.load_img(image)
-        b, g, r, a = cv2.split(image)
-
-        progressSignal.emit(40, "Preprocessing image")
-
-        (tens_l_orig, tens_l_rs) = ColorizerUtil.preprocess_img(np.dstack((b, g, r)), HW=(256,256))
-        if(useGpu):
-            tens_l_rs = tens_l_rs.cuda()
-
-        progressSignal.emit(50, "Running colorizer on " + "cuda" if useGpu else "cpu")
-
-        # colorizer outputs 256x256 ab map
-        # resize and concatenate to original L channel
-        img_bw = ColorizerUtil.postprocess_tens(tens_l_orig, torch.cat((0*tens_l_orig,0*tens_l_orig),dim=1))
-        output = ColorizerUtil.postprocess_tens(tens_l_orig, colorizer_siggraph17(tens_l_rs).cpu())
-
-        del image
-        del tens_l_rs
-        del tens_l_orig
-        del img_bw
-
-        progressSignal.emit(80, "Postprocessing output")
-
-        # Fix RGB channels and recover the alpha channel that was lost earlier
-        output = np.dstack((output * 255, a)).astype(np.uint8)
-
-        progressSignal.emit(90, "Done")
-        
-        return output
+            self.ColorizerToolButton.setChecked(False)
+            del self.currentTool
+            self.currentTool = None
 
     def OnColorizerToolButton(self, checked):
+        if checked and not self.currentTool:
+            currentPixmap = self.getCurrentLayerLatestPixmap()
+            image = self.QPixmapToImage(currentPixmap)
 
-        if checked:
-            self.EnableTool("colorizer") if checked else self.DisableTool("colorizer")
-
-            self.progressWidget.setWindowTitle("Colorizing...")
-            self.progressBarLabel.setText("Starting colorization")
-            self.progressWidget.show()
-
-            if not self.progressBarThread.isRunning():
-                self.progressBarThread.maxRange = 1000
-                self.progressBarThread.completeSignal.connect(self.onColorizationCompleted)
-                self.progressBarThread.progressSignal.connect(self.updateProgressBar)
-                self.progressBarThread.taskFunction = self.performColorization
-                self.progressBarThread.start()
+            from QToolColorizer import QToolColorizer
+            self.currentTool = QToolColorizer(None, image, self.OnColorizerCompleted)
+            self.currentTool.setWindowModality(Qt.ApplicationModal)
+            self.currentTool.show()
 
     @QtCore.pyqtSlot()
     def onSuperResolutionCompleted(self):
@@ -1123,7 +1058,7 @@ class Gui(QtWidgets.QMainWindow):
     @QtCore.pyqtSlot()
     def OnAnimeGanV2Completed(self):
         output = self.currentTool.output
-        if output:
+        if output is not None:
             # Save new pixmap
             updatedPixmap = self.ImageToQPixmap(output)
             self.image_viewer.setImage(updatedPixmap, True, "Anime GAN v2")
@@ -1141,9 +1076,6 @@ class Gui(QtWidgets.QMainWindow):
             self.currentTool = QToolAnimeGANv2(None, image, self.OnAnimeGanV2Completed)
             self.currentTool.setWindowModality(Qt.ApplicationModal)
             self.currentTool.show()
-        elif not checked:
-            del self.currentTool
-            self.currentTool = None
 
     def OnEraserToolButton(self, checked):
         self.EnableTool("eraser") if checked else self.DisableTool("eraser")

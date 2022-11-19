@@ -7,7 +7,7 @@ class QToolAnimeGANv2(QTool):
     net = None
 
     def __init__(self, parent=None, toolInput=None, onCompleted=None):
-        super(QToolAnimeGANv2, self).__init__(parent, self.onRun, toolInput, onCompleted)
+        super(QToolAnimeGANv2, self).__init__(parent, "Anime GAN v2", "images/AnimeGanV2_05.jpg", self.onRun, toolInput, onCompleted)
 
         self.parent = parent
         self.output = None

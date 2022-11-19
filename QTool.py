@@ -5,7 +5,7 @@ class QTool(QtWidgets.QWidget):
 
     completedSignal = QtCore.pyqtSignal()
 
-    def __init__(self, parent=None, onRun=None, toolInput=None, onCompleted=None):
+    def __init__(self, parent=None, name="", demoImagePath=None, onRun=None, toolInput=None, onCompleted=None):
         super(QTool, self).__init__(parent)
 
         self.parent = parent
@@ -14,7 +14,7 @@ class QTool(QtWidgets.QWidget):
         self.onCompleted = onCompleted
 
         self.titleLabel = QtWidgets.QLabel()
-        self.titleLabel.setText("Anime GAN v2")
+        self.titleLabel.setText(name)
         self.titleLabel.setStyleSheet("""
             QLabel {
                 font-size: 40px;
@@ -38,7 +38,7 @@ class QTool(QtWidgets.QWidget):
 
         self.toolImageLabel = QtWidgets.QLabel()
         image = QtGui.QImage()
-        image.load("images/AnimeGanV2_05.jpg")
+        image.load(demoImagePath)
         image = image.scaled(800, 800, QtCore.Qt.AspectRatioMode.KeepAspectRatio)
         pixmap = QtGui.QPixmap.fromImage(image)
         self.toolImageLabel.setPixmap(pixmap)

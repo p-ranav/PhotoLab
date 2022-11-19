@@ -81,8 +81,6 @@ class QAnimeGANv2(QtWidgets.QWidget):
 
         self.output = None
 
-        self.show()
-
     @QtCore.pyqtSlot(int, str)
     def updateProgressBar(self, e, label):
         self.progressBar.setValue(e)

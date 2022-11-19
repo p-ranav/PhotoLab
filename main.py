@@ -1139,6 +1139,8 @@ class Gui(QtWidgets.QMainWindow):
 
             from QAnimeGANv2 import QAnimeGANv2
             self.currentTool = QAnimeGANv2(None, image, self.OnAnimeGanV2Completed)
+            self.currentTool.setWindowModality(Qt.ApplicationModal)
+            self.currentTool.show()
         elif not checked:
             del self.currentTool
             self.currentTool = None

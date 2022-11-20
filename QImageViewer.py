@@ -160,8 +160,11 @@ class QtImageViewer(QGraphicsView):
         self._isSelectingPath = False
         self.selectPoints = []
         self.path = None
+        self.pathSelected = None
         self.selectPainterPaths = []
         self.pathItem = None
+        self.pathPointItem = None
+        self.selectPainterPointPaths = []
 
         # Flags for spot removal tool
         self._isRemovingSpots = False
@@ -265,8 +268,12 @@ class QtImageViewer(QGraphicsView):
                         if pathItem and pathItem in self.scene.items():
                             self.scene.removeItem(pathItem)
 
+                    for pathPointItem in self.selectPainterPointPaths:
+                        if pathPointItem and pathPointItem in self.scene.items():
+                            self.scene.removeItem(pathPointItem)
+
                     if previous["note"] == "Path Select":
-                        self.selectPoints, self.selectPainterPaths = previous["value"]
+                        self.selectPoints, self.selectPainterPaths, self.selectPainterPointPaths = previous["value"]
                         if len(self.selectPoints) > 1:
                             self.buildPath(addToHistory=False)
 
@@ -277,12 +284,14 @@ class QtImageViewer(QGraphicsView):
                             self.layerHistory[self.currentLayer] = history[:-2]
                             self.selectPoints = []
                             self.selectPainterPaths = []
+                            self.selectPainterPointPaths = []
                     else:
                         # Previous is not a path select
                         # Remove the last 2 entries from the history
                         self.layerHistory[self.currentLayer] = history[:-1]
                         self.selectPoints = []
                         self.selectPainterPaths = []
+                        self.selectPainterPointPaths = []
 
                 elif previous["type"] == "Slider":
                     if previous["value"]:
@@ -1026,18 +1035,27 @@ class QtImageViewer(QGraphicsView):
         for pathItem in self.selectPainterPaths:
             if pathItem and pathItem in self.scene.items():
                 self.scene.removeItem(pathItem)
+
+        for pathPointItem in self.selectPainterPointPaths:
+            if pathPointItem and pathPointItem in self.scene.items():
+                self.scene.removeItem(pathPointItem)
+
         self.selectPainterPaths = []
+        self.selectPainterPointPaths = []
         self.path = None
         self._isSelectingPath = False
+        self.pathItem = None
+        self.pathPointItem = None
 
     def performSelectCrop(self):
         self.path.quadTo(self.selectPoints[-1], self.selectPoints[-1])
+        self.pathSelected.quadTo(self.selectPoints[-1], self.selectPoints[-1])
 
         currentImage = self.getCurrentLayerLatestPixmap()
         output = QImage(currentImage.toImage().size(), QImage.Format.Format_ARGB32)
         output.fill(Qt.GlobalColor.transparent)
         painter = QPainter(output)
-        painter.setClipPath(self.path)
+        painter.setClipPath(self.pathSelected)
         painter.drawImage(QPoint(), currentImage.toImage())
         painter.end()
         # To avoid useless transparent background you can crop it like that:
@@ -1048,13 +1066,22 @@ class QtImageViewer(QGraphicsView):
 
         if self.path:
             self.path.clear()
+            self.pathSelected.clear()
         
         for pathItem in self.selectPainterPaths:
             if pathItem and pathItem in self.scene.items():
                 self.scene.removeItem(pathItem)
+
+        for pathPointItem in self.selectPainterPointPaths:
+            if pathPointItem and pathPointItem in self.scene.items():
+                self.scene.removeItem(pathPointItem)
                 
         self.selectPainterPaths = []
-        self.path = None
+        self.selectPainterPointPaths = []
+        self.path = None         # Path + boundingRect to make it look nice
+        self.pathSelected = None # Just the path, nothing more - used for crop
+        self.pathItem = None
+        self.pathPointItem = None
 
     def performCrop(self):
         if self._selectRect and self._isSelectingRect and self._isSelectingRectStarted:
@@ -1089,7 +1116,19 @@ class QtImageViewer(QGraphicsView):
         if self.path in self.scene.items():
             self.scene.removeItem(self.path)
             del self.path
-        self.path = QtGui.QPainterPath(self.selectPoints[0])
+            del self.pathSelected
+        self.path = QtGui.QPainterPath()
+        self.pathSelected = QtGui.QPainterPath(self.selectPoints[0])
+        self.path.addRect(self._image.boundingRect())
+        self.path.moveTo(self.selectPoints[0])
+
+        # Create a painter path for the points
+        # Add ellipses/circles for each point selected so far
+        self.pointPainter = QtGui.QPainterPath()
+        maxDim = max(self._image.pixmap().width(), self._image.pixmap().height())
+        for point in self.selectPoints:
+            self.pointPainter.addEllipse(point, int(maxDim / 100), int(maxDim / 100))
+
         for p, current in enumerate(self.selectPoints[1:-1], 1):
             # previous segment
             source = QtCore.QLineF(self.selectPoints[p - 1], current)
@@ -1106,9 +1145,11 @@ class QtImageViewer(QGraphicsView):
 
             if p == 1:
                 self.path.quadTo(cp2, current)
+                self.pathSelected.quadTo(cp2, current)
             else:
                 # use the control point "cp1" set in the *previous* cycle
                 self.path.cubicTo(cp1, cp2, current)
+                self.pathSelected.cubicTo(cp1, cp2, current)
 
             revSource = QtCore.QLineF.fromPolar(target.length() * factor, angle).translated(current)
             cp1 = revSource.p2()
@@ -1116,8 +1157,10 @@ class QtImageViewer(QGraphicsView):
         # the final curve, that joins to the last point
         if len(self.selectPoints) > 1:
             self.path.quadTo(self.selectPoints[-2], self.selectPoints[-1])
+            self.pathSelected.quadTo(self.selectPoints[-2], self.selectPoints[-1])
 
         self.path.quadTo(self.selectPoints[-1], self.selectPoints[-1])
+        self.pathSelected.quadTo(self.selectPoints[-1], self.selectPoints[-1])
 
         '''
         Alternate simpler solution that does not draw any curves
@@ -1132,34 +1175,24 @@ class QtImageViewer(QGraphicsView):
         
         if len(self.selectPainterPaths):
             # Hide previous pen and brush
-
-            self.selectPainterPaths[-1].setPen(
-                QtGui.QPen(
-                    QtGui.QColor(255, 255, 255, 0),
-                    penWidth if penWidth > 0 else 1,
-                    QtCore.Qt.PenStyle.SolidLine,
-                    QtCore.Qt.PenCapStyle.RoundCap,
-                    QtCore.Qt.PenJoinStyle.RoundJoin,
-                )
-            )
-            self.selectPainterPaths[-1].setBrush(QtGui.QColor(255, 0, 0, 0))
+            self.selectPainterPaths[-1].setBrush(QtGui.QColor(10, 100, 100, 0))
+            self.selectPainterPaths[-1].setPen(QPen(Qt.PenStyle.NoPen))
 
         self.pathItem = self.scene.addPath(self.path)
         self.selectPainterPaths.append(self.pathItem)
 
-        self.pathItem.setPen(
-            QtGui.QPen(
-                QtGui.QColor(255, 255, 255, 127),
-                penWidth if penWidth > 0 else 1,
-                QtCore.Qt.PenStyle.DashLine,
-                QtCore.Qt.PenCapStyle.RoundCap,
-                QtCore.Qt.PenJoinStyle.RoundJoin,
-            )
-        )
-        self.pathItem.setBrush(QtGui.QColor(255, 0, 0, 100))
+        # Brush and Pen for the selected region
+        self.pathItem.setBrush(QtGui.QColor(10, 100, 100, 100))
+        self.pathItem.setPen(QPen(Qt.PenStyle.NoPen))
+
+        # Brush and Pen for the selected POINTS
+        self.pathPointItem = self.scene.addPath(self.pointPainter)
+        self.pathPointItem.setBrush(QtGui.QColor(255, 255, 255, 255))
+        self.pathPointItem.setPen(QPen(Qt.PenStyle.NoPen))
+        self.selectPainterPointPaths.append(self.pathPointItem)
 
         if addToHistory:
-            self.addToHistory(self.pixmap(), "Path Select", "Tool", [self.selectPoints.copy(), self.selectPainterPaths.copy()], None)
+            self.addToHistory(self.pixmap(), "Path Select", "Tool", [self.selectPoints.copy(), self.selectPainterPaths.copy(), self.selectPainterPointPaths.copy()], None)
 
     def Luminance(self, pixel):
         return (0.299 * pixel[0] + 0.587 * pixel[1] + 0.114 * pixel[2])

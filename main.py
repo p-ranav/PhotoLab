@@ -262,23 +262,7 @@ class Gui(QtWidgets.QMainWindow):
 
         ##############################################################################################
         ##############################################################################################
-        # Crop Tool
-        ##############################################################################################
-        ##############################################################################################
-
-        self.CropToolButton = QToolButton(self)
-        self.CropToolButton.setText("&Crop")
-        self.CropToolButton.setIcon(QtGui.QIcon("icons/crop.svg"))
-        self.CropToolButton.setToolTip("Basic Crop")
-        self.CropToolButton.setCheckable(True)
-        self.CropToolButton.toggled.connect(self.OnCropToolButton)
-
-        self.CropToolShortcut = QtGui.QShortcut(QKeySequence("Ctrl+Shift+Alt+K"), self)
-        self.CropToolShortcut.activated.connect(lambda: self.CropToolButton.toggle())
-
-        ##############################################################################################
-        ##############################################################################################
-        # Select + Crop Tool
+        # Path Select Tool
         ##############################################################################################
         ##############################################################################################
 
@@ -288,6 +272,22 @@ class Gui(QtWidgets.QMainWindow):
         self.PathSelectToolButton.setIcon(QtGui.QIcon("icons/select_path.svg"))
         self.PathSelectToolButton.setCheckable(True)
         self.PathSelectToolButton.toggled.connect(self.OnPathSelectToolButton)
+
+        ##############################################################################################
+        ##############################################################################################
+        # Crop Tool
+        ##############################################################################################
+        ##############################################################################################
+
+        self.CropToolButton = QToolButton(self)
+        self.CropToolButton.setText("&Crop")
+        self.CropToolButton.setIcon(QtGui.QIcon("icons/crop.svg"))
+        self.CropToolButton.setToolTip("Crop")
+        self.CropToolButton.setCheckable(True)
+        self.CropToolButton.toggled.connect(self.OnCropToolButton)
+
+        self.CropToolShortcut = QtGui.QShortcut(QKeySequence("Ctrl+Shift+Alt+K"), self)
+        self.CropToolShortcut.activated.connect(lambda: self.CropToolButton.toggle())
 
         ##############################################################################################
         ##############################################################################################
@@ -849,7 +849,8 @@ class Gui(QtWidgets.QMainWindow):
         if checked:
             self.image_viewer._isCropping = True
             self.image_viewer.performCrop()
-            self.DisableTool("crop")
+            self.DisableAllTools()
+            # self.DisableTool("crop")
 
     def OnRectSelectToolButton(self, checked):
         self.EnableTool("select_rect") if checked else self.DisableTool("select_rect")
@@ -999,6 +1000,13 @@ class Gui(QtWidgets.QMainWindow):
         setattr(self.image_viewer, value["var"], False)
         if "destructor" in value:
             getattr(self.image_viewer, value["destructor"])()
+
+    def DisableAllTools(self):
+        for _, value in self.tools.items():
+            getattr(self, value["tool"]).setChecked(False)
+            setattr(self.image_viewer, value["var"], False)
+            if "destructor" in value:
+                getattr(self.image_viewer, value["destructor"])()
 
     def updateHistogram(self):
         # Update Histogram

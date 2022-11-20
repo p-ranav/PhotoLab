@@ -255,19 +255,57 @@ class QtImageViewer(QGraphicsView):
             if len(history) > 1:
                 previous = history[-2]
                 latest = history[-1]
-                self.layerHistory[self.currentLayer] = history[:-2]
-                self.setImage(previous["pixmap"], True, previous["note"], previous["type"], previous["value"], previous["object"])
-                # Update GUI object value, e.g., slider setting
-                if previous["value"]:
-                    if previous["type"] == "Slider":
+
+                if latest["type"] == "Tool" and latest["note"] == "Path Select":
+                    # Undo path selection
+                    if self.path:
+                        self.path.clear()
+
+                    for pathItem in self.selectPainterPaths:
+                        if pathItem and pathItem in self.scene.items():
+                            self.scene.removeItem(pathItem)
+
+                    if previous["note"] == "Path Select":
+                        self.selectPoints, self.selectPainterPaths = previous["value"]
+                        if len(self.selectPoints) > 1:
+                            self.buildPath(addToHistory=False)
+
+                            # Remove the last entry from the history
+                            self.layerHistory[self.currentLayer] = history[:-1]
+                        else:
+                            # Remove the last 2 entries from the history
+                            self.layerHistory[self.currentLayer] = history[:-2]
+                            self.selectPoints = []
+                            self.selectPainterPaths = []
+                    else:
+                        # Previous is not a path select
+                        # Remove the last 2 entries from the history
+                        self.layerHistory[self.currentLayer] = history[:-1]
+                        self.selectPoints = []
+                        self.selectPainterPaths = []
+
+                elif previous["type"] == "Slider":
+                    if previous["value"]:
                         slider = getattr(self.parent, previous["object"])
                         slider.setValue(previous["value"])
                         setattr(self.parent, previous["object"], slider)
-                
-                if len(self.layerHistory[self.currentLayer]) == 0:
-                    self.layerHistory[self.currentLayer].append(previous)
 
-                # print("Undo", latest, len(self.layerHistory[self.currentLayer]))
+                        # Remove the last two entries
+                        self.layerHistory[self.currentLayer] = history[:-2]
+                        self.setImage(previous["pixmap"], True, previous["note"], previous["type"], previous["value"], previous["object"])
+                        # Update GUI object value, e.g., slider setting
+                
+                        if len(self.layerHistory[self.currentLayer]) == 0:
+                            self.layerHistory[self.currentLayer].append(previous)
+                else:
+                    # Generic undo
+                    # Remove the last two entries
+                    self.layerHistory[self.currentLayer] = history[:-2]
+                    self.setImage(previous["pixmap"], True, previous["note"], previous["type"], previous["value"], previous["object"])
+                    # Update GUI object value, e.g., slider setting
+                
+                    if len(self.layerHistory[self.currentLayer]) == 0:
+                        self.layerHistory[self.currentLayer].append(previous)
 
     def getCurrentLayerLatestPixmap(self):
         if self.currentLayer in self.layerHistory:
@@ -325,7 +363,6 @@ class QtImageViewer(QGraphicsView):
             "value": valueOfChange,
             "object": objectOfChange
         })
-        # print(explanationOfChange, self.layerHistory[self.currentLayer][-1])
 
     def setImage(self, image, addToHistory=True, explanationOfChange="", typeOfChange=None, valueOfChange=None, objectOfChange=None):
         """ Set the scene's current image pixmap to the input QImage or QPixmap.
@@ -1035,12 +1072,19 @@ class QtImageViewer(QGraphicsView):
             self.exitSelectPath()
             self.updateViewer()
             self.viewChanged.emit()
+            # Clean up history
+            # Remove the "Path Select" entries
+            if self.currentLayer in self.layerHistory:
+                history = self.layerHistory[self.currentLayer]
+                if len(history) > 1:
+                    history = [h for h in history if h["note"] != "Path Select"]
+                    self.layerHistory[self.currentLayer] = history
 
-    def buildPath(self):
+    def buildPath(self, addToHistory=True):
         '''
         https://stackoverflow.com/questions/63016214/drawing-multi-point-curve-with-pyqt5
         '''
-        factor = 0.05
+        factor = 0.25
         cp1 = QPointF(0, 0)
         if self.path in self.scene.items():
             self.scene.removeItem(self.path)
@@ -1113,6 +1157,9 @@ class QtImageViewer(QGraphicsView):
             )
         )
         self.pathItem.setBrush(QtGui.QColor(255, 0, 0, 100))
+
+        if addToHistory:
+            self.addToHistory(self.pixmap(), "Path Select", "Tool", [self.selectPoints.copy(), self.selectPainterPaths.copy()], None)
 
     def Luminance(self, pixel):
         return (0.299 * pixel[0] + 0.587 * pixel[1] + 0.114 * pixel[2])

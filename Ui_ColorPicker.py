@@ -124,7 +124,7 @@ class Ui_ColorPicker(object):
         self.hue.setObjectName("hue")
         self.horizontalLayout_2.addWidget(self.hue_frame)
         self.editfields = QtWidgets.QFrame(ColorPicker)
-        self.editfields.setMinimumSize(QtCore.QSize(120, 200))
+        self.editfields.setMinimumSize(QtCore.QSize(60, 200))
         self.editfields.setMaximumSize(QtCore.QSize(120, 200))
         self.editfields.setStyleSheet("QLabel{\n"
 #"    font-family: Segoe UI;\n"

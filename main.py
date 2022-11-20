@@ -1,3 +1,4 @@
+import PyQt6
 from PyQt6 import QtWidgets, QtCore, QtGui
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
@@ -10,7 +11,6 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtGui import QPixmap
 import sys
-import qdarkstyle
 
 from QImageViewer import QtImageViewer
 from PyQt6.QtGui import QKeySequence
@@ -19,8 +19,6 @@ from QColorPicker import QColorPicker
 import os
 from QFlowLayout import QFlowLayout
 from PIL import Image, ImageEnhance, ImageFilter
-from QProgressBarThread import QProgressBarThread
-from QTool import QTool
 
 def free_gpu_cache():
     import torch
@@ -84,7 +82,6 @@ class Gui(QtWidgets.QMainWindow):
         HistogramDock.setMinimumHeight(220)
         HistogramDock.setMaximumHeight(220)
         HistogramDock.setMaximumWidth(380)
-        self.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, HistogramDock)
 
         content = QtWidgets.QWidget()
         HistogramLayout = QtWidgets.QVBoxLayout(content)
@@ -103,8 +100,6 @@ class Gui(QtWidgets.QMainWindow):
         ColorPickerDock.setMinimumWidth(100)
         ColorPickerDock.setMinimumHeight(100)
         ColorPickerDock.setMaximumHeight(260)
-        ColorPickerDock.setMaximumWidth(380)
-        self.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, ColorPickerDock)
 
         content = QtWidgets.QWidget()
         ColorPickerLayout = QtWidgets.QVBoxLayout(content)
@@ -120,7 +115,6 @@ class Gui(QtWidgets.QMainWindow):
         ##############################################################################################
 
         dock = QtWidgets.QDockWidget("")
-        self.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, dock)
 
         scroll = QtWidgets.QScrollArea()
         dock.setWidget(scroll)
@@ -467,10 +461,19 @@ class Gui(QtWidgets.QMainWindow):
 
         ToolbarContent.setLayout(ToolbarLayout)
         ToolbarDockWidget.setWidget(ToolbarContent)
-
-        self.addDockWidget(QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, ToolbarDockWidget)
-
+        ToolbarDockWidget.setMaximumHeight(180)
         self.currentTool = None
+
+        ##############################################################################################
+        ##############################################################################################
+        # Right Dock
+        ##############################################################################################
+        ##############################################################################################
+
+        self.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, ToolbarDockWidget)
+        self.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, dock)
+        self.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, HistogramDock)
+        self.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, ColorPickerDock)
 
         ##############################################################################################
         ##############################################################################################
@@ -481,23 +484,23 @@ class Gui(QtWidgets.QMainWindow):
         self.initImageViewer()
         self.showMaximized()
 
-        self.progressWidgetLayout = QtWidgets.QVBoxLayout()
-        self.progressWidget = QtWidgets.QWidget()
-        self.progressBarLabel = QtWidgets.QLabel("Foo")
+        #self.progressWidgetLayout = QtWidgets.QVBoxLayout()
+        #self.progressWidget = QtWidgets.QWidget()
+        #self.progressBarLabel = QtWidgets.QLabel("Foo")
 
-        # self.progressBarLayout = QtWidgets.QVBoxLayout()
-        self.progressBar = QtWidgets.QProgressBar()
-        self.progressBar.setRange(0, 100)
-        self.progressBar.setMinimumWidth(300)
-        self.progressBar.setMinimumHeight(50)
-        self.progressWidgetLayout.addWidget(self.progressBarLabel)
-        self.progressWidgetLayout.addWidget(self.progressBar)
+        ## self.progressBarLayout = QtWidgets.QVBoxLayout()
+        #self.progressBar = QtWidgets.QProgressBar()
+        #self.progressBar.setRange(0, 100)
+        #self.progressBar.setMinimumWidth(300)
+        #self.progressBar.setMinimumHeight(50)
+        #self.progressWidgetLayout.addWidget(self.progressBarLabel)
+        #self.progressWidgetLayout.addWidget(self.progressBar)
 
-        self.progressWidget.setLayout(self.progressWidgetLayout)
-        self.progressWidget.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)
+        #self.progressWidget.setLayout(self.progressWidgetLayout)
+        #self.progressWidget.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)
 
-        # Initialize the thread
-        self.progressBarThread = QProgressBarThread()
+        ## Initialize the thread
+        #self.progressBarThread = QProgressBarThread()
 
     @QtCore.pyqtSlot(int, str)
     def updateProgressBar(self, e, label):
@@ -851,7 +854,7 @@ class Gui(QtWidgets.QMainWindow):
 
             from QToolBackgroundRemoval import QToolBackgroundRemoval
             self.currentTool = QToolBackgroundRemoval(None, image, self.onBackgroundRemovalCompleted)
-            self.currentTool.setWindowModality(Qt.ApplicationModal)
+            self.currentTool.setWindowModality(Qt.WindowModality.ApplicationModal)
             self.currentTool.show()
 
     @QtCore.pyqtSlot()
@@ -873,7 +876,7 @@ class Gui(QtWidgets.QMainWindow):
 
             from QToolHumanSegmentation import QToolHumanSegmentation
             self.currentTool = QToolHumanSegmentation(None, image, self.onHumanSegmentationCompleted)
-            self.currentTool.setWindowModality(Qt.ApplicationModal)
+            self.currentTool.setWindowModality(Qt.WindowModality.ApplicationModal)
             self.currentTool.show()
 
     @QtCore.pyqtSlot()
@@ -899,7 +902,7 @@ class Gui(QtWidgets.QMainWindow):
 
             from QToolColorizer import QToolColorizer
             self.currentTool = QToolColorizer(None, image, self.OnColorizerCompleted)
-            self.currentTool.setWindowModality(Qt.ApplicationModal)
+            self.currentTool.setWindowModality(Qt.WindowModality.ApplicationModal)
             self.currentTool.show()
 
     @QtCore.pyqtSlot()
@@ -922,7 +925,7 @@ class Gui(QtWidgets.QMainWindow):
 
             from QToolSuperResolution import QToolSuperResolution
             self.currentTool = QToolSuperResolution(None, image, self.onSuperResolutionCompleted)
-            self.currentTool.setWindowModality(Qt.ApplicationModal)
+            self.currentTool.setWindowModality(Qt.WindowModality.ApplicationModal)
             self.currentTool.show()
 
     @QtCore.pyqtSlot()
@@ -944,7 +947,7 @@ class Gui(QtWidgets.QMainWindow):
 
             from QToolAnimeGANv2 import QToolAnimeGANv2
             self.currentTool = QToolAnimeGANv2(None, image, self.OnAnimeGanV2Completed)
-            self.currentTool.setWindowModality(Qt.ApplicationModal)
+            self.currentTool.setWindowModality(Qt.WindowModality.ApplicationModal)
             self.currentTool.show()
 
     def OnEraserToolButton(self, checked):
@@ -1060,9 +1063,7 @@ class Gui(QtWidgets.QMainWindow):
 def main():
     app = QApplication(sys.argv)
 
-    ## setup stylesheet
-    ## the default system in qdarkstyle uses qtpy environment variable
-    app.setStyleSheet(qdarkstyle.load_stylesheet())
+    # app.setStyleSheet(open("darktheme.stylesheet").read())
 
     gui = Gui()
     sys.exit(app.exec())

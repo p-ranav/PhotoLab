@@ -1000,9 +1000,6 @@ class QtImageViewer(QGraphicsView):
             self.viewChanged.emit()
 
     def performSelect(self, event):
-        # if len(self.selectPoints) > 1:
-        #     self.path.quadTo(self.selectPoints[-2], self.selectPoints[-1])
-
         self.path.quadTo(self.selectPoints[-1], self.selectPoints[-1])
 
         currentImage = self.getCurrentLayerLatestPixmap()
@@ -1015,8 +1012,6 @@ class QtImageViewer(QGraphicsView):
         # To avoid useless transparent background you can crop it like that:
         output = output.copy(self.path.boundingRect().toRect())
         self.setImage(output, True, "Select")
-        ## Crop the original image as well
-        #self.OriginalImage = QPixmap(output)
 
         self.selectPoints = []
 

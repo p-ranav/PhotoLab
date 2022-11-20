@@ -248,6 +248,19 @@ class Gui(QtWidgets.QMainWindow):
 
         ##############################################################################################
         ##############################################################################################
+        # Rectangle Select Tool
+        ##############################################################################################
+        ##############################################################################################
+
+        self.RectSelectToolButton = QToolButton(self)
+        self.RectSelectToolButton.setText("&Rectangle Select")
+        self.RectSelectToolButton.setToolTip("Rectangle Select")
+        self.RectSelectToolButton.setIcon(QtGui.QIcon("icons/select_rect.svg"))
+        self.RectSelectToolButton.setCheckable(True)
+        self.RectSelectToolButton.toggled.connect(self.OnRectSelectToolButton)
+
+        ##############################################################################################
+        ##############################################################################################
         # Crop Tool
         ##############################################################################################
         ##############################################################################################
@@ -403,6 +416,10 @@ class Gui(QtWidgets.QMainWindow):
                 "tool": "FillToolButton",
                 "var": '_isFilling'
             },
+            "select_rect": {
+                "tool": "RectSelectToolButton",
+                "var": '_isSelectingRect'
+            },
             "crop": {
                 "tool": "CropToolButton",
                 "var": '_isCropping'
@@ -450,7 +467,7 @@ class Gui(QtWidgets.QMainWindow):
 
         tool_buttons = [
             self.CursorToolButton, self.ColorPickerToolButton, self.PaintToolButton, self.EraserToolButton, 
-            self.FillToolButton, self.CropToolButton, self.SelectToolButton, self.SpotRemovalToolButton, 
+            self.FillToolButton, self.RectSelectToolButton, self.CropToolButton, self.SelectToolButton, self.SpotRemovalToolButton, 
             self.BlurToolButton, self.BackgroundRemovalToolButton, self.HumanSegmentationToolButton, self.ColorizerToolButton,
             self.SuperResolutionToolButton, self.AnimeGanV2ToolButton
         ]
@@ -828,6 +845,9 @@ class Gui(QtWidgets.QMainWindow):
 
     def OnCropToolButton(self, checked):
         self.EnableTool("crop") if checked else self.DisableTool("crop")
+
+    def OnRectSelectToolButton(self, checked):
+        self.EnableTool("select_rect") if checked else self.DisableTool("select_rect")
 
     def OnSelectToolButton(self, checked):
         self.EnableTool("select") if checked else self.DisableTool("select")

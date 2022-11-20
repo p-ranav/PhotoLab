@@ -41,6 +41,7 @@ class Gui(QtWidgets.QMainWindow):
     def __init__(self, parent=None):
         super(Gui, self).__init__(parent)
         self.setWindowTitle('Photo Editor')
+        self.setMinimumHeight(850)
 
         ##############################################################################################
         ##############################################################################################
@@ -281,12 +282,12 @@ class Gui(QtWidgets.QMainWindow):
         ##############################################################################################
         ##############################################################################################
 
-        self.SelectToolButton = QToolButton(self)
-        self.SelectToolButton.setText("&Select")
-        self.SelectToolButton.setToolTip("Path Crop")
-        self.SelectToolButton.setIcon(QtGui.QIcon("icons/select.svg"))
-        self.SelectToolButton.setCheckable(True)
-        self.SelectToolButton.toggled.connect(self.OnSelectToolButton)
+        self.PathSelectToolButton = QToolButton(self)
+        self.PathSelectToolButton.setText("&Path Select")
+        self.PathSelectToolButton.setToolTip("Path Select")
+        self.PathSelectToolButton.setIcon(QtGui.QIcon("icons/select_path.svg"))
+        self.PathSelectToolButton.setCheckable(True)
+        self.PathSelectToolButton.toggled.connect(self.OnPathSelectToolButton)
 
         ##############################################################################################
         ##############################################################################################
@@ -421,14 +422,14 @@ class Gui(QtWidgets.QMainWindow):
                 "var": '_isSelectingRect',
                 "destructor": 'exitSelectRect'
             },
+            "select_path": {
+                "tool": "PathSelectToolButton",
+                "var": '_isSelectingPath',
+                "destructor": 'exitSelectPath'
+            },
             "crop": {
                 "tool": "CropToolButton",
                 "var": '_isCropping'
-            },
-            "select": {
-                "tool": "SelectToolButton",
-                "var": '_isSelecting',
-                "destructor": 'exitSelect'
             },
             "spot_removal": {
                 "tool": "SpotRemovalToolButton",
@@ -468,7 +469,7 @@ class Gui(QtWidgets.QMainWindow):
 
         tool_buttons = [
             self.CursorToolButton, self.ColorPickerToolButton, self.PaintToolButton, self.EraserToolButton, 
-            self.FillToolButton, self.RectSelectToolButton, self.CropToolButton, self.SelectToolButton, self.SpotRemovalToolButton, 
+            self.FillToolButton, self.RectSelectToolButton, self.PathSelectToolButton, self.CropToolButton, self.SpotRemovalToolButton, 
             self.BlurToolButton, self.BackgroundRemovalToolButton, self.HumanSegmentationToolButton, self.ColorizerToolButton,
             self.SuperResolutionToolButton, self.AnimeGanV2ToolButton
         ]
@@ -853,8 +854,8 @@ class Gui(QtWidgets.QMainWindow):
     def OnRectSelectToolButton(self, checked):
         self.EnableTool("select_rect") if checked else self.DisableTool("select_rect")
 
-    def OnSelectToolButton(self, checked):
-        self.EnableTool("select") if checked else self.DisableTool("select")
+    def OnPathSelectToolButton(self, checked):
+        self.EnableTool("select_path") if checked else self.DisableTool("select_path")
 
     def OnSpotRemovalToolButton(self, checked):
         self.EnableTool("spot_removal") if checked else self.DisableTool("spot_removal")

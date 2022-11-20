@@ -157,7 +157,7 @@ class QtImageViewer(QGraphicsView):
 
         # Flags for active selecting
         # Set to true when using the select tool with toolbar
-        self._isSelecting = False
+        self._isSelectingPath = False
         self.selectPoints = []
         self.path = None
         self.selectPainterPaths = []
@@ -533,7 +533,7 @@ class QtImageViewer(QGraphicsView):
                     return
             else:
                 event.ignore()
-        elif self._isSelecting:
+        elif self._isSelectingPath:
             # TODO: https://stackoverflow.com/questions/63568214/qpainter-delete-previously-drawn-shapes
             #
             #
@@ -872,11 +872,6 @@ class QtImageViewer(QGraphicsView):
             elif event.key() == Qt.Key.Key_BracketRight:
                 self.eraserBrushSize += 3
                 self.renderCursorOverlay(self._lastMousePositionInScene, self.eraserBrushSize)
-        elif self._isSelecting:
-            if event.key() == Qt.Key.Key_Enter or event.key() == Qt.Key.Key_Return:
-                self.performSelect(event)
-            elif event.key() == Qt.Key.Key_Escape:
-                self.exitSelect()
         elif self._isRemovingSpots:
             if event.key() == Qt.Key.Key_BracketLeft:
                 self.spotsBrushSize -= 3
@@ -987,31 +982,30 @@ class QtImageViewer(QGraphicsView):
         self._isSelectingRect = False
         self._isSelectingRectStarted = False
 
-    def performCrop(self):
-        if self._selectRect and self._isSelectingRect and self._isSelectingRectStarted:
-            rect = self._selectRect.toAlignedRect()
-            # Crop the pixmap
-            cropQPixmap = self.getCurrentLayerLatestPixmap().copy(rect)
+    def exitSelectPath(self):
+        self.selectPoints = []
+        if self.path:
+            self.path.clear()
+        for pathItem in self.selectPainterPaths:
+            if pathItem and pathItem in self.scene.items():
+                self.scene.removeItem(pathItem)
+        self.selectPainterPaths = []
+        self.path = None
+        self._isSelectingPath = False
 
-            self.setImage(cropQPixmap, True, "Crop")
-
-            self.exitSelectRect()
-            self.updateViewer()
-            self.viewChanged.emit()
-
-    def performSelect(self, event):
+    def performSelectCrop(self):
         self.path.quadTo(self.selectPoints[-1], self.selectPoints[-1])
 
         currentImage = self.getCurrentLayerLatestPixmap()
-        output = QImage(currentImage.toImage().size(), QImage.Format_ARGB32)
-        output.fill(Qt.transparent)
+        output = QImage(currentImage.toImage().size(), QImage.Format.Format_ARGB32)
+        output.fill(Qt.GlobalColor.transparent)
         painter = QPainter(output)
         painter.setClipPath(self.path)
         painter.drawImage(QPoint(), currentImage.toImage())
         painter.end()
         # To avoid useless transparent background you can crop it like that:
         output = output.copy(self.path.boundingRect().toRect())
-        self.setImage(output, True, "Select")
+        self.setImage(output, True, "PathCrop")
 
         self.selectPoints = []
 
@@ -1025,15 +1019,22 @@ class QtImageViewer(QGraphicsView):
         self.selectPainterPaths = []
         self.path = None
 
-    def exitSelect(self):
-        self.selectPoints = []
-        if self.path:
-            self.path.clear()
-        for pathItem in self.selectPainterPaths:
-            if pathItem and pathItem in self.scene.items():
-                self.scene.removeItem(pathItem)
-        self.selectPainterPaths = []
-        self.path = None
+    def performCrop(self):
+        if self._selectRect and self._isSelectingRect and self._isSelectingRectStarted:
+            rect = self._selectRect.toAlignedRect()
+            # Crop the pixmap
+            cropQPixmap = self.getCurrentLayerLatestPixmap().copy(rect)
+
+            self.setImage(cropQPixmap, True, "RectCrop")
+
+            self.exitSelectRect()
+            self.updateViewer()
+            self.viewChanged.emit()
+        elif self._isSelectingPath:
+            self.performSelectCrop()
+            self.exitSelectPath()
+            self.updateViewer()
+            self.viewChanged.emit()
 
     def buildPath(self):
         '''
@@ -1092,9 +1093,9 @@ class QtImageViewer(QGraphicsView):
                 QtGui.QPen(
                     QtGui.QColor(255, 255, 255, 0),
                     penWidth if penWidth > 0 else 1,
-                    QtCore.Qt.SolidLine,
-                    QtCore.Qt.RoundCap,
-                    QtCore.Qt.RoundJoin,
+                    QtCore.Qt.PenStyle.SolidLine,
+                    QtCore.Qt.PenCapStyle.RoundCap,
+                    QtCore.Qt.PenJoinStyle.RoundJoin,
                 )
             )
             self.selectPainterPaths[-1].setBrush(QtGui.QColor(255, 0, 0, 0))
@@ -1106,9 +1107,9 @@ class QtImageViewer(QGraphicsView):
             QtGui.QPen(
                 QtGui.QColor(255, 255, 255, 127),
                 penWidth if penWidth > 0 else 1,
-                QtCore.Qt.DashLine,
-                QtCore.Qt.RoundCap,
-                QtCore.Qt.RoundJoin,
+                QtCore.Qt.PenStyle.DashLine,
+                QtCore.Qt.PenCapStyle.RoundCap,
+                QtCore.Qt.PenJoinStyle.RoundJoin,
             )
         )
         self.pathItem.setBrush(QtGui.QColor(255, 0, 0, 100))
@@ -1216,7 +1217,7 @@ class QtImageViewer(QGraphicsView):
 
         # First convert to a format that supports transparency
         # https://stackoverflow.com/questions/16910905/set-alpha-channel-per-pixel-in-qimage
-        currentImage = currentImage.convertToFormat(QImage.Format_ARGB32)
+        currentImage = currentImage.convertToFormat(QImage.Format.Format_ARGB32)
 
         scene_pos = self.mapToScene(event.pos())
         x = scene_pos.x()

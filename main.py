@@ -418,7 +418,8 @@ class Gui(QtWidgets.QMainWindow):
             },
             "select_rect": {
                 "tool": "RectSelectToolButton",
-                "var": '_isSelectingRect'
+                "var": '_isSelectingRect',
+                "destructor": 'exitSelectRect'
             },
             "crop": {
                 "tool": "CropToolButton",
@@ -844,7 +845,10 @@ class Gui(QtWidgets.QMainWindow):
         self.EnableTool("fill") if checked else self.DisableTool("fill")
 
     def OnCropToolButton(self, checked):
-        self.EnableTool("crop") if checked else self.DisableTool("crop")
+        if checked:
+            self.image_viewer._isCropping = True
+            self.image_viewer.performCrop()
+            self.DisableTool("crop")
 
     def OnRectSelectToolButton(self, checked):
         self.EnableTool("select_rect") if checked else self.DisableTool("select_rect")

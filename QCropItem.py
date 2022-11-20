@@ -125,10 +125,8 @@ class SizeGripItem(QGraphicsItem):
         painter.drawRect(self._rect)
 
     def doResize(self):
-        print("Resizing", self._rect)
         self.parentItem().setRect(self._rect)
         self.updateHandleItemPositions()
-        print("Done")
 
     def updateHandleItemPositions(self):
         for item in self._handleItems:

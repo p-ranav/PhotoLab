@@ -838,7 +838,7 @@ class Gui(QtWidgets.QMainWindow):
         if output is not None:
             # Save new pixmap
             updatedPixmap = self.ImageToQPixmap(output)
-            self.image_viewer.setImage(updatedPixmap, True, "Anime GAN v2")
+            self.image_viewer.setImage(updatedPixmap, True, "Background Removal")
 
         self.BackgroundRemovalToolButton.setChecked(False)
         del self.currentTool
@@ -856,52 +856,25 @@ class Gui(QtWidgets.QMainWindow):
 
     @QtCore.pyqtSlot()
     def onHumanSegmentationCompleted(self):
-        import torch
-
-        output = self.progressBarThread.taskFunctionOutput
-
-        # Save new pixmap
-        updatedPixmap = self.ImageToQPixmap(output)
-        self.image_viewer.setImage(updatedPixmap, True, "Human Segmentation")
-
-        self.progressBar.setValue(100)
-        self.progressWidget.hide()
-
-        self.progressBarThread.completeSignal.disconnect(self.onHumanSegmentationCompleted)
-        self.progressBarThread.progressSignal.disconnect(self.updateProgressBar)
+        output = self.currentTool.output
+        if output is not None:
+            # Save new pixmap
+            updatedPixmap = self.ImageToQPixmap(output)
+            self.image_viewer.setImage(updatedPixmap, True, "Human Segmentation")
 
         self.HumanSegmentationToolButton.setChecked(False)
-
-        # Clean up CUDA resources
-        if torch.cuda.is_available():
-            free_gpu_cache()
-
-    def performHumanSegmentation(self, progressSignal):
-        from BackgroundRemoval import remove2
-        from FileUtils import merge_files
-
-        if not os.path.exists("models/u2net_human_seg.pth"):
-            merge_files("u2net_human_seg.pth", "models")
-
-        progressSignal.emit(10, "Loading current pixmap")
-        currentPixmap = self.getCurrentLayerLatestPixmap()
-        return remove2(self.QPixmapToImage(currentPixmap), progressSignal, model_name="u2net_human_seg")
+        del self.currentTool
+        self.currentTool = None
 
     def OnHumanSegmentationToolButton(self, checked):
+        if checked and not self.currentTool:
+            currentPixmap = self.getCurrentLayerLatestPixmap()
+            image = self.QPixmapToImage(currentPixmap)
 
-        if checked:
-            self.EnableTool("human_segmentation") if checked else self.DisableTool("human_segmentation")
-
-            self.progressWidget.setWindowTitle("Performing Human Segmentation...")
-            self.progressBarLabel.setText("Starting...")
-            self.progressWidget.show()
-
-            if not self.progressBarThread.isRunning():
-                self.progressBarThread.maxRange = 1000
-                self.progressBarThread.completeSignal.connect(self.onHumanSegmentationCompleted)
-                self.progressBarThread.progressSignal.connect(self.updateProgressBar)
-                self.progressBarThread.taskFunction = self.performHumanSegmentation
-                self.progressBarThread.start()
+            from QToolHumanSegmentation import QToolHumanSegmentation
+            self.currentTool = QToolHumanSegmentation(None, image, self.onHumanSegmentationCompleted)
+            self.currentTool.setWindowModality(Qt.ApplicationModal)
+            self.currentTool.show()
 
     @QtCore.pyqtSlot()
     def OnColorizerCompleted(self):
@@ -936,7 +909,7 @@ class Gui(QtWidgets.QMainWindow):
             # Save new pixmap
             output = Image.fromarray(output)
             updatedPixmap = self.ImageToQPixmap(output)
-            self.image_viewer.setImage(updatedPixmap, True, "Anime GAN v2")
+            self.image_viewer.setImage(updatedPixmap, True, "Super Resolution")
 
         self.AnimeGanV2ToolButton.setChecked(False)
         del self.currentTool

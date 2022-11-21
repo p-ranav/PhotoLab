@@ -23,16 +23,11 @@ from PIL import Image, ImageEnhance, ImageFilter
 def free_gpu_cache():
     import torch
     from GPUtil import showUtilization as gpu_usage
-    from numba import cuda
 
     print("Initial GPU Usage")
     gpu_usage()                             
 
     torch.cuda.empty_cache()
-
-    #cuda.select_device(0)
-    #cuda.close()
-    #cuda.select_device(0)
 
     print("GPU Usage after emptying the cache")
     gpu_usage()

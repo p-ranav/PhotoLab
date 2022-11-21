@@ -1,1 +1,0 @@
-python -m nuitka --include-data-dir=icons=icons --include-data-files=u2net.pth=u2net.pth --include-data-files=u2net_human_seg.pth=u2net_human_seg.pth --follow-imports --onefile --enable-plugin=numpy --enable-plugin=pyqt6 --windows-disable-console main.py

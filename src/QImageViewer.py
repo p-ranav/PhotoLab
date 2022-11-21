@@ -168,7 +168,10 @@ class QtImageViewer(QGraphicsView):
 
         # Flags for spot removal tool
         self._isRemovingSpots = False
-        self.spotsBrushSize = 43
+        self._targetSelected = False
+        self._sourcePos = None
+        self._targetPos = None
+        self.spotsBrushSize = 10
         self.spotRemovalSimilarityThreshold = 10
 
         # Flags for blur tool
@@ -185,7 +188,7 @@ class QtImageViewer(QGraphicsView):
         self._lastMousePositionInScene = QPointF()
 
         # Track mouse position. e.g., For displaying coordinates in a UI.
-        # self.setMouseTracking(True)
+        self.setMouseTracking(True)
 
         # ROIs.
         self.ROIs = []
@@ -645,7 +648,19 @@ class QtImageViewer(QGraphicsView):
                 return
         elif self._isRemovingSpots:
             if (self.regionZoomButton is not None) and (event.button() == self.regionZoomButton):
-                self.removeSpots(event)
+                if not self._targetSelected:
+                    # Target selected
+
+                    # Save the target position
+                    self._targetPos = self.mapToScene(event.pos())
+                    self._targetPos = (int(self._targetPos.x()), int(self._targetPos.y()))
+                    # Set toggle
+                    self._targetSelected = True
+                    # cv2.circle(image_view, center = mouse_pos, radius = brush_size, color = (0, 0, 255), thickness=1)
+                    # self.removeSpots(event)
+                    print("Target selected")
+                else:
+                    self.removeSpots(event)
         elif self._isBlurring:
             if (self.regionZoomButton is not None) and (event.button() == self.regionZoomButton):
                 self.blur(event)
@@ -878,9 +893,16 @@ class QtImageViewer(QGraphicsView):
             pass
             # TODO: Change cursor to a paint bucket?
         elif self._isRemovingSpots:
-            self.renderCursorOverlay(self._lastMousePositionInScene, self.spotsBrushSize)
-            if self._isLeftMouseButtonPressed:
-                self.removeSpots(event)
+            if not self._targetSelected:
+                # Show ROI
+                # Make mouse red
+                self.renderCursorOverlay(self._lastMousePositionInScene, self.spotsBrushSize)
+            else:
+                # A target has been selected
+                # Show blemish fix around the mouse position
+                # If the user is happy with the result, they will click again and the fix
+                # will be placed
+                self.showSpotRemovalResultAtMousePosition(event)
         elif self._isBlurring:
             self.renderCursorOverlay(self._lastMousePositionInScene, self.blurBrushSize)
 
@@ -1251,8 +1273,84 @@ class QtImageViewer(QGraphicsView):
 
     def isSimilar(self, pixel_a, pixel_b, threshold):
         return abs(self.Luminance(pixel_a) - self.Luminance(pixel_b)) < threshold
+    
+    def fixBlemish(self, image, source_pos, target_pos, brush_size):
+        import cv2
+        # Trying to construct a good method to identify a "good" region seems really difficult. 
+        # There are multiple factors to consider, such as how big of a search region to include, how to determine proper textured regions vs incorrect near by regions, how to optimize a search, whether to just search until you find one, or try to optimize, etc. 
+        # So instead, I will build a tool similar to the Photoshop healing brush tool, where the user manually selects a better region. 
+        # Personally, having used photoshop, I actually prefer this method, as it gives the user more control. Plus, since I am more familiar with it, it'll be easier for me to implement.
+
+        image_original = image.copy()
+        # Get ROI
+        clone_source_roi = image_original[source_pos[1]-brush_size:source_pos[1]+brush_size, source_pos[0]-brush_size:source_pos[0]+brush_size]
+        
+        # Get mask
+        clone_source_mask = np.ones(clone_source_roi.shape, clone_source_roi.dtype) * 255
+        # Feather mask
+        clone_source_mask = cv2.GaussianBlur(clone_source_mask, (5,5), 0, 0)
+
+        # Apply clone
+        fix = cv2.seamlessClone(clone_source_roi, image_original, clone_source_mask, target_pos, cv2.NORMAL_CLONE)
+        return fix
+    
+    def showSpotRemovalResultAtMousePosition(self, event):
+        currentPixmap = self.getCurrentLayerLatestPixmap().copy()
+        currentImage = self.QPixmapToImage(currentPixmap)
+        image_view = np.asarray(currentImage)
+        scenePos = self.mapToScene(event.pos())
+        scenePos = (int(scenePos.x()), int(scenePos.y()))
+
+        # Show ROI
+        # Show target
+        image_view = self.fixBlemish(image_view, scenePos, self._targetPos, self.spotsBrushSize)
+        currentImage = Image.fromarray(image_view).convert("RGBA")
+        blemishFixedPixmap = self.ImageToQPixmap(currentImage)
+
+        # Show cursor overlay
+        # pixmapTmp = currentPixmap.copy()
+        cursorPainter = QPainter()
+        cursorPainter.begin(blemishFixedPixmap)
+        cursorPainter.drawEllipse(QPointF(self._targetPos[0], self._targetPos[1]), self.spotsBrushSize, self.spotsBrushSize)
+        cursorPainter.drawEllipse(QPointF(scenePos[0], scenePos[1]), self.spotsBrushSize, self.spotsBrushSize)
+
+        # Draw line
+        # Whole bunch of vector code to draw the proper connecting line
+        t = np.array(self._targetPos)
+        m = np.array(scenePos)
+        if np.linalg.norm(t-m) > self.spotsBrushSize * 2:
+            # Brushes are far enough to draw lines without error
+            # Get vector between points
+            v = t - m
+            # Normalize vector
+            line_vector = v / np.linalg.norm(v)
+            # Subtract off the parts that we don't want 
+            t = t - line_vector * self.spotsBrushSize
+            t = tuple(t.astype(np.int64))
+            m = m + line_vector * self.spotsBrushSize
+            m = tuple(m.astype(np.int64))
+            cursorPainter.drawLine(t[0], t[1], m[0], m[1])
+
+        cursorPainter.end() 
+        self.setImage(blemishFixedPixmap, False, "Cursor Overlay")
 
     def removeSpots(self, event):
+        currentPixmap = self.getCurrentLayerLatestPixmap().copy()
+        currentImage = self.QPixmapToImage(currentPixmap)
+        image_view = np.asarray(currentImage)
+        scenePos = self.mapToScene(event.pos())
+        scenePos = (int(scenePos.x()), int(scenePos.y()))
+
+        image_view = self.fixBlemish(image_view, scenePos, self._targetPos, self.spotsBrushSize)
+        currentImage = Image.fromarray(image_view).convert("RGBA")
+
+        # Update the pixmap
+        updatedPixmap = self.ImageToQPixmap(currentImage)
+        self.setImage(updatedPixmap, True, "Spot Removal")
+        self._targetSelected = False
+        self._targetPos = None
+
+        return
         currentPixmap = self.getCurrentLayerLatestPixmap().copy()
         currentImage = self.QPixmapToImage(currentPixmap)
         pixelAccess = currentImage.load()

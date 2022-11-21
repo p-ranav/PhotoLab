@@ -409,32 +409,43 @@ class QtImageViewer(QGraphicsView):
         # Grid for transparent images
         #########################################################################################
 
-        #original = pixmap.copy()
-        #painter = QPainter(pixmap)
+        def checkerboard(size):
+            from PIL import Image
 
-        #x = y = 0
-        #width = pixmap.width()
-        #height = pixmap.height()
-        #gridSize = 10
+            img = Image.new("RGBA", (size,size), "white") # create a new 15x15 image
+            pixels = img.load() # create the pixel map
 
-        #box = QRect(0, 0, width, height)
-        #painter.fillRect(box, QtGui.QColor(255, 255, 255, 255))
+            black_2 = []
+            for i in range(img.size[0]):
+                if i % 2 == 0:
+                    black_2.append(i)
 
-        #pen = QPen(QtGui.QColor("#a9a9a9"), 1, Qt.PenStyle.SolidLine, Qt.PenCapStyle.FlatCap, Qt.PenJoinStyle.RoundJoin)
-        #painter.setPen(pen)
+            black_1 = [i-1 for i in black_2 if i > 0]
+            if img.size[0] % 2 == 0: # 'that' if statement
+                black_1.append(img.size[0]-1)
 
-        #while y <= height:
-        #    # draw horizontal lines
-        #    painter.drawLine(0, y, width, y)
-        #    y += gridSize
-        #while x <= width:
-        #    # draw vertical lines
-        #    painter.drawLine(x, 0, x, height)
-        #    x += gridSize
 
-        #painter.drawPixmap(QPoint(), original)
+            for i in black_1:
+                for j in range(0, size, 2):
+                    pixels[i,j] = (10, 100, 100, 100)
 
-        #painter.end()
+            for k in black_2:
+                for l in range(1, size, 2):
+                    pixels[k,l] = (10, 100, 100, 100)
+
+            return img
+
+        original = pixmap.copy()
+        painter = QPainter(pixmap)
+
+        width = pixmap.width()
+        height = pixmap.height()
+
+        checkerboard_image = checkerboard(max(width, height))
+        checkerboard_pixmap = self.ImageToQPixmap(checkerboard_image)
+        painter.drawPixmap(QPoint(), checkerboard_pixmap)
+        painter.drawPixmap(QPoint(), original)
+        painter.end()
 
         #########################################################################################
         
@@ -1059,7 +1070,7 @@ class QtImageViewer(QGraphicsView):
         painter.drawImage(QPoint(), currentImage.toImage())
         painter.end()
         # To avoid useless transparent background you can crop it like that:
-        output = output.copy(self.path.boundingRect().toRect())
+        output = output.copy(self.pathSelected.boundingRect().toRect())
         self.setImage(output, True, "PathCrop")
 
         self.selectPoints = []

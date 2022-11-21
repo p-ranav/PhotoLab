@@ -656,9 +656,7 @@ class QtImageViewer(QGraphicsView):
                     self._targetPos = (int(self._targetPos.x()), int(self._targetPos.y()))
                     # Set toggle
                     self._targetSelected = True
-                    # cv2.circle(image_view, center = mouse_pos, radius = brush_size, color = (0, 0, 255), thickness=1)
-                    # self.removeSpots(event)
-                    print("Target selected")
+                    self.showSpotRemovalResultAtMousePosition(event)
                 else:
                     self.removeSpots(event)
         elif self._isBlurring:
@@ -1309,8 +1307,7 @@ class QtImageViewer(QGraphicsView):
 
         # Show cursor overlay
         # pixmapTmp = currentPixmap.copy()
-        cursorPainter = QPainter()
-        cursorPainter.begin(blemishFixedPixmap)
+        cursorPainter = QPainter(blemishFixedPixmap)
         cursorPainter.drawEllipse(QPointF(self._targetPos[0], self._targetPos[1]), self.spotsBrushSize, self.spotsBrushSize)
         cursorPainter.drawEllipse(QPointF(scenePos[0], scenePos[1]), self.spotsBrushSize, self.spotsBrushSize)
 
@@ -1351,69 +1348,6 @@ class QtImageViewer(QGraphicsView):
         self._targetPos = None
 
         return
-        currentPixmap = self.getCurrentLayerLatestPixmap().copy()
-        currentImage = self.QPixmapToImage(currentPixmap)
-        pixelAccess = currentImage.load()
-        scene_pos = self.mapToScene(event.pos())
-        x = scene_pos.x()
-        y = scene_pos.y()
-        w = currentImage.width
-        h = currentImage.height
-
-        brush_size = 2 * self.spotsBrushSize
-
-        # Compute average of pixels in a rectange around current point
-        neighbors = []
-        sample_freq = 50
-        sum = [0, 0, 0]
-        count = 0
-        for i in range(int(x - brush_size), int(x + brush_size), int(brush_size / sample_freq) if int(brush_size / sample_freq) > 0 else 1):
-            for j in range(int(y - brush_size), int(y + brush_size), int(brush_size / sample_freq) if int(brush_size / sample_freq) > 0 else 1):
-                
-                # Keep track of RGB sum (for average calculation)
-                # for each sampled point
-                if i >= 0 and i < w and j >= 0 and j < h:
-                    pr, pg, pb, _ = pixelAccess[i, j]
-                    sum[0] += pr
-                    sum[1] += pg
-                    sum[2] += pb
-                    count += 1
-
-                # Find neighbor pixels in a circle around (x, y)
-                dist = (i - x) * (i - x) + (j - y) * (j - y)
-
-                # Introduce some randomnes in the distance check
-                if dist <= brush_size + random.randint(0, 15) * brush_size + random.randint(0, 15):
-                    # point is inside circle
-
-                    # is point inside the image?
-                    if i >= 0 and i < w and j >= 0 and j < h:
-                        neighbors.append([i, j])
-
-        average = [sum[0] / count, sum[1] / count, sum[2] / count]
-
-        # For each point, update the pixel by averaging
-        for point in neighbors:
-            i, j = point
-            pr, pg, pb, _ = pixelAccess[i, j] # current neighbor pixel inside the brush circle
-            ar, ag, ab = average
-            if not self.isSimilar((ar, ag, ab), (pr, pg, pb), self.spotRemovalSimilarityThreshold):
-                # Update this pixel
-                rr = 0
-                if ar > 150:
-                    rr = random.randint(-3, 3)
-                rg = 0
-                if ag > 150:
-                    rg = random.randint(-3, 3)
-                rb = 0
-                if ab > 150:
-                    rb = random.randint(-3, 3)
-                pixelAccess[i, j] = (int(ar + rr), int(ag + rg), int(ab + rb), 255)
-
-        # Update the pixmap
-        updatedPixmap = self.ImageToQPixmap(currentImage)
-        self.setImage(updatedPixmap, True, "Spot Removal")
-        # self.OriginalImage = updatedPixmap
         
     def blur(self, event):
         brush_size = self.blurBrushSize

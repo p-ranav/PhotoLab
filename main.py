@@ -19,6 +19,7 @@ from QColorPicker import QColorPicker
 import os
 from QFlowLayout import QFlowLayout
 from PIL import Image, ImageEnhance, ImageFilter
+from QProgressBarThread import QProgressBarThread
 
 def free_gpu_cache():
     import torch
@@ -498,23 +499,23 @@ class Gui(QtWidgets.QMainWindow):
         self.initImageViewer()
         self.showMaximized()
 
-        #self.progressWidgetLayout = QtWidgets.QVBoxLayout()
-        #self.progressWidget = QtWidgets.QWidget()
-        #self.progressBarLabel = QtWidgets.QLabel("Foo")
+        self.progressWidgetLayout = QtWidgets.QVBoxLayout()
+        self.progressWidget = QtWidgets.QWidget()
+        self.progressBarLabel = QtWidgets.QLabel("Foo")
 
-        ## self.progressBarLayout = QtWidgets.QVBoxLayout()
-        #self.progressBar = QtWidgets.QProgressBar()
-        #self.progressBar.setRange(0, 100)
-        #self.progressBar.setMinimumWidth(300)
-        #self.progressBar.setMinimumHeight(50)
-        #self.progressWidgetLayout.addWidget(self.progressBarLabel)
-        #self.progressWidgetLayout.addWidget(self.progressBar)
+        # self.progressBarLayout = QtWidgets.QVBoxLayout()
+        self.progressBar = QtWidgets.QProgressBar()
+        self.progressBar.setRange(0, 100)
+        self.progressBar.setMinimumWidth(300)
+        self.progressBar.setMinimumHeight(50)
+        self.progressWidgetLayout.addWidget(self.progressBarLabel)
+        self.progressWidgetLayout.addWidget(self.progressBar)
 
-        #self.progressWidget.setLayout(self.progressWidgetLayout)
-        #self.progressWidget.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)
+        self.progressWidget.setLayout(self.progressWidgetLayout)
+        self.progressWidget.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)
 
-        ## Initialize the thread
-        #self.progressBarThread = QProgressBarThread()
+        # Initialize the thread
+        self.progressBarThread = QProgressBarThread()
 
     @QtCore.pyqtSlot(int, str)
     def updateProgressBar(self, e, label):
@@ -1055,15 +1056,19 @@ class Gui(QtWidgets.QMainWindow):
             self.resetSliderValues()
 
     def OnSave(self):
-        # self.image_viewer.OriginalImage = self.image_viewer.pixmap()
-        self.image_viewer.save()
+        if self.image_viewer._current_filename.lower().endswith(".nef"):
+            # Cannot save pixmap as .NEF (yet)
+            # so open SaveAs menu to export as PNG instead
+            self.OnSaveAs()
+        else:
+            self.image_viewer.save()
    
     def OnSaveAs(self):
         name, ext = os.path.splitext(self.image_viewer._current_filename)
         dialog = QFileDialog()
-        dialog.setDefaultSuffix("jpg")
-        extension_filter = "Default (*.jpg);;BMP (*.bmp);;Icon (*.ico);;JPEG (*.jpeg *.jpg);;PBM (*.pbm);;PGM (*.pgm);;PNG (*.png);;PPM (*.ppm);;TIF (*.tif *.tiff);;WBMP (*.wbmp);;XBM (*.xbm);;XPM (*.xpm)"
-        name = dialog.getSaveFileName(self, 'Save File', name + " EDITED" + ".jpg", extension_filter)
+        dialog.setDefaultSuffix("png")
+        extension_filter = "Default (*.png);;BMP (*.bmp);;Icon (*.ico);;JPEG (*.jpeg *.jpg);;PBM (*.pbm);;PGM (*.pgm);;PNG (*.png);;PPM (*.ppm);;TIF (*.tif *.tiff);;WBMP (*.wbmp);;XBM (*.xbm);;XPM (*.xpm)"
+        name = dialog.getSaveFileName(self, 'Save File', name + ".png", extension_filter)
         # self.image_viewer.OriginalImage = self.image_viewer.pixmap()
         self.image_viewer.save(name[0])
         filename = self.image_viewer._current_filename

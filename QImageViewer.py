@@ -486,6 +486,18 @@ class QtImageViewer(QGraphicsView):
         self.setSceneRect(QRectF(pixmap.rect()))  # Set scene size to image size.
         self.updateViewer()
 
+    # Nikon NEF raw file
+    def read_nef(self, path):
+        import rawpy
+        image = QtGui.QImage()
+        with rawpy.imread(path) as raw:
+            src = raw.postprocess(rawpy.Params(use_camera_wb=True))
+            h, w, ch = src.shape
+            bytesPerLine = ch * w
+            buf = src.data.tobytes() # or bytes(src.data)
+            image = QtGui.QImage(buf, w, h, bytesPerLine, QtGui.QImage.Format.Format_RGB888)
+        return image.copy()
+
     def open(self, filepath=None):
         """ Load an image from file.
         Without any arguments, loadImageFromFile() will pop up a file dialog to choose the image file.
@@ -495,8 +507,13 @@ class QtImageViewer(QGraphicsView):
             filepath, dummy = QFileDialog.getOpenFileName(self, "Open image file.")
         if len(filepath) and os.path.isfile(filepath):
             self._current_filename = filepath
-            image = QImage(filepath)
-            self.setImage(image, True, "Open")
+            
+            if filepath.lower().endswith(".nef"):
+                image = self.read_nef(filepath)
+                self.setImage(image, True, "Open")
+            else:
+                image = QImage(filepath)
+                self.setImage(image, True, "Open")
 
     def save(self, filepath=None):
         path = self._current_filename

@@ -1045,13 +1045,14 @@ class Gui(QtWidgets.QMainWindow):
     def OnOpen(self):
         # Load an image file to be displayed (will popup a file dialog).
         self.image_viewer.open()
-        filename = self.image_viewer._current_filename
-        filename = os.path.basename(filename)
-        self.setWindowTitle(filename)
-        # self.image_viewer.OriginalImage = self.image_viewer.pixmap()
-        self.updateHistogram()
-        self.updateColorPicker()
-        self.resetSliderValues()
+        if self.image_viewer._current_filename != None:
+            filename = self.image_viewer._current_filename
+            filename = os.path.basename(filename)
+            self.setWindowTitle(filename)
+            # self.image_viewer.OriginalImage = self.image_viewer.pixmap()
+            self.updateHistogram()
+            self.updateColorPicker()
+            self.resetSliderValues()
 
     def OnSave(self):
         # self.image_viewer.OriginalImage = self.image_viewer.pixmap()

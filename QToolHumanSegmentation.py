@@ -5,7 +5,7 @@ class QToolHumanSegmentation(QTool):
     def __init__(self, parent=None, toolInput=None, onCompleted=None):
         super(QToolHumanSegmentation, self).__init__(parent, "Human Segmentation", 
                                              "Extract humans from images\nhttps://github.com/nadermx/backgroundremover", 
-                                             "images/HumanSegmentation.jpg", 
+                                             "images/HumanSegmentation_02.jpg", 
                                              self.onRun, toolInput, onCompleted)
 
         self.parent = parent

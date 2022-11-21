@@ -210,6 +210,10 @@ class QtImageViewer(QGraphicsView):
         }
         self.currentLayer = 0
 
+        self.checkerBoard = None
+        self.checkerBoardWidth = 0
+        self.checkerBoardHeight = 0
+
     def sizeHint(self):
         return QSize(900, 600)
 
@@ -409,31 +413,45 @@ class QtImageViewer(QGraphicsView):
         # Grid for transparent images
         #########################################################################################
 
-        def checkerboard(size):
+        # https://stackoverflow.com/a/67073067
+        def checkerboard(w, h):
+            from itertools import chain
+            from math import ceil
             from PIL import Image
 
-            img = Image.new("RGBA", (size,size), "white") # create a new 15x15 image
-            pixels = img.load() # create the pixel map
+            m, n = (int(w / 100), int(h / 100))             # Checker dimension (x, y)
 
-            black_2 = []
-            for i in range(img.size[0]):
-                if i % 2 == 0:
-                    black_2.append(i)
+            if m < 100:
+                m *= 100/m
+                m = int(m)
+                n = int(m * h / w)
+            elif n < 100:
+                n *= 100/n 
+                n = int(n)
+                m = int(n * w / h)
 
-            black_1 = [i-1 for i in black_2 if i > 0]
-            if img.size[0] % 2 == 0: # 'that' if statement
-                black_1.append(img.size[0]-1)
+            c1 = (225, 255, 255, 0)                         # First color
+            c2 = (10, 100, 100, 100)                        # Second color
+            mode = 'L' if isinstance(c1, int) else 'RGBA'   # Mode from first color
 
+            # Generate pixel-wise checker, even x dimension
+            if m % 2 == 0:
+                pixels = [[c1, c2] for i in range(int(m/2))] + \
+                         [[c2, c1] for i in range(int(m/2))]
+                pixels = [list(chain(*pixels)) for i in range(ceil(n/2))]
 
-            for i in black_1:
-                for j in range(0, size, 2):
-                    pixels[i,j] = (10, 100, 100, 100)
+            # Generate pixel-wise checker, odd x dimension
+            else:
+                pixels = [[c1, c2] for i in range(ceil(m*n/2))]
 
-            for k in black_2:
-                for l in range(1, size, 2):
-                    pixels[k,l] = (10, 100, 100, 100)
+            # Generate final Pillow-compatible pixel values
+            pixels = list(chain(*pixels))[:(m*n)]
 
-            return img
+            # Generate Pillow image from pixel values, resize to final image size, and save
+            checker = Image.new(mode, (m, n))
+            checker.putdata(pixels)
+            checker = checker.resize((w, h), Image.NEAREST)
+            return checker
 
         original = pixmap.copy()
         painter = QPainter(pixmap)
@@ -441,9 +459,15 @@ class QtImageViewer(QGraphicsView):
         width = pixmap.width()
         height = pixmap.height()
 
-        checkerboard_image = checkerboard(max(width, height))
-        checkerboard_pixmap = self.ImageToQPixmap(checkerboard_image)
-        painter.drawPixmap(QPoint(), checkerboard_pixmap)
+        if not self.checkerBoard:
+            self.checkerBoard = checkerboard(width, height)
+            self.checkerBoard = self.ImageToQPixmap(self.checkerBoard)
+        else:
+            if self.checkerBoardHeight != height or self.checkerBoardWidth != width:
+                self.checkerBoard = checkerboard(width, height)
+                self.checkerBoard = self.ImageToQPixmap(self.checkerBoard)
+
+        painter.drawPixmap(QPoint(), self.checkerBoard)
         painter.drawPixmap(QPoint(), original)
         painter.end()
 

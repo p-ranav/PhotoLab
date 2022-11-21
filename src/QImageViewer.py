@@ -895,7 +895,7 @@ class QtImageViewer(QGraphicsView):
                 # Show ROI
                 # Make mouse red
                 self.renderCursorOverlay(self._lastMousePositionInScene, self.spotsBrushSize)
-            else:
+            if self._targetSelected:
                 # A target has been selected
                 # Show blemish fix around the mouse position
                 # If the user is happy with the result, they will click again and the fix
@@ -1286,22 +1286,29 @@ class QtImageViewer(QGraphicsView):
         # Get mask
         clone_source_mask = np.ones(clone_source_roi.shape, clone_source_roi.dtype) * 255
         # Feather mask
-        clone_source_mask = cv2.GaussianBlur(clone_source_mask, (5,5), 0, 0)
+        # clone_source_mask = cv2.GaussianBlur(clone_source_mask, (5, 5), 0, 0)
 
         # Apply clone
         fix = cv2.seamlessClone(clone_source_roi, image_original, clone_source_mask, target_pos, cv2.NORMAL_CLONE)
         return fix
     
     def showSpotRemovalResultAtMousePosition(self, event):
+        import cv2
+
         currentPixmap = self.getCurrentLayerLatestPixmap().copy()
         currentImage = self.QPixmapToImage(currentPixmap)
         image_view = np.asarray(currentImage)
         scenePos = self.mapToScene(event.pos())
         scenePos = (int(scenePos.x()), int(scenePos.y()))
 
+        b, g, r, a = cv2.split(image_view)
+        image_view = np.dstack((b, g, r))
+
         # Show ROI
         # Show target
         image_view = self.fixBlemish(image_view, scenePos, self._targetPos, self.spotsBrushSize)
+
+        image_view = np.dstack((image_view, a))
         currentImage = Image.fromarray(image_view).convert("RGBA")
         blemishFixedPixmap = self.ImageToQPixmap(currentImage)
 
@@ -1332,13 +1339,19 @@ class QtImageViewer(QGraphicsView):
         self.setImage(blemishFixedPixmap, False, "Cursor Overlay")
 
     def removeSpots(self, event):
+        import cv2
         currentPixmap = self.getCurrentLayerLatestPixmap().copy()
         currentImage = self.QPixmapToImage(currentPixmap)
         image_view = np.asarray(currentImage)
         scenePos = self.mapToScene(event.pos())
         scenePos = (int(scenePos.x()), int(scenePos.y()))
 
+        b, g, r, a = cv2.split(image_view)
+        image_view = np.dstack((b, g, r))
+
         image_view = self.fixBlemish(image_view, scenePos, self._targetPos, self.spotsBrushSize)
+
+        image_view = np.dstack((image_view, a))
         currentImage = Image.fromarray(image_view).convert("RGBA")
 
         # Update the pixmap

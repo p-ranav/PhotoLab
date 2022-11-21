@@ -329,6 +329,19 @@ class Gui(QtWidgets.QMainWindow):
 
         ##############################################################################################
         ##############################################################################################
+        # Background Removal Tool
+        ##############################################################################################
+        ##############################################################################################
+
+        self.PortraitModeBackgroundBlurToolButton = QToolButton(self)
+        self.PortraitModeBackgroundBlurToolButton.setText("&Portrait Mode")
+        self.PortraitModeBackgroundBlurToolButton.setToolTip("Portrait Mode")
+        self.PortraitModeBackgroundBlurToolButton.setIcon(QtGui.QIcon("icons/portrait_mode.svg"))
+        self.PortraitModeBackgroundBlurToolButton.setCheckable(True)
+        self.PortraitModeBackgroundBlurToolButton.toggled.connect(self.OnPortraitModeBackgroundBlurToolButton)
+
+        ##############################################################################################
+        ##############################################################################################
         # Human Segmentation Tool
         ##############################################################################################
         ##############################################################################################
@@ -456,6 +469,10 @@ class Gui(QtWidgets.QMainWindow):
                 "tool": "HumanSegmentationToolButton",
                 "var": '_isSegmentingHuman'
             },
+            "portrait_mode": {
+                "tool": "PortraitModeBackgroundBlurToolButton",
+                "var": '_isBlurringBackground'
+            },
             "colorizer": {
                 "tool": "ColorizerToolButton",
                 "var": '_isColorizing'
@@ -488,8 +505,8 @@ class Gui(QtWidgets.QMainWindow):
             self.CursorToolButton, self.ColorPickerToolButton, self.PaintToolButton, self.EraserToolButton, 
             self.FillToolButton, self.RectSelectToolButton, self.PathSelectToolButton, self.CropToolButton, self.SpotRemovalToolButton, 
             self.BlurToolButton, self.WhiteBalanceToolButton, 
-            self.BackgroundRemovalToolButton, self.HumanSegmentationToolButton, self.ColorizerToolButton,
-            self.SuperResolutionToolButton, self.AnimeGanV2ToolButton, 
+            self.BackgroundRemovalToolButton, self.HumanSegmentationToolButton, self.PortraitModeBackgroundBlurToolButton, 
+            self.ColorizerToolButton, self.SuperResolutionToolButton, self.AnimeGanV2ToolButton, 
         ]
 
         for button in tool_buttons:
@@ -632,7 +649,7 @@ class Gui(QtWidgets.QMainWindow):
 
     def ApplyGaussianBlur(self, Pixmap, value):
         CurrentImage = self.QPixmapToImage(Pixmap)
-        AdjustedImage = CurrentImage.filter(ImageFilter.GaussianBlur(radius=float(self.GaussianBlurRadius / 100)))
+        AdjustedImage = CurrentImage.filter(ImageFilter.GaussianBlur(radius=value))
         return self.ImageToQPixmap(AdjustedImage)
 
     def UpdateReds(self, Pixmap, value):
@@ -891,6 +908,40 @@ class Gui(QtWidgets.QMainWindow):
 
             from QToolBackgroundRemoval import QToolBackgroundRemoval
             self.currentTool = QToolBackgroundRemoval(None, image, self.onBackgroundRemovalCompleted)
+            self.currentTool.setWindowModality(Qt.WindowModality.ApplicationModal)
+            self.currentTool.show()
+
+    @QtCore.pyqtSlot()
+    def onPortraitModeBackgroundBlurCompleted(self):
+        output = self.currentTool.output
+        if output is not None:
+            # Save new pixmap
+            updatedPixmap = self.ImageToQPixmap(output)
+
+            # Get current pixmap and apply gaussian blur
+            currentPixmap = self.getCurrentLayerLatestPixmap().copy()
+            currentPixmap = self.ApplyGaussianBlur(currentPixmap, 4)
+
+            # Draw foreground on top of the blurred background
+            painter = QtGui.QPainter(currentPixmap)
+            painter.drawPixmap(QtCore.QPoint(), updatedPixmap)
+            painter.end()
+
+            self.image_viewer.setImage(currentPixmap, True, "Portrait Mode Background Blur")
+
+        self.PortraitModeBackgroundBlurToolButton.setChecked(False)
+        del self.currentTool
+        self.currentTool = None
+
+    def OnPortraitModeBackgroundBlurToolButton(self, checked):
+        if checked and not self.currentTool:
+            currentPixmap = self.getCurrentLayerLatestPixmap()
+            image = self.QPixmapToImage(currentPixmap)
+
+            from QToolPortraitMode import QToolPortraitMode
+
+            # Run human segmentation with alpha matting
+            self.currentTool = QToolPortraitMode(None, image, self.onPortraitModeBackgroundBlurCompleted)
             self.currentTool.setWindowModality(Qt.WindowModality.ApplicationModal)
             self.currentTool.show()
 

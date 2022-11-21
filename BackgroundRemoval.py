@@ -82,6 +82,8 @@ def alpha_matting_cutout(
     img_normalized = img / 255.0
     trimap_normalized = trimap / 255.0
 
+    img_normalized = img_normalized[:,:,:3] # remove alpha channel
+
     alpha = estimate_alpha_cf(img_normalized, trimap_normalized)
     foreground = estimate_foreground_ml(img_normalized, alpha)
     cutout = stack_images(foreground, alpha)
@@ -142,7 +144,7 @@ def remove2(
     img,
     progressSignal,
     model_name="u2net",
-    alpha_matting=False,
+    alpha_matting=True,
     alpha_matting_foreground_threshold=240,
     alpha_matting_background_threshold=10,
     alpha_matting_erode_structure_size=10,

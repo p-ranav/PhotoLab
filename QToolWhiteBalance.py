@@ -5,7 +5,7 @@ class QToolWhiteBalance(QTool):
     def __init__(self, parent=None, toolInput=None, onCompleted=None):
         super(QToolWhiteBalance, self).__init__(parent, "White Balance Correction", 
                                              "Correct a camera image that has been improperly white balanced\nhttps://github.com/mahmoudnafifi/WB_sRGB",
-                                             "images/WhiteBalance_04.jpg", 
+                                             "images/WhiteBalance_05.jpg", 
                                              self.onRun, toolInput, onCompleted)
 
         self.parent = parent

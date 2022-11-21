@@ -19,7 +19,7 @@ from QColorPicker import QColorPicker
 import os
 from QFlowLayout import QFlowLayout
 from PIL import Image, ImageEnhance, ImageFilter
-from QProgressBarThread import QProgressBarThread
+from QWorker import QWorker
 
 def free_gpu_cache():
     import torch
@@ -34,6 +34,9 @@ def free_gpu_cache():
     gpu_usage()
 
 class Gui(QtWidgets.QMainWindow):
+
+    sliderChangeSignal = QtCore.pyqtSignal()
+
     def __init__(self, parent=None):
         super(Gui, self).__init__(parent)
         self.setWindowTitle('Photo Editor')
@@ -379,6 +382,20 @@ class Gui(QtWidgets.QMainWindow):
 
         ##############################################################################################
         ##############################################################################################
+        # White Balance Tool
+        # https://github.com/mahmoudnafifi/WB_sRGB
+        ##############################################################################################
+        ##############################################################################################
+
+        self.WhiteBalanceToolButton = QToolButton(self)
+        self.WhiteBalanceToolButton.setText("&White Balance")
+        self.WhiteBalanceToolButton.setToolTip("White Balance")
+        self.WhiteBalanceToolButton.setIcon(QtGui.QIcon("icons/white_balance.svg"))
+        self.WhiteBalanceToolButton.setCheckable(True)
+        self.WhiteBalanceToolButton.toggled.connect(self.OnWhiteBalanceToolButton)
+
+        ##############################################################################################
+        ##############################################################################################
         # Eraser Tool
         ##############################################################################################
         ##############################################################################################
@@ -455,6 +472,10 @@ class Gui(QtWidgets.QMainWindow):
                 "tool": "BlurToolButton",
                 "var": '_isBlurring'
             },
+            "white_balance": {
+                "tool": "WhiteBalanceToolButton",
+                "var": '_isWhiteBalancing'
+            },
         }
 
         ToolbarDockWidget = QtWidgets.QDockWidget("Tools")
@@ -466,8 +487,9 @@ class Gui(QtWidgets.QMainWindow):
         tool_buttons = [
             self.CursorToolButton, self.ColorPickerToolButton, self.PaintToolButton, self.EraserToolButton, 
             self.FillToolButton, self.RectSelectToolButton, self.PathSelectToolButton, self.CropToolButton, self.SpotRemovalToolButton, 
-            self.BlurToolButton, self.BackgroundRemovalToolButton, self.HumanSegmentationToolButton, self.ColorizerToolButton,
-            self.SuperResolutionToolButton, self.AnimeGanV2ToolButton
+            self.BlurToolButton, self.WhiteBalanceToolButton, 
+            self.BackgroundRemovalToolButton, self.HumanSegmentationToolButton, self.ColorizerToolButton,
+            self.SuperResolutionToolButton, self.AnimeGanV2ToolButton, 
         ]
 
         for button in tool_buttons:
@@ -499,23 +521,14 @@ class Gui(QtWidgets.QMainWindow):
         self.initImageViewer()
         self.showMaximized()
 
-        self.progressWidgetLayout = QtWidgets.QVBoxLayout()
-        self.progressWidget = QtWidgets.QWidget()
-        self.progressBarLabel = QtWidgets.QLabel("Foo")
-
-        # self.progressBarLayout = QtWidgets.QVBoxLayout()
-        self.progressBar = QtWidgets.QProgressBar()
-        self.progressBar.setRange(0, 100)
-        self.progressBar.setMinimumWidth(300)
-        self.progressBar.setMinimumHeight(50)
-        self.progressWidgetLayout.addWidget(self.progressBarLabel)
-        self.progressWidgetLayout.addWidget(self.progressBar)
-
-        self.progressWidget.setLayout(self.progressWidgetLayout)
-        self.progressWidget.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)
-
-        # Initialize the thread
-        self.progressBarThread = QProgressBarThread()
+        self.threadpool = QtCore.QThreadPool()
+        self.sliderChangedPixmap = None
+        self.sliderExplanationOfChange = None
+        self.sliderTypeOfChange = None
+        self.sliderValueOfChange = None
+        self.sliderObjectOfChange = None
+        self.sliderChangeSignal.connect(self.onUpdateImageCompleted)
+        self.sliderWorkers = []
 
     @QtCore.pyqtSlot(int, str)
     def updateProgressBar(self, e, label):
@@ -586,7 +599,18 @@ class Gui(QtWidgets.QMainWindow):
         return self.image_viewer.getCurrentLayerLatestPixmap()
 
     def processSliderChange(self, explanationOfChange, typeOfChange, valueOfChange, objectOfChange):
-        self.UpdateImage(explanationOfChange, typeOfChange, valueOfChange, objectOfChange)
+        if len(self.sliderWorkers):
+            pass
+        # Pass the function to execute
+        worker = QWorker(self.performUpdateImage, explanationOfChange, typeOfChange, valueOfChange, objectOfChange)
+        # worker.signals.result.connect(self.print_output)
+        # worker.signals.finished.connect(self.thread_complete)
+        # worker.signals.progress.connect(self.progress_fn)
+
+        # Execute
+        self.threadpool.start(worker)
+        self.sliderWorkers.append(worker)
+        # self.UpdateImage(explanationOfChange, typeOfChange, valueOfChange, objectOfChange)
 
     def QPixmapToImage(self, pixmap):
         width = pixmap.width()
@@ -782,23 +806,12 @@ class Gui(QtWidgets.QMainWindow):
 
     @QtCore.pyqtSlot()
     def onUpdateImageCompleted(self):
-        import torch
-
-        Pixmap, explanationOfChange, typeOfChange, valueOfChange, objectOfChange = self.progressBarThread.taskFunctionOutput
-        if Pixmap:
-            self.image_viewer.setImage(Pixmap, True, explanationOfChange, typeOfChange, valueOfChange, objectOfChange)
+        if self.sliderChangedPixmap:
+            self.image_viewer.setImage(self.sliderChangedPixmap, True, self.sliderExplanationOfChange, 
+                                       self.sliderTypeOfChange, self.sliderValueOfChange, self.sliderObjectOfChange)
             self.UpdateHistogramPlot()
-        self.progressBarThread.taskFunctionArgs = []
 
-        self.progressBarThread.completeSignal.disconnect(self.onUpdateImageCompleted)
-        self.progressBarThread.progressSignal.disconnect(self.updateProgressBar)
-
-        # Clean up CUDA resources
-        if torch.cuda.is_available():
-            free_gpu_cache()
-
-    def performUpdateImage(self, _, args):
-        explanationOfChange, typeOfChange, valueOfChange, objectOfChange = args
+    def performUpdateImage(self, explanationOfChange, typeOfChange, valueOfChange, objectOfChange):
         Pixmap = self.image_viewer.getCurrentLayerLatestPixmapBeforeSliderChange()
         if Pixmap:
             Pixmap = self.UpdateReds(Pixmap, float(self.RedFactor / 100))
@@ -811,23 +824,25 @@ class Gui(QtWidgets.QMainWindow):
             if self.GaussianBlurRadius > 0:
                 Pixmap = self.ApplyGaussianBlur(Pixmap, float(self.GaussianBlurRadius / 100))
 
-        return [Pixmap, explanationOfChange, typeOfChange, valueOfChange, objectOfChange]
+            self.sliderChangedPixmap = Pixmap
+            self.sliderExplanationOfChange = explanationOfChange
+            self.sliderTypeOfChange = typeOfChange
+            self.sliderValueOfChange = valueOfChange
+            self.sliderObjectOfChange = objectOfChange
+            self.sliderChangeSignal.emit()
 
     def UpdateImage(self, explanationOfChange, typeOfChange, valueOfChange, objectOfChange):
-        # if not self.progressBarThread.isRunning():
-        # TODO: Figure out how to correctly do this when lots of slider changes are made 
-        # in quick succession
+        ## if not self.progressBarThread.isRunning():
+        ## TODO: Figure out how to correctly do this when lots of slider changes are made 
+        ## in quick succession
 
-        self.progressBarThread.maxRange = 1000
-        self.progressBarThread.completeSignal.connect(self.onUpdateImageCompleted)
-        self.progressBarThread.progressSignal.connect(self.updateProgressBar)
-        self.progressBarThread.taskFunction = self.performUpdateImage
-        self.progressBarThread.taskFunctionArgs = [
-            explanationOfChange, 
-            typeOfChange, 
-            valueOfChange, 
-            objectOfChange]
-        self.progressBarThread.start()
+        #self.progressBarThread.taskFunctionArgs = [
+        #    explanationOfChange, 
+        #    typeOfChange, 
+        #    valueOfChange, 
+        #    objectOfChange]
+        #self.progressBarThread.start()
+        pass
 
     def OnCursorToolButton(self, checked):
         self.EnableTool("cursor") if checked else self.DisableTool("cursor")
@@ -969,6 +984,28 @@ class Gui(QtWidgets.QMainWindow):
 
             from QToolAnimeGANv2 import QToolAnimeGANv2
             self.currentTool = QToolAnimeGANv2(None, image, self.OnAnimeGanV2Completed)
+            self.currentTool.setWindowModality(Qt.WindowModality.ApplicationModal)
+            self.currentTool.show()
+
+    @QtCore.pyqtSlot()
+    def onWhiteBalanceCompleted(self):
+        output = self.currentTool.output
+        if output is not None:
+            # Save new pixmap
+            updatedPixmap = self.ImageToQPixmap(output)
+            self.image_viewer.setImage(updatedPixmap, True, "White Balance")
+
+        self.WhiteBalanceToolButton.setChecked(False)
+        del self.currentTool
+        self.currentTool = None
+
+    def OnWhiteBalanceToolButton(self, checked):
+        if checked and not self.currentTool:
+            currentPixmap = self.getCurrentLayerLatestPixmap()
+            image = self.QPixmapToImage(currentPixmap)
+
+            from QToolWhiteBalance import QToolWhiteBalance
+            self.currentTool = QToolWhiteBalance(None, image, self.onWhiteBalanceCompleted)
             self.currentTool.setWindowModality(Qt.WindowModality.ApplicationModal)
             self.currentTool.show()
 

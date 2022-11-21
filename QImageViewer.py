@@ -454,7 +454,6 @@ class QtImageViewer(QGraphicsView):
             return checker
 
         original = pixmap.copy()
-        painter = QPainter(pixmap)
 
         width = pixmap.width()
         height = pixmap.height()
@@ -466,10 +465,11 @@ class QtImageViewer(QGraphicsView):
             if self.checkerBoardHeight != height or self.checkerBoardWidth != width:
                 self.checkerBoard = checkerboard(width, height)
                 self.checkerBoard = self.ImageToQPixmap(self.checkerBoard)
-
-        painter.drawPixmap(QPoint(), self.checkerBoard)
-        painter.drawPixmap(QPoint(), original)
-        painter.end()
+        if self.checkerBoard:
+            painter = QPainter(pixmap)
+            painter.drawPixmap(QPoint(), self.checkerBoard)
+            painter.drawPixmap(QPoint(), original)
+            painter.end()
 
         #########################################################################################
         

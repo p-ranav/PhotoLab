@@ -831,13 +831,20 @@ class Gui(QtWidgets.QMainWindow):
     def performUpdateImage(self, explanationOfChange, typeOfChange, valueOfChange, objectOfChange):
         Pixmap = self.image_viewer.getCurrentLayerLatestPixmapBeforeSliderChange()
         if Pixmap:
-            Pixmap = self.UpdateReds(Pixmap, float(self.RedFactor / 100))
-            Pixmap = self.UpdateGreens(Pixmap, float(self.GreenFactor / 100))
-            Pixmap = self.UpdateBlues(Pixmap, float(self.BlueFactor / 100))
-            Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Color, self.Color)
-            Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Brightness, self.Brightness)
-            Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Contrast, self.Contrast)
-            Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Sharpness, self.Sharpness)
+            if self.RedFactor != 100:
+                Pixmap = self.UpdateReds(Pixmap, float(self.RedFactor / 100))
+            if self.GreenFactor != 100:
+                Pixmap = self.UpdateGreens(Pixmap, float(self.GreenFactor / 100))
+            if self.BlueFactor != 100:
+                Pixmap = self.UpdateBlues(Pixmap, float(self.BlueFactor / 100))
+            if self.Color != 100:
+                Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Color, self.Color)
+            if self.Brightness != 100:
+                Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Brightness, self.Brightness)
+            if self.Contrast != 100:
+                Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Contrast, self.Contrast)
+            if self.Sharpness != 100:
+                Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Sharpness, self.Sharpness)
             if self.GaussianBlurRadius > 0:
                 Pixmap = self.ApplyGaussianBlur(Pixmap, float(self.GaussianBlurRadius / 100))
 

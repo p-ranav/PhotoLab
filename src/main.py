@@ -920,21 +920,22 @@ class Gui(QtWidgets.QMainWindow):
 
     @QtCore.pyqtSlot()
     def onPortraitModeBackgroundBlurCompleted(self):
+        backgroundRemoved = self.currentTool.backgroundRemoved
+        backgroundRemoved = self.ImageToQPixmap(backgroundRemoved)
+
         output = self.currentTool.output
         if output is not None:
-            # Save new pixmap
+
+            # Depth prediction output
+            # Blurred based on predicted depth
             updatedPixmap = self.ImageToQPixmap(output)
 
-            # Get current pixmap and apply gaussian blur
-            currentPixmap = self.getCurrentLayerLatestPixmap().copy()
-            currentPixmap = self.ApplyGaussianBlur(currentPixmap, 4)
-
             # Draw foreground on top of the blurred background
-            painter = QtGui.QPainter(currentPixmap)
-            painter.drawPixmap(QtCore.QPoint(), updatedPixmap)
+            painter = QtGui.QPainter(updatedPixmap)
+            painter.drawPixmap(QtCore.QPoint(), backgroundRemoved)
             painter.end()
 
-            self.image_viewer.setImage(currentPixmap, True, "Portrait Mode Background Blur")
+            self.image_viewer.setImage(updatedPixmap, True, "Portrait Mode Background Blur")
 
         self.PortraitModeBackgroundBlurToolButton.setChecked(False)
         del self.currentTool

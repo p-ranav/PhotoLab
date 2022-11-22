@@ -1,6 +1,7 @@
 __pycache__
 .vscode
 models/*.pth
+models/dpt_large-midas-2f21e586.pt
 *.bin
 main.dist
 main.build

@@ -23,10 +23,17 @@ def merge_files(prefix, dirname):
     '''
     files = glob.glob(os.path.join(dirname, prefix) + "*")
     files = list(files)
-    files.sort()
+
+    files_sorted = []
+    for i in range(1, len(files) + 1):
+        part_filename = prefix + ".part" + str(i)
+        if os.path.exists(os.path.join(dirname, part_filename)):
+            files_sorted.append(os.path.join(dirname, part_filename))
+
+    print(files_sorted)
 
     mergedBytes = b''
-    for fn in files:
+    for fn in files_sorted:
         with open(fn, 'rb') as fp:
             mergedBytes += fp.read()
 

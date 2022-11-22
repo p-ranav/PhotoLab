@@ -117,7 +117,7 @@ def remove(
     alpha_matting_foreground_threshold=240,
     alpha_matting_background_threshold=10,
     alpha_matting_erode_structure_size=10,
-    alpha_matting_base_size=1000,
+    alpha_matting_base_size=500,
 ):
     model = get_model(model_name)
     img = Image.open(io.BytesIO(data)).convert("RGB")
@@ -145,7 +145,7 @@ def remove2(
     progressSignal,
     model_name="u2net",
     alpha_matting=True,
-    alpha_matting_foreground_threshold=240,
+    alpha_matting_foreground_threshold=200,
     alpha_matting_background_threshold=10,
     alpha_matting_erode_structure_size=10,
     alpha_matting_base_size=1000,

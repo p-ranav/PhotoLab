@@ -386,7 +386,7 @@ def prepare_AI_model(AI_model, device):
     elif 'dml' in device:
         backend = torch.device('dml')
 
-    model_path = find_by_relative_path(os.path.join('models', AI_model + '.pth'))
+    model_path = os.path.join('models', AI_model + '.pth')
 
     if "x2" in AI_model: upscale_factor = 2
     elif "x4" in AI_model: upscale_factor = 4

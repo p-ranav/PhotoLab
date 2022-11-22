@@ -33,6 +33,17 @@ def free_gpu_cache():
     print("GPU Usage after emptying the cache")
     gpu_usage()
 
+def importLibraries():
+    import torch
+    import numpy as np
+    import cv2
+    import PIL
+    print("Torch version", torch.__version__)
+    print("Torch CUDA available?", "YES" if torch.cuda.is_available() else "NO")
+    print("cv2 version", cv2.__version__)
+    print("numpy version", np.__version__)
+    print("PIl version", PIL.__version__)
+
 class Gui(QtWidgets.QMainWindow):
 
     sliderChangeSignal = QtCore.pyqtSignal()
@@ -290,6 +301,32 @@ class Gui(QtWidgets.QMainWindow):
 
         ##############################################################################################
         ##############################################################################################
+        # Horizontal Stack Tool
+        ##############################################################################################
+        ##############################################################################################
+
+        self.HStackToolButton = QToolButton(self)
+        self.HStackToolButton.setText("&Horizontal Stack")
+        self.HStackToolButton.setIcon(QtGui.QIcon("icons/hstack.svg"))
+        self.HStackToolButton.setToolTip("Horizontal Stack")
+        self.HStackToolButton.setCheckable(True)
+        self.HStackToolButton.toggled.connect(self.OnHStackToolButton)
+
+        ##############################################################################################
+        ##############################################################################################
+        # Vertical Stack Tool
+        ##############################################################################################
+        ##############################################################################################
+
+        self.VStackToolButton = QToolButton(self)
+        self.VStackToolButton.setText("&Vertical Stack")
+        self.VStackToolButton.setIcon(QtGui.QIcon("icons/vstack.svg"))
+        self.VStackToolButton.setToolTip("Vertical Stack")
+        self.VStackToolButton.setCheckable(True)
+        self.VStackToolButton.toggled.connect(self.OnVStackToolButton)
+
+        ##############################################################################################
+        ##############################################################################################
         # Spot Removal Tool
         ##############################################################################################
         ##############################################################################################
@@ -503,8 +540,9 @@ class Gui(QtWidgets.QMainWindow):
 
         tool_buttons = [
             self.CursorToolButton, self.ColorPickerToolButton, self.PaintToolButton, self.EraserToolButton, 
-            self.FillToolButton, self.RectSelectToolButton, self.PathSelectToolButton, self.CropToolButton, self.SpotRemovalToolButton, 
-            self.BlurToolButton, self.WhiteBalanceToolButton, 
+            self.FillToolButton, self.RectSelectToolButton, self.PathSelectToolButton, self.CropToolButton, 
+            self.HStackToolButton, self.VStackToolButton, 
+            self.SpotRemovalToolButton, self.BlurToolButton, self.WhiteBalanceToolButton, 
             self.BackgroundRemovalToolButton, self.HumanSegmentationToolButton, self.PortraitModeBackgroundBlurToolButton, 
             self.ColorizerToolButton, self.SuperResolutionToolButton, self.AnimeGanV2ToolButton, 
         ]
@@ -886,6 +924,52 @@ class Gui(QtWidgets.QMainWindow):
             self.image_viewer.performCrop()
             self.DisableAllTools()
             # self.DisableTool("crop")
+
+    def OnHStackToolButton(self, checked):
+        if checked:
+            if self.image_viewer._current_filename:
+
+                pixmap = self.getCurrentLayerLatestPixmap()
+                first = self.QPixmapToImage(pixmap)
+
+                if pixmap:
+
+                    # Open second image
+                    filepath, _ = QFileDialog.getOpenFileName(self, "Open image file.")
+                    if len(filepath) and os.path.isfile(filepath):
+                        second = Image.open(filepath)
+
+                        # Hstack the two
+                        dst = Image.new('RGBA', (first.width + second.width, first.height))
+                        dst.paste(first, (0, 0))
+                        dst.paste(second, (first.width, 0))
+
+                        # Save result
+                        updatedPixmap = self.ImageToQPixmap(dst)
+                        self.image_viewer.setImage(updatedPixmap, True, "HStack", "Tool", None, None)
+
+    def OnVStackToolButton(self, checked):
+        if checked:
+            if self.image_viewer._current_filename:
+
+                pixmap = self.getCurrentLayerLatestPixmap()
+                first = self.QPixmapToImage(pixmap)
+
+                if pixmap:
+
+                    # Open second image
+                    filepath, _ = QFileDialog.getOpenFileName(self, "Open image file.")
+                    if len(filepath) and os.path.isfile(filepath):
+                        second = Image.open(filepath)
+
+                        # Vstack the two
+                        dst = Image.new('RGBA', (first.width, first.height + second.height))
+                        dst.paste(first, (0, 0))
+                        dst.paste(second, (0, first.height))
+
+                        # Save result
+                        updatedPixmap = self.ImageToQPixmap(dst)
+                        self.image_viewer.setImage(updatedPixmap, True, "HStack", "Tool", None, None)
 
     def OnRectSelectToolButton(self, checked):
         self.EnableTool("select_rect") if checked else self.DisableTool("select_rect")

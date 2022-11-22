@@ -5,7 +5,7 @@ class QToolPortraitMode(QTool):
     def __init__(self, parent=None, toolInput=None, onCompleted=None):
         super(QToolPortraitMode, self).__init__(parent, "Portrait Mode", 
                                              "Narrow the depth of field to draw attention to a subject in the photo", 
-                                             None, # "images/HumanSegmentation_02.jpg", 
+                                             "images/PortraitMode.jpg", 
                                              self.onRun, toolInput, onCompleted)
 
         self.parent = parent

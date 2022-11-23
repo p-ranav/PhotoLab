@@ -353,6 +353,32 @@ class Gui(QtWidgets.QMainWindow):
 
         ##############################################################################################
         ##############################################################################################
+        # Flip Left Right Tool
+        ##############################################################################################
+        ##############################################################################################
+
+        self.FlipLeftRightToolButton = QToolButton(self)
+        self.FlipLeftRightToolButton.setText("&Flip Left-Right")
+        self.FlipLeftRightToolButton.setIcon(QtGui.QIcon("icons/flip_left_right.svg"))
+        self.FlipLeftRightToolButton.setToolTip("Flip Left-Right")
+        self.FlipLeftRightToolButton.setCheckable(True)
+        self.FlipLeftRightToolButton.toggled.connect(self.OnFlipLeftRightToolButton)
+
+        ##############################################################################################
+        ##############################################################################################
+        # Flip Top Bottom Tool
+        ##############################################################################################
+        ##############################################################################################
+
+        self.FlipTopBottomToolButton = QToolButton(self)
+        self.FlipTopBottomToolButton.setText("&Flip Top-Bottom")
+        self.FlipTopBottomToolButton.setIcon(QtGui.QIcon("icons/flip_top_bottom.svg"))
+        self.FlipTopBottomToolButton.setToolTip("Flip Top-Bottom")
+        self.FlipTopBottomToolButton.setCheckable(True)
+        self.FlipTopBottomToolButton.toggled.connect(self.OnFlipTopBottomToolButton)
+
+        ##############################################################################################
+        ##############################################################################################
         # Spot Removal Tool
         ##############################################################################################
         ##############################################################################################
@@ -569,6 +595,7 @@ class Gui(QtWidgets.QMainWindow):
             self.FillToolButton, self.RectSelectToolButton, self.PathSelectToolButton, self.CropToolButton, 
             self.RotateLeftToolButton, self.RotateRightToolButton,
             self.HStackToolButton, self.VStackToolButton, 
+            self.FlipLeftRightToolButton, self.FlipTopBottomToolButton,
             self.SpotRemovalToolButton, self.BlurToolButton, self.WhiteBalanceToolButton, 
             self.BackgroundRemovalToolButton, self.HumanSegmentationToolButton, self.PortraitModeBackgroundBlurToolButton, 
             self.ColorizerToolButton, self.SuperResolutionToolButton, self.AnimeGanV2ToolButton, 
@@ -1079,6 +1106,24 @@ class Gui(QtWidgets.QMainWindow):
                         self.image_viewer.setImage(updatedPixmap, True, "VStack", "Tool", None, None)
 
         self.VStackToolButton.setChecked(False)
+
+    def OnFlipLeftRightToolButton(self, checked):
+        if checked:
+            pixmap = self.getCurrentLayerLatestPixmap()
+            pil = self.QPixmapToImage(pixmap)
+            pil = pil.transpose(Image.FLIP_LEFT_RIGHT)
+            updatedPixmap = self.ImageToQPixmap(pil)
+            self.image_viewer.setImage(updatedPixmap, True, "Flip Left-Right", "Tool", None, None)
+        self.FlipLeftRightToolButton.setChecked(False)
+
+    def OnFlipTopBottomToolButton(self, checked):
+        if checked:
+            pixmap = self.getCurrentLayerLatestPixmap()
+            pil = self.QPixmapToImage(pixmap)
+            pil = pil.transpose(Image.FLIP_TOP_BOTTOM)
+            updatedPixmap = self.ImageToQPixmap(pil)
+            self.image_viewer.setImage(updatedPixmap, True, "Flip Top-Bottom", "Tool", None, None)
+        self.FlipTopBottomToolButton.setChecked(False)
 
     def OnRectSelectToolButton(self, checked):
         self.EnableTool("select_rect") if checked else self.DisableTool("select_rect")

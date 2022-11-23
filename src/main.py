@@ -1,4 +1,4 @@
-import PyQt6
+﻿import PyQt6
 from PyQt6 import QtWidgets, QtCore, QtGui
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
@@ -956,7 +956,7 @@ class Gui(QtWidgets.QMainWindow):
         if checked:
             pixmap = self.getCurrentLayerLatestPixmap()
             pil = self.QPixmapToImage(pixmap)
-            pil = pil.rotate(90)
+            pil = pil.rotate(90, expand=True)
             updatedPixmap = self.ImageToQPixmap(pil)
             self.image_viewer.setImage(updatedPixmap, True, "Rotate Left", "Tool", None, None)
         self.RotateLeftToolButton.setChecked(False)
@@ -965,7 +965,7 @@ class Gui(QtWidgets.QMainWindow):
         if checked:
             pixmap = self.getCurrentLayerLatestPixmap()
             pil = self.QPixmapToImage(pixmap)
-            pil = pil.rotate(-90)
+            pil = pil.rotate(-90, expand=True)
             updatedPixmap = self.ImageToQPixmap(pil)
             self.image_viewer.setImage(updatedPixmap, True, "Rotate Right", "Tool", None, None)
         self.RotateRightToolButton.setChecked(False)
@@ -1211,7 +1211,6 @@ class Gui(QtWidgets.QMainWindow):
         if checked and not self.currentTool:
             currentPixmap = self.getCurrentLayerLatestPixmap()
             image = self.QPixmapToImage(currentPixmap)
-
             from QToolSuperResolution import QToolSuperResolution
             self.currentTool = QToolSuperResolution(None, image, self.onSuperResolutionCompleted)
             self.currentTool.setWindowModality(Qt.WindowModality.ApplicationModal)

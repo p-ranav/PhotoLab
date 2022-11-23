@@ -301,6 +301,32 @@ class Gui(QtWidgets.QMainWindow):
 
         ##############################################################################################
         ##############################################################################################
+        # Rotate Left Tool
+        ##############################################################################################
+        ##############################################################################################
+
+        self.RotateLeftToolButton = QToolButton(self)
+        self.RotateLeftToolButton.setText("&Rotate Left")
+        self.RotateLeftToolButton.setIcon(QtGui.QIcon("icons/rotate_left.svg"))
+        self.RotateLeftToolButton.setToolTip("Rotate Left")
+        self.RotateLeftToolButton.setCheckable(True)
+        self.RotateLeftToolButton.toggled.connect(self.OnRotateLeftToolButton)
+
+        ##############################################################################################
+        ##############################################################################################
+        # Rotate Right Tool
+        ##############################################################################################
+        ##############################################################################################
+
+        self.RotateRightToolButton = QToolButton(self)
+        self.RotateRightToolButton.setText("&Rotate Right")
+        self.RotateRightToolButton.setIcon(QtGui.QIcon("icons/rotate_right.svg"))
+        self.RotateRightToolButton.setToolTip("Rotate Right")
+        self.RotateRightToolButton.setCheckable(True)
+        self.RotateRightToolButton.toggled.connect(self.OnRotateRightToolButton)
+
+        ##############################################################################################
+        ##############################################################################################
         # Horizontal Stack Tool
         ##############################################################################################
         ##############################################################################################
@@ -541,6 +567,7 @@ class Gui(QtWidgets.QMainWindow):
         tool_buttons = [
             self.CursorToolButton, self.ColorPickerToolButton, self.PaintToolButton, self.EraserToolButton, 
             self.FillToolButton, self.RectSelectToolButton, self.PathSelectToolButton, self.CropToolButton, 
+            self.RotateLeftToolButton, self.RotateRightToolButton,
             self.HStackToolButton, self.VStackToolButton, 
             self.SpotRemovalToolButton, self.BlurToolButton, self.WhiteBalanceToolButton, 
             self.BackgroundRemovalToolButton, self.HumanSegmentationToolButton, self.PortraitModeBackgroundBlurToolButton, 
@@ -925,6 +952,24 @@ class Gui(QtWidgets.QMainWindow):
             self.DisableAllTools()
             # self.DisableTool("crop")
 
+    def OnRotateLeftToolButton(self, checked):
+        if checked:
+            pixmap = self.getCurrentLayerLatestPixmap()
+            pil = self.QPixmapToImage(pixmap)
+            pil = pil.rotate(90)
+            updatedPixmap = self.ImageToQPixmap(pil)
+            self.image_viewer.setImage(updatedPixmap, True, "Rotate Left", "Tool", None, None)
+        self.RotateLeftToolButton.setChecked(False)
+
+    def OnRotateRightToolButton(self, checked):
+        if checked:
+            pixmap = self.getCurrentLayerLatestPixmap()
+            pil = self.QPixmapToImage(pixmap)
+            pil = pil.rotate(-90)
+            updatedPixmap = self.ImageToQPixmap(pil)
+            self.image_viewer.setImage(updatedPixmap, True, "Rotate Right", "Tool", None, None)
+        self.RotateRightToolButton.setChecked(False)
+
     def OnHStackToolButton(self, checked):
         if checked:
             if self.image_viewer._current_filename:
@@ -1031,7 +1076,7 @@ class Gui(QtWidgets.QMainWindow):
 
                         # Save result
                         updatedPixmap = self.ImageToQPixmap(dst)
-                        self.image_viewer.setImage(updatedPixmap, True, "HStack", "Tool", None, None)
+                        self.image_viewer.setImage(updatedPixmap, True, "VStack", "Tool", None, None)
 
         self.VStackToolButton.setChecked(False)
 

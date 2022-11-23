@@ -939,6 +939,36 @@ class Gui(QtWidgets.QMainWindow):
                     if len(filepath) and os.path.isfile(filepath):
                         second = Image.open(filepath)
 
+                        if first.width != second.width or first.height != second.height:
+                            # The two images are of different size
+
+                            # If the two images are not the exact same size
+                            # Ask the user if they want to resize the first or second or leave as is
+                            msgBox = QtWidgets.QMessageBox()
+                            msgBox.setText('First Image is ' + str(first.width) + "x" + str(first.height) + '\n'
+                                           'Second Image is ' + str(second.width) + "x" + str(second.height))
+                            msgBox.addButton(QtWidgets.QPushButton('Resize First'), QtWidgets.QMessageBox.ButtonRole.YesRole)
+                            msgBox.addButton(QtWidgets.QPushButton('Resize Second'), QtWidgets.QMessageBox.ButtonRole.NoRole)
+                            msgBox.addButton(QtWidgets.QPushButton("Stack As Is"), QtWidgets.QMessageBox.ButtonRole.DestructiveRole)
+                            msgBox.addButton(QtWidgets.QPushButton('Cancel'), QtWidgets.QMessageBox.ButtonRole.RejectRole)
+                            ret = msgBox.exec()
+
+                            from PIL import ImageOps
+                            
+                            if ret == 3:
+                                # Cancel operation
+                                self.HStackToolButton.setChecked(False)
+                                return
+                            elif ret == 0:
+                                # Resize first to match the size of second
+                                first = ImageOps.contain(first, (second.width, second.height))
+                            elif ret == 1:
+                                # Resize second to match the size of first
+                                second = ImageOps.contain(second, (first.width, first.height))
+                            elif ret == 2:
+                                # Do nothing
+                                pass
+
                         # Hstack the two
                         dst = Image.new('RGBA', (first.width + second.width, first.height))
                         dst.paste(first, (0, 0))
@@ -947,6 +977,8 @@ class Gui(QtWidgets.QMainWindow):
                         # Save result
                         updatedPixmap = self.ImageToQPixmap(dst)
                         self.image_viewer.setImage(updatedPixmap, True, "HStack", "Tool", None, None)
+
+        self.HStackToolButton.setChecked(False)
 
     def OnVStackToolButton(self, checked):
         if checked:
@@ -962,6 +994,36 @@ class Gui(QtWidgets.QMainWindow):
                     if len(filepath) and os.path.isfile(filepath):
                         second = Image.open(filepath)
 
+                        if first.width != second.width or first.height != second.height:
+                            # The two images are of different size
+
+                            # If the two images are not the exact same size
+                            # Ask the user if they want to resize the first or second or leave as is
+                            msgBox = QtWidgets.QMessageBox()
+                            msgBox.setText('First Image is ' + str(first.width) + "x" + str(first.height) + '\n'
+                                           'Second Image is ' + str(second.width) + "x" + str(second.height))
+                            msgBox.addButton(QtWidgets.QPushButton('Resize First'), QtWidgets.QMessageBox.ButtonRole.YesRole)
+                            msgBox.addButton(QtWidgets.QPushButton('Resize Second'), QtWidgets.QMessageBox.ButtonRole.NoRole)
+                            msgBox.addButton(QtWidgets.QPushButton("Stack As Is"), QtWidgets.QMessageBox.ButtonRole.DestructiveRole)
+                            msgBox.addButton(QtWidgets.QPushButton('Cancel'), QtWidgets.QMessageBox.ButtonRole.RejectRole)
+                            ret = msgBox.exec()
+
+                            from PIL import ImageOps
+                            
+                            if ret == 3:
+                                # Cancel operation
+                                self.HStackToolButton.setChecked(False)
+                                return
+                            elif ret == 0:
+                                # Resize first to match the size of second
+                                first = ImageOps.contain(first, (second.width, second.height))
+                            elif ret == 1:
+                                # Resize second to match the size of first
+                                second = ImageOps.contain(second, (first.width, first.height))
+                            elif ret == 2:
+                                # Do nothing
+                                pass
+
                         # Vstack the two
                         dst = Image.new('RGBA', (first.width, first.height + second.height))
                         dst.paste(first, (0, 0))
@@ -970,6 +1032,8 @@ class Gui(QtWidgets.QMainWindow):
                         # Save result
                         updatedPixmap = self.ImageToQPixmap(dst)
                         self.image_viewer.setImage(updatedPixmap, True, "HStack", "Tool", None, None)
+
+        self.VStackToolButton.setChecked(False)
 
     def OnRectSelectToolButton(self, checked):
         self.EnableTool("select_rect") if checked else self.DisableTool("select_rect")

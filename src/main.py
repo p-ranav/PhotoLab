@@ -20,6 +20,7 @@ import os
 from QFlowLayout import QFlowLayout
 from PIL import Image, ImageEnhance, ImageFilter
 from QWorker import QWorker
+import qdarkstyle
 
 def free_gpu_cache():
     import torch
@@ -1430,7 +1431,7 @@ class Gui(QtWidgets.QMainWindow):
 def main():
     app = QApplication(sys.argv)
 
-    # app.setStyleSheet(open("darktheme.stylesheet").read())
+    app.setStyleSheet(qdarkstyle.load_stylesheet(qt_api="PyQt6"))
 
     gui = Gui()
     sys.exit(app.exec())

@@ -419,7 +419,7 @@ class Gui(QtWidgets.QMainWindow):
 
         ##############################################################################################
         ##############################################################################################
-        # Background Removal Tool
+        # Portrait Mode Background Blur Tool
         ##############################################################################################
         ##############################################################################################
 
@@ -429,6 +429,19 @@ class Gui(QtWidgets.QMainWindow):
         self.PortraitModeBackgroundBlurToolButton.setIcon(QtGui.QIcon("icons/portrait_mode.svg"))
         self.PortraitModeBackgroundBlurToolButton.setCheckable(True)
         self.PortraitModeBackgroundBlurToolButton.toggled.connect(self.OnPortraitModeBackgroundBlurToolButton)
+
+        ##############################################################################################
+        ##############################################################################################
+        # Grayscale Background Tool
+        ##############################################################################################
+        ##############################################################################################
+
+        self.GrayscaleBackgroundToolButton = QToolButton(self)
+        self.GrayscaleBackgroundToolButton.setText("&Grayscale Background")
+        self.GrayscaleBackgroundToolButton.setToolTip("Grayscale Background")
+        self.GrayscaleBackgroundToolButton.setIcon(QtGui.QIcon("icons/grayscale_background.svg"))
+        self.GrayscaleBackgroundToolButton.setCheckable(True)
+        self.GrayscaleBackgroundToolButton.toggled.connect(self.OnGrayscaleBackgroundToolButton)
 
         ##############################################################################################
         ##############################################################################################
@@ -551,26 +564,6 @@ class Gui(QtWidgets.QMainWindow):
                 "tool": "SpotRemovalToolButton",
                 "var": '_isRemovingSpots'
             },
-            "background_removal": {
-                "tool": "BackgroundRemovalToolButton",
-                "var": '_isRemovingBackground'
-            },
-            "human_segmentation": {
-                "tool": "HumanSegmentationToolButton",
-                "var": '_isSegmentingHuman'
-            },
-            "portrait_mode": {
-                "tool": "PortraitModeBackgroundBlurToolButton",
-                "var": '_isBlurringBackground'
-            },
-            "colorizer": {
-                "tool": "ColorizerToolButton",
-                "var": '_isColorizing'
-            },
-            "super_resolution": {
-                "tool": "SuperResolutionToolButton",
-                "var": '_isUpscaling'
-            },
             "eraser": {
                 "tool": "EraserToolButton",
                 "var": '_isErasing'
@@ -578,10 +571,6 @@ class Gui(QtWidgets.QMainWindow):
             "blur": {
                 "tool": "BlurToolButton",
                 "var": '_isBlurring'
-            },
-            "white_balance": {
-                "tool": "WhiteBalanceToolButton",
-                "var": '_isWhiteBalancing'
             },
         }
 
@@ -598,7 +587,8 @@ class Gui(QtWidgets.QMainWindow):
             self.HStackToolButton, self.VStackToolButton, 
             self.FlipLeftRightToolButton, self.FlipTopBottomToolButton,
             self.SpotRemovalToolButton, self.BlurToolButton, self.WhiteBalanceToolButton, 
-            self.BackgroundRemovalToolButton, self.HumanSegmentationToolButton, self.PortraitModeBackgroundBlurToolButton, 
+            self.BackgroundRemovalToolButton, self.HumanSegmentationToolButton, self.GrayscaleBackgroundToolButton,
+            self.PortraitModeBackgroundBlurToolButton, 
             self.ColorizerToolButton, self.SuperResolutionToolButton, self.AnimeGanV2ToolButton, 
         ]
 
@@ -1189,6 +1179,44 @@ class Gui(QtWidgets.QMainWindow):
 
             # Run human segmentation with alpha matting
             self.currentTool = QToolPortraitMode(None, image, self.onPortraitModeBackgroundBlurCompleted)
+            self.currentTool.setWindowModality(Qt.WindowModality.ApplicationModal)
+            self.currentTool.show()
+
+    @QtCore.pyqtSlot()
+    def onGrayscaleBackgroundCompleted(self):
+        foreground = self.currentTool.output
+        foregroundPixmap = self.ImageToQPixmap(foreground)
+
+        background = self.QPixmapToImage(self.getCurrentLayerLatestPixmap())
+        if foreground is not None and background is not None:
+
+            # Depth prediction output
+            # Blurred based on predicted depth
+            # Grayscale the background
+            from PIL import ImageOps
+            background = ImageOps.grayscale(background)
+            backgroundPixmap = self.ImageToQPixmap(background)
+
+            # Draw foreground on top of the blurred background
+            painter = QtGui.QPainter(backgroundPixmap)
+            painter.drawPixmap(QtCore.QPoint(), foregroundPixmap)
+            painter.end()
+
+            self.image_viewer.setImage(backgroundPixmap, True, "Grayscale Background")
+
+        self.GrayscaleBackgroundToolButton.setChecked(False)
+        del self.currentTool
+        self.currentTool = None
+
+    def OnGrayscaleBackgroundToolButton(self, checked):
+        if checked and not self.currentTool:
+            currentPixmap = self.getCurrentLayerLatestPixmap()
+            image = self.QPixmapToImage(currentPixmap)
+
+            from QToolGrayscaleBackground import QToolGrayscaleBackground
+
+            # Run human segmentation with alpha matting
+            self.currentTool = QToolGrayscaleBackground(None, image, self.onGrayscaleBackgroundCompleted)
             self.currentTool.setWindowModality(Qt.WindowModality.ApplicationModal)
             self.currentTool.show()
 

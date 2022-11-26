@@ -198,15 +198,6 @@ class Gui(QtWidgets.QMainWindow):
 
         ##############################################################################################
         ##############################################################################################
-        # Toolbar
-        ##############################################################################################
-        ##############################################################################################
-
-        # Using a QToolBar object and a toolbar area
-        ImageToolBar = QToolBar("Toolbar", self)
-
-        ##############################################################################################
-        ##############################################################################################
         # Cursor Tool
         ##############################################################################################
         ##############################################################################################
@@ -637,6 +628,8 @@ class Gui(QtWidgets.QMainWindow):
 
     def initImageViewer(self):
         self.image_viewer = QtImageViewer(self)
+        self.previousImage = None
+        self.previousImageDock = None
 
         # Set viewer's aspect ratio mode.
         # !!! ONLY applies to full image view.
@@ -1407,6 +1400,9 @@ class Gui(QtWidgets.QMainWindow):
 
     def OnOpen(self):
         # Load an image file to be displayed (will popup a file dialog).
+        self.image_viewer.previousImage = None
+        if self.previousImage:
+            self.previousImage.setImage(QPixmap())
         self.image_viewer.open()
         if self.image_viewer._current_filename != None:
             filename = self.image_viewer._current_filename
@@ -1416,6 +1412,33 @@ class Gui(QtWidgets.QMainWindow):
             self.updateHistogram()
             self.updateColorPicker()
             self.resetSliderValues()
+            self.createPreviousImageWidget()
+
+    def createPreviousImageWidget(self):
+        if self.previousImageDock:
+            self.removeDockWidget(self.previousImageDock)
+
+        def multipleOfXClosestToN(x, n):
+            n = n + x/2
+            n = n - (n % x)
+            return int(n)
+
+        # Create previous image dock
+        pixmap = self.getCurrentLayerLatestPixmap()
+        self.previousImageDock = QtWidgets.QDockWidget("Previous")
+        print(pixmap.width())
+        width = multipleOfXClosestToN(pixmap.width() / 1000, 300)
+        height = int(pixmap.height() * width / pixmap.width())
+        self.previousImageDock.setFixedWidth(width)
+        self.previousImageDock.setFixedHeight(height)
+
+        self.previousImage = QtImageViewer(self.previousImageDock)
+        self.previousImage.setImage(pixmap)
+
+        self.previousImageDock.setWidget(self.previousImage)
+            
+        self.addDockWidget(QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.previousImageDock)
+        self.image_viewer.previousImage = self.previousImage
 
     def OnSave(self):
         if self.image_viewer._current_filename.lower().endswith(".nef"):

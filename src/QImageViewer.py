@@ -217,6 +217,9 @@ class QtImageViewer(QGraphicsView):
         self.checkerBoardWidth = 0
         self.checkerBoardHeight = 0
 
+        # Reference to dock widget that shows previous image
+        self.previousImage = None
+
     def sizeHint(self):
         return QSize(900, 600)
 
@@ -410,6 +413,9 @@ class QtImageViewer(QGraphicsView):
 
         # Add to layer history
         if addToHistory:
+            if self.previousImage:
+                currentPixmap = self.getCurrentLayerLatestPixmap()
+                self.previousImage.setImage(currentPixmap)
             self.addToHistory(pixmap.copy(), explanationOfChange, typeOfChange, valueOfChange, objectOfChange)
         
         ##########################################################################################

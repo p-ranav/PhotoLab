@@ -630,6 +630,7 @@ class Gui(QtWidgets.QMainWindow):
         self.image_viewer = QtImageViewer(self)
         self.previousImage = None
         self.previousImageDock = None
+        self.layerListDock = None
 
         # Set viewer's aspect ratio mode.
         # !!! ONLY applies to full image view.
@@ -1403,6 +1404,11 @@ class Gui(QtWidgets.QMainWindow):
         self.image_viewer.previousImage = None
         if self.previousImage:
             self.previousImage.setImage(QPixmap())
+        self.image_viewer.numLayersCreated = 1
+        self.image_viewer.currentLayer = 0
+        self.image_viewer.layerHistory = {
+            0: []
+        }
         self.image_viewer.open()
         if self.image_viewer._current_filename != None:
             filename = self.image_viewer._current_filename
@@ -1413,6 +1419,7 @@ class Gui(QtWidgets.QMainWindow):
             self.updateColorPicker()
             self.resetSliderValues()
             self.createPreviousImageWidget()
+            self.createLayersDock()
 
     def createPreviousImageWidget(self):
         if self.previousImageDock:
@@ -1439,6 +1446,39 @@ class Gui(QtWidgets.QMainWindow):
             
         self.addDockWidget(QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.previousImageDock)
         self.image_viewer.previousImage = self.previousImage
+
+    def onDuplicateLayer(self):
+        self.image_viewer.duplicateCurrentLayer()
+        self.layerListDock.update()
+
+    def createLayersDock(self):
+        if self.layerListDock:
+            self.removeDockWidget(self.layerListDock)
+            self.layerListDock.layerButtons = []
+            self.layerListDock.numLayers = 1
+            self.layerListDock.currentLayer = 0
+
+        from QLayerList import QLayerList
+        self.layerListDock = QLayerList("Layers", self)
+
+        titleBar = QtWidgets.QWidget()
+        titleBarLayout = QtWidgets.QHBoxLayout()
+        titleBar.setLayout(titleBarLayout)
+
+        duplicateLayerButton = QtWidgets.QPushButton()
+        duplicateLayerButton.setIcon(QtGui.QIcon("icons/duplicate.svg"))
+        duplicateLayerButton.setIconSize(QtCore.QSize(30, 30))
+        duplicateLayerButton.setToolTip("Duplicate")
+        duplicateLayerButton.clicked.connect(self.onDuplicateLayer)
+
+        titleBarLabel = QtWidgets.QLabel("Layers")
+        titleBarLayout.addWidget(titleBarLabel)
+        titleBarLayout.setAlignment(titleBarLabel, Qt.AlignmentFlag.AlignLeft)
+        titleBarLayout.addWidget(duplicateLayerButton)
+        titleBarLayout.setAlignment(duplicateLayerButton, Qt.AlignmentFlag.AlignRight)
+        self.layerListDock.setTitleBarWidget(titleBar)
+
+        self.addDockWidget(QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.layerListDock)
 
     def OnSave(self):
         if self.image_viewer._current_filename.lower().endswith(".nef"):

@@ -212,6 +212,7 @@ class QtImageViewer(QGraphicsView):
             0: []    
         }
         self.currentLayer = 0
+        self.numLayersCreated = 1
 
         self.checkerBoard = None
         self.checkerBoardWidth = 0
@@ -382,6 +383,18 @@ class QtImageViewer(QGraphicsView):
             "value": valueOfChange,
             "object": objectOfChange
         })
+
+    def duplicateCurrentLayer(self):
+        if self.currentLayer in self.layerHistory:
+            history = self.layerHistory[self.currentLayer]
+            if len(history) > 0:
+                latest = history[-1]
+
+                # Create a new layer with latest as the starting point
+                self.currentLayer = self.numLayersCreated
+                self.numLayersCreated += 1
+                self.layerHistory[self.currentLayer] = []
+                self.addToHistory(latest["pixmap"], "Open", None, None, None)
 
     def setImage(self, image, addToHistory=True, explanationOfChange="", typeOfChange=None, valueOfChange=None, objectOfChange=None):
         """ Set the scene's current image pixmap to the input QImage or QPixmap.

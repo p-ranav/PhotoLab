@@ -30,6 +30,9 @@ class QLayerList(QtWidgets.QDockWidget):
                 self.currentButton = lb
                 pixmap = self.parent.image_viewer.getCurrentLayerLatestPixmap()
                 self.parent.image_viewer.setImage(pixmap, False)
+                previous = self.parent.image_viewer.getCurrentLayerPreviousPixmap()
+                if previous:
+                    self.parent.previousImage.setImage(previous, False)
             else:
                 lb.setChecked(False)
 

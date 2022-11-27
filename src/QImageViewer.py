@@ -351,6 +351,29 @@ class QtImageViewer(QGraphicsView):
                     return entry["pixmap"]
         return None
 
+    def getCurrentLayerPreviousPixmap(self):
+        if self.currentLayer in self.layerHistory:
+            # Layer name checks out
+            history = self.layerHistory[self.currentLayer]
+            
+            # History structure
+            #
+            # List of objects
+            # {
+            #    "note"   : "Crop",
+            #    "pixmap" : QPixmap(...)
+            #    "type"   : "Tool" or "Slider"
+            #    "value"  : None or some value e.g., 10
+            #    "object" : Relevant object, e.g., brightnessSlider <- will be used to update parent.brightnessSlider.setValue(...)
+            # }
+
+            if len(history) > 1:
+                # Get most recent
+                entry = history[-2]
+                if "pixmap" in entry:
+                    return entry["pixmap"]
+        return None
+
     def getCurrentLayerLatestPixmapBeforeSliderChange(self):
         if self.currentLayer in self.layerHistory:
             # Layer name checks out

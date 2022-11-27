@@ -36,9 +36,89 @@ class QLayerList(QtWidgets.QDockWidget):
             else:
                 lb.setChecked(False)
 
+    def updateScrollView(self):
+        self.scroll = QtWidgets.QScrollArea()
+        self.content = QtWidgets.QWidget()
+
+        self.content.setLayout(self.layout)
+        self.content.setContentsMargins(0, 0, 0, 0)
+
+        #Scroll Area Properties
+        self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
+        self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        # self.scroll.setWidgetResizable(True)
+        self.scroll.setWidget(self.content)
+        self.setWidget(self.scroll)
+
     def onDuplicateLayer(self):
         self.parent.image_viewer.duplicateCurrentLayer()
-        self.parent.layerListDock.update()
+        self.currentButton.setChecked(False)
+
+        self.currentLayer = self.parent.image_viewer.currentLayer
+        pixmap = self.parent.getCurrentLayerLatestPixmap()
+
+        button = QtWidgets.QToolButton(self)
+        button.setText("Layer " + str(self.currentLayer + 1))
+        button.setIcon(QtGui.QIcon(pixmap))
+        button.setIconSize(QtCore.QSize(50, 50))
+        button.setMinimumHeight(50)
+        button.setMinimumWidth(260)
+        button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        button.setCheckable(True)
+        button.setObjectName("Layer " + str(self.currentLayer))
+        button.clicked.connect(self.OnLayerSelect)
+        button.setChecked(True)
+        self.currentButton = button
+
+        self.layerButtons.append(button)
+        self.layout.addWidget(button)
+
+        self.updateScrollView()
+
+    def onDeleteLayer(self):
+        objectName = self.currentButton.objectName()
+
+        if len(self.layerButtons) > 1:
+            # Can only delete second, third, etc. layers
+            # Cannot delete when only 1 layer is open
+
+            layerIndex = objectName.split("Layer ")[-1]
+            layerIndex = int(layerIndex)
+
+            if self.parent.image_viewer.currentLayer == layerIndex:
+                # Current layer matches
+                # Switch to a different layer first
+                layerList = list(reversed(self.layerButtons))
+
+                nextLayer = None
+                newLayerButtons = []
+
+                for i, l in enumerate(layerList):
+                    if l.objectName() == objectName:
+                        # l is the layer being deleted
+                        # The next layer in the layer we want to switch to
+
+                        nextIndex = i + 1 if (i + 1 < len(layerList)) else (i - 1)
+
+                        if nextIndex >= 0:
+                            nextLayer = layerList[nextIndex]
+                            nextLayer.setChecked(True)
+                            nextLayerIndex = int(nextLayer.objectName().split("Layer ")[-1])
+                            
+                            if nextLayerIndex is not None:
+                                self.layout.removeWidget(l)
+                                self.currentButton = nextLayer
+                                self.parent.image_viewer.currentLayer = nextLayerIndex
+                                pixmap = self.parent.image_viewer.getCurrentLayerLatestPixmap()
+                                self.parent.image_viewer.setImage(pixmap, False)
+                                previous = self.parent.image_viewer.getCurrentLayerPreviousPixmap()
+                                if previous:
+                                    self.parent.previousImage.setImage(previous, False)
+                                del self.parent.image_viewer.layerHistory[layerIndex]
+                    else:
+                        newLayerButtons.append(l)
+
+                self.layerButtons = list(reversed(newLayerButtons))
 
     def init(self):
         self.numLayers = self.getNumberOfLayers()
@@ -53,13 +133,28 @@ class QLayerList(QtWidgets.QDockWidget):
             titleBarLayout = QtWidgets.QHBoxLayout()
             titleBarLayout.setContentsMargins(0, 0, 0, 0)
             titleBar.setLayout(titleBarLayout)
+
             duplicateLayerButton = QtWidgets.QPushButton()
             duplicateLayerButton.setIcon(QtGui.QIcon("icons/duplicate.svg"))
             duplicateLayerButton.setIconSize(QtCore.QSize(20, 20))
-            duplicateLayerButton.setToolTip("Duplicate")
+            duplicateLayerButton.setToolTip("Duplicate Layer")
             duplicateLayerButton.clicked.connect(self.onDuplicateLayer)
-            titleBarLayout.addWidget(duplicateLayerButton)
-            titleBarLayout.setAlignment(duplicateLayerButton, Qt.AlignmentFlag.AlignRight)
+
+            deleteLayerButton = QtWidgets.QPushButton()
+            deleteLayerButton.setIcon(QtGui.QIcon("icons/trash.svg"))
+            deleteLayerButton.setIconSize(QtCore.QSize(20, 20))
+            deleteLayerButton.setToolTip("Delete Layer")
+            deleteLayerButton.clicked.connect(self.onDeleteLayer)
+
+            tools = QtWidgets.QWidget()
+            toolsLayout = QtWidgets.QHBoxLayout()
+            tools.setLayout(toolsLayout)
+            toolsLayout.addWidget(deleteLayerButton)
+            toolsLayout.addWidget(duplicateLayerButton)
+
+            titleBarLayout.addWidget(tools)
+            titleBarLayout.setAlignment(tools, Qt.AlignmentFlag.AlignRight)
+
             self.layout.addWidget(titleBar)
 
         for i in range(self.numLayers):
@@ -82,23 +177,9 @@ class QLayerList(QtWidgets.QDockWidget):
             self.layerButtons.append(button)
             self.layout.addWidget(button)
 
-        self.scroll = QtWidgets.QScrollArea()
-        self.content = QtWidgets.QWidget()
-
-        self.content.setLayout(self.layout)
-        self.content.setContentsMargins(0, 0, 0, 0)
-
-        #Scroll Area Properties
-        self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
-        self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        # self.scroll.setWidgetResizable(True)
-        self.scroll.setWidget(self.content)
-        self.setWidget(self.scroll)
+        self.updateScrollView()
 
     def update(self):
-        for button in self.layerButtons:
-            self.layout.removeWidget(button)
-        self.layerButtons = []
         self.init()
 
     def setButtonPixmap(self, pixmap):

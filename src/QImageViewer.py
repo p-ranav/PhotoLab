@@ -416,6 +416,7 @@ class QtImageViewer(QGraphicsView):
 
                 # Create a new layer with latest as the starting point
                 self.currentLayer = self.numLayersCreated
+                print("New Layer index: " + str(self.currentLayer))
                 self.numLayersCreated += 1
                 self.layerHistory[self.currentLayer] = []
                 self.addToHistory(latest["pixmap"], "Open", None, None, None)
@@ -452,7 +453,8 @@ class QtImageViewer(QGraphicsView):
         if addToHistory:
             if self.previousImage:
                 currentPixmap = self.getCurrentLayerLatestPixmap()
-                self.previousImage.setImage(currentPixmap)
+                if currentPixmap:
+                    self.previousImage.setImage(currentPixmap)
             if self.layerListDock:
                 # Update the layer button pixmap to the new 
                 self.layerListDock.setButtonPixmap(pixmap)

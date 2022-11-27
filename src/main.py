@@ -1433,7 +1433,6 @@ class Gui(QtWidgets.QMainWindow):
         # Create previous image dock
         pixmap = self.getCurrentLayerLatestPixmap()
         self.previousImageDock = QtWidgets.QDockWidget("Previous")
-        print(pixmap.width())
         width = multipleOfXClosestToN(pixmap.width() / 1000, 300)
         height = int(pixmap.height() * width / pixmap.width())
         self.previousImageDock.setFixedWidth(width)
@@ -1447,10 +1446,6 @@ class Gui(QtWidgets.QMainWindow):
         self.addDockWidget(QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.previousImageDock)
         self.image_viewer.previousImage = self.previousImage
 
-    def onDuplicateLayer(self):
-        self.image_viewer.duplicateCurrentLayer()
-        self.layerListDock.update()
-
     def createLayersDock(self):
         if self.layerListDock:
             self.removeDockWidget(self.layerListDock)
@@ -1460,24 +1455,6 @@ class Gui(QtWidgets.QMainWindow):
 
         from QLayerList import QLayerList
         self.layerListDock = QLayerList("Layers", self)
-
-        titleBar = QtWidgets.QWidget()
-        titleBarLayout = QtWidgets.QHBoxLayout()
-        titleBar.setLayout(titleBarLayout)
-
-        duplicateLayerButton = QtWidgets.QPushButton()
-        duplicateLayerButton.setIcon(QtGui.QIcon("icons/duplicate.svg"))
-        duplicateLayerButton.setIconSize(QtCore.QSize(30, 30))
-        duplicateLayerButton.setToolTip("Duplicate")
-        duplicateLayerButton.clicked.connect(self.onDuplicateLayer)
-
-        titleBarLabel = QtWidgets.QLabel("Layers")
-        titleBarLayout.addWidget(titleBarLabel)
-        titleBarLayout.setAlignment(titleBarLabel, Qt.AlignmentFlag.AlignLeft)
-        titleBarLayout.addWidget(duplicateLayerButton)
-        titleBarLayout.setAlignment(duplicateLayerButton, Qt.AlignmentFlag.AlignRight)
-        self.layerListDock.setTitleBarWidget(titleBar)
-
         self.addDockWidget(QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.layerListDock)
         self.image_viewer.layerListDock = self.layerListDock
 
@@ -1523,7 +1500,7 @@ class Gui(QtWidgets.QMainWindow):
 def main():
     app = QApplication(sys.argv)
 
-    app.setStyleSheet(qdarkstyle.load_stylesheet(qt_api="PyQt6"))
+    # app.setStyleSheet(qdarkstyle.load_stylesheet(qt_api="PyQt6"))
 
     gui = Gui()
     sys.exit(app.exec())

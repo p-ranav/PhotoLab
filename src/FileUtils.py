@@ -30,8 +30,6 @@ def merge_files(prefix, dirname):
         if os.path.exists(os.path.join(dirname, part_filename)):
             files_sorted.append(os.path.join(dirname, part_filename))
 
-    print(files_sorted)
-
     mergedBytes = b''
     for fn in files_sorted:
         with open(fn, 'rb') as fp:

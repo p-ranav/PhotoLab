@@ -36,10 +36,31 @@ class QLayerList(QtWidgets.QDockWidget):
             else:
                 lb.setChecked(False)
 
+    def onDuplicateLayer(self):
+        self.parent.image_viewer.duplicateCurrentLayer()
+        self.parent.layerListDock.update()
+
     def init(self):
         self.numLayers = self.getNumberOfLayers()
         self.currentLayer = self.parent.image_viewer.currentLayer
         pixmap = self.parent.getCurrentLayerLatestPixmap()
+
+        if not self.currentButton:
+            titleBar = QtWidgets.QWidget()
+            titleBar.setContentsMargins(0, 0, 0, 0)
+            titleBar.setMinimumWidth(260)
+            titleBar.setMinimumHeight(20)
+            titleBarLayout = QtWidgets.QHBoxLayout()
+            titleBarLayout.setContentsMargins(0, 0, 0, 0)
+            titleBar.setLayout(titleBarLayout)
+            duplicateLayerButton = QtWidgets.QPushButton()
+            duplicateLayerButton.setIcon(QtGui.QIcon("icons/duplicate.svg"))
+            duplicateLayerButton.setIconSize(QtCore.QSize(20, 20))
+            duplicateLayerButton.setToolTip("Duplicate")
+            duplicateLayerButton.clicked.connect(self.onDuplicateLayer)
+            titleBarLayout.addWidget(duplicateLayerButton)
+            titleBarLayout.setAlignment(duplicateLayerButton, Qt.AlignmentFlag.AlignRight)
+            self.layout.addWidget(titleBar)
 
         for i in range(self.numLayers):
             button = QtWidgets.QToolButton(self)

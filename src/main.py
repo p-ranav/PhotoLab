@@ -126,7 +126,7 @@ class Gui(QtWidgets.QMainWindow):
         ##############################################################################################
         ##############################################################################################
 
-        dock = QtWidgets.QDockWidget("")
+        dock = QtWidgets.QDockWidget("Adjust")
 
         scroll = QtWidgets.QScrollArea()
         dock.setWidget(scroll)

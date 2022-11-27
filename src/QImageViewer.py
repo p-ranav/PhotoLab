@@ -535,6 +535,8 @@ class QtImageViewer(QGraphicsView):
 
         self.setSceneRect(QRectF(pixmap.rect()))  # Set scene size to image size.
         self.updateViewer()
+        if getattr(self.parent, "UpdateHistogramPlot", None):
+            self.parent.UpdateHistogramPlot()
 
     # Nikon NEF raw file
     def read_nef(self, path):

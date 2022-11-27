@@ -57,7 +57,7 @@ class IColoriTUI(QWidget):
         self.bSave.setToolTip('Save the current result.')
 
         drawPadMenu.addWidget(self.bGray)
-        drawPadMenu.addWidget(self.bLoad)
+        # drawPadMenu.addWidget(self.bLoad)
         drawPadMenu.addWidget(self.bSave)
 
         drawPadLayout.addLayout(drawPadMenu)

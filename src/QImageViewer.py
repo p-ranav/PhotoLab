@@ -220,6 +220,7 @@ class QtImageViewer(QGraphicsView):
 
         # Reference to dock widget that shows previous image
         self.previousImage = None
+        self.layerListDock = None
 
     def sizeHint(self):
         return QSize(900, 600)
@@ -429,6 +430,9 @@ class QtImageViewer(QGraphicsView):
             if self.previousImage:
                 currentPixmap = self.getCurrentLayerLatestPixmap()
                 self.previousImage.setImage(currentPixmap)
+            if self.layerListDock:
+                # Update the layer button pixmap to the new 
+                self.layerListDock.setButtonPixmap(pixmap)
             self.addToHistory(pixmap.copy(), explanationOfChange, typeOfChange, valueOfChange, objectOfChange)
         
         ##########################################################################################

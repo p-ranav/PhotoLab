@@ -9,6 +9,7 @@ class QLayerList(QtWidgets.QDockWidget):
         self.parent = parent
         self.layout = QFlowLayout()
         self.layerButtons = []
+        self.currentButton = None
         self.init()
 
     def getNumberOfLayers(self):
@@ -26,6 +27,9 @@ class QLayerList(QtWidgets.QDockWidget):
         for lb in self.layerButtons:
             if lb.objectName() == button.objectName():
                 lb.setChecked(True)
+                self.currentButton = lb
+                pixmap = self.parent.image_viewer.getCurrentLayerLatestPixmap()
+                self.parent.image_viewer.setImage(pixmap, False)
             else:
                 lb.setChecked(False)
 
@@ -47,6 +51,7 @@ class QLayerList(QtWidgets.QDockWidget):
             button.clicked.connect(self.OnLayerSelect)
             if i == self.currentLayer:
                 button.setChecked(True)
+                self.currentButton = button
             else:
                 button.setChecked(False)
 
@@ -71,3 +76,6 @@ class QLayerList(QtWidgets.QDockWidget):
             self.layout.removeWidget(button)
         self.layerButtons = []
         self.init()
+
+    def setButtonPixmap(self, pixmap):
+        self.currentButton.setIcon(QtGui.QIcon(pixmap))

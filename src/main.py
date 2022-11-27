@@ -1479,6 +1479,7 @@ class Gui(QtWidgets.QMainWindow):
         self.layerListDock.setTitleBarWidget(titleBar)
 
         self.addDockWidget(QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.layerListDock)
+        self.image_viewer.layerListDock = self.layerListDock
 
     def OnSave(self):
         if self.image_viewer._current_filename.lower().endswith(".nef"):

@@ -87,17 +87,17 @@ class Gui(QtWidgets.QMainWindow):
         ##############################################################################################
 
         # Create histogram dock
-        HistogramDock = QtWidgets.QDockWidget("Histogram")
+        self.HistogramDock = QtWidgets.QDockWidget("Histogram")
         # TODO: Change these numbers on dock resize
         # These are just the starting value
-        HistogramDock.setMinimumWidth(100)
-        HistogramDock.setMinimumHeight(220)
-        HistogramDock.setMaximumHeight(220)
-        HistogramDock.setMaximumWidth(380)
+        #self.HistogramDock.setMinimumWidth(100)
+        #self.HistogramDock.setMinimumHeight(220)
+        #self.HistogramDock.setMaximumHeight(220)
+        #self.HistogramDock.setMaximumWidth(380)
 
         content = QtWidgets.QWidget()
         HistogramLayout = QtWidgets.QVBoxLayout(content)
-        HistogramDock.setWidget(content)
+        self.HistogramDock.setWidget(content)
 
         HistogramLayout.addWidget(self.ImageHistogramPlot)
 
@@ -108,14 +108,14 @@ class Gui(QtWidgets.QMainWindow):
         ##############################################################################################
 
         # Create color picker dock
-        ColorPickerDock = QtWidgets.QDockWidget("ColorPicker")
-        ColorPickerDock.setMinimumWidth(100)
-        ColorPickerDock.setMinimumHeight(100)
-        ColorPickerDock.setMaximumHeight(260)
+        self.ColorPickerDock = QtWidgets.QDockWidget("ColorPicker")
+        #ColorPickerDock.setMinimumWidth(100)
+        #ColorPickerDock.setMinimumHeight(100)
+        #ColorPickerDock.setMaximumHeight(260)
 
         content = QtWidgets.QWidget()
         ColorPickerLayout = QtWidgets.QVBoxLayout(content)
-        ColorPickerDock.setWidget(content)
+        self.ColorPickerDock.setWidget(content)
 
         self.color_picker = QColorPicker(content, rgb=(173, 36, 207))
         ColorPickerLayout.addWidget(self.color_picker)
@@ -126,10 +126,10 @@ class Gui(QtWidgets.QMainWindow):
         ##############################################################################################
         ##############################################################################################
 
-        dock = QtWidgets.QDockWidget("Adjust")
+        self.SlidersDock = QtWidgets.QDockWidget("Adjust")
 
         scroll = QtWidgets.QScrollArea()
-        dock.setWidget(scroll)
+        self.SlidersDock.setWidget(scroll)
         content = QtWidgets.QWidget()
         scroll.setWidget(content)
         scroll.setWidgetResizable(True)
@@ -565,8 +565,8 @@ class Gui(QtWidgets.QMainWindow):
             },
         }
 
-        ToolbarDockWidget = QtWidgets.QDockWidget("Tools")
-        ToolbarDockWidget.setMinimumWidth(145)
+        self.ToolbarDockWidget = QtWidgets.QDockWidget("Tools")
+        # self.ToolbarDockWidget.setMinimumWidth(145)
         ToolbarContent = QtWidgets.QWidget()
         ToolbarLayout = QFlowLayout(ToolbarContent)
         ToolbarLayout.setSpacing(0)
@@ -588,8 +588,8 @@ class Gui(QtWidgets.QMainWindow):
             ToolbarLayout.addWidget(button)
 
         ToolbarContent.setLayout(ToolbarLayout)
-        ToolbarDockWidget.setWidget(ToolbarContent)
-        ToolbarDockWidget.setMaximumHeight(180)
+        self.ToolbarDockWidget.setWidget(ToolbarContent)
+        # self.ToolbarDockWidget.setMaximumHeight(180)
         self.currentTool = None
 
         ##############################################################################################
@@ -598,10 +598,10 @@ class Gui(QtWidgets.QMainWindow):
         ##############################################################################################
         ##############################################################################################
 
-        self.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, ToolbarDockWidget)
-        self.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, dock)
-        self.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, HistogramDock)
-        self.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, ColorPickerDock)
+        self.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, self.ToolbarDockWidget)
+        self.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, self.SlidersDock)
+        self.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, self.HistogramDock)
+        self.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, self.ColorPickerDock)
 
         ##############################################################################################
         ##############################################################################################
@@ -620,6 +620,12 @@ class Gui(QtWidgets.QMainWindow):
         self.sliderObjectOfChange = None
         self.sliderChangeSignal.connect(self.onUpdateImageCompleted)
         self.sliderWorkers = []
+
+        self.resizeDockWidgets()
+
+    def resizeDockWidgets(self):
+        self.resizeDocks([self.HistogramDock], [380], Qt.Orientation.Horizontal)
+        self.resizeDocks([self.ToolbarDockWidget, self.SlidersDock, self.HistogramDock, self.ColorPickerDock], [200, 400, 280, 230], Qt.Orientation.Vertical)
 
     @QtCore.pyqtSlot(int, str)
     def updateProgressBar(self, e, label):

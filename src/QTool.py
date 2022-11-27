@@ -96,8 +96,10 @@ class QTool(QtWidgets.QWidget):
             self.progressBarThread.progressSignal.connect(self.updateProgressBar)
             self.progressBarThread.completeSignal.connect(self.stop)
             self.progressBarThread.taskFunction = self.onRun
-            if self.toolInput:
+            if self.toolInput is not None:
                 self.progressBarThread.taskFunctionArgs = [self.toolInput]
+            else:
+                self.progressBarThread.taskFunctionArgs = []
             self.progressBarThread.start()
 
     def stop(self):

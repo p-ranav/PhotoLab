@@ -1,79 +1,73 @@
+#def get_args():
+#    parser = argparse.ArgumentParser('Colorization UI', add_help=False)
+#    # Directories
+#    parser.add_argument('--model_path', type=str, default='path/to/checkpoints', help='checkpoint path of model')
+#    parser.add_argument('--target_image', default='path/to/image', type=str, help='validation dataset path')
+#    parser.add_argument('--device', default='cpu', help='device to use for testing')
+
+#    # Dataset parameters
+#    parser.add_argument('--input_size', default=224, type=int, help='images input size for backbone')
+
+#    # Model parameters
+#    parser.add_argument('--model', default='icolorit_base_4ch_patch16_224', type=str, help='Name of model to vis')
+#    parser.add_argument('--drop_path', type=float, default=0.0, help='Drop path rate (default: 0.1)')
+#    parser.add_argument('--use_rpb', action='store_true', help='relative positional bias')
+#    parser.add_argument('--no_use_rpb', action='store_false', dest='use_rpb')
+#    parser.set_defaults(use_rpb=True)
+#    parser.add_argument('--avg_hint', action='store_true', help='avg hint')
+#    parser.add_argument('--no_avg_hint', action='store_false', dest='avg_hint')
+#    parser.set_defaults(avg_hint=True)
+#    parser.add_argument('--head_mode', type=str, default='cnn', help='head_mode')
+#    parser.add_argument('--mask_cent', action='store_true', help='mask_cent')
+
+#    args = parser.parse_args()
+
+#    return args
+
+
 from QTool import QTool
+import os
 
 class QToolColorizer(QTool):
     def __init__(self, parent=None, toolInput=None, onCompleted=None):
-        super(QToolColorizer, self).__init__(parent, "Image Colorization", 
-                                             "Colorize black and white images with learned deep priors\nhttps://github.com/richzhang/colorization", 
-                                             "images/Colorizer_04.jpg", self.onRun, toolInput, onCompleted)
-
+        super(QToolColorizer, self).__init__(parent, "Interactive Colorization", 
+                                             "Colorize image interactively by leveraging a vision transformer",
+                                             "images/Colorizer.jpg", 
+                                             self.onRun, toolInput, onCompleted)
         self.parent = parent
         self.output = None
 
-    def onRun(self, progressSignal, args):
-        image = args[0]
-
-        import ColorizerUtil
-        import ColorizerSiggraph17Model
+    def onRun(self, progressSignal):
+        import ColorizerMain
+        import ColorizerModeling
+        from timm.models import create_model
         import torch
-        import cv2
-        import numpy as np
-        from PIL import Image
+        import os
+        from FileUtils import merge_files
 
-        progressSignal.emit(10, "Checking CUDA capability")
-        useGpu = torch.cuda.is_available()
-        device = "cuda" if useGpu else "cpu"
+        # Merge NN model files into pth file if not exists
+        if not os.path.exists("models/icolorit_base_4ch_patch16_224.pth"):
+            merge_files("icolorit_base_4ch_patch16_224.pth", "models")
 
-        i = 0
-        max_attempts = 2 # once on CUDA, once on CPU
+        def get_model():
+            model = create_model(
+                "icolorit_base_4ch_patch16_224",
+                pretrained=False,
+                drop_path_rate=0.0,
+                drop_block_rate=None,
+                use_rpb=True,
+                avg_hint=True,
+                head_mode="cnn",
+                mask_cent=False,
+            )
 
-        while i < max_attempts:
-            try:
-                progressSignal.emit(20, "Loading colorizer model")
+            return model
 
-                # Load colorizer
-                colorizer_siggraph17 = ColorizerSiggraph17Model.siggraph17(pretrained=True).eval()
-                if(useGpu):
-                    colorizer_siggraph17.cuda()
+        device = "cuda" if torch.cuda.is_available() else "cpu"
 
-                progressSignal.emit(30, "Loading current pixmap")
-
-                # Preprocess
-                image = ColorizerUtil.load_img(image)
-                b, g, r, a = cv2.split(image)
-
-                progressSignal.emit(40, "Preprocessing image")
-
-                (tens_l_orig, tens_l_rs) = ColorizerUtil.preprocess_img(np.dstack((b, g, r)), HW=(256,256))
-                if(useGpu):
-                    tens_l_rs = tens_l_rs.cuda()
-
-                progressSignal.emit(50, "Running colorizer on " + "cuda" if useGpu else "cpu")
-
-                # colorizer outputs 256x256 ab map
-                # resize and concatenate to original L channel
-                img_bw = ColorizerUtil.postprocess_tens(tens_l_orig, torch.cat((0*tens_l_orig,0*tens_l_orig),dim=1))
-                output = ColorizerUtil.postprocess_tens(tens_l_orig, colorizer_siggraph17(tens_l_rs).cpu())
-
-                del image
-                del tens_l_rs
-                del tens_l_orig
-                del img_bw
-
-                progressSignal.emit(80, "Postprocessing output")
-
-                # Fix RGB channels and recover the alpha channel that was lost earlier
-                self.output = np.dstack((output * 255, a)).astype(np.uint8)
-
-                progressSignal.emit(90, "Done")
-
-                break
-
-            except RuntimeError as e:
-                i += 1
-                print(e)
-                if device == "cuda":
-                    # Retry on CPU
-                    progressSignal.emit(10, "Failed to run on CUDA device. Retrying on CPU")
-                    device = "cpu"
-                    torch.cuda.empty_cache()
-                    print("Retrying on CPU")
+        model = get_model()
+        model.to(device)
+        checkpoint = torch.load(os.path.join("models", "icolorit_base_4ch_patch16_224.pth"), map_location=torch.device(device))
+        model.load_state_dict(checkpoint['model'], strict=False)
+        model.eval()
+        self.output = model

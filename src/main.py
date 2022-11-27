@@ -1248,23 +1248,53 @@ class Gui(QtWidgets.QMainWindow):
             output = self.currentTool.output
             if output is not None:
 
-                # Save new pixmap
-                from PIL import Image
-                output = Image.fromarray(output)
-                updatedPixmap = self.ImageToQPixmap(output)
-                self.image_viewer.setImage(updatedPixmap, True, "Colorizer")
+                # Show Interactive Colorization widget
+                currentPixmap = self.getCurrentLayerLatestPixmap()
+                image = self.QPixmapToImage(currentPixmap)
+                import numpy as np
+                import cv2
+                import torch
+
+                image = np.asarray(image)
+                print("Original image size", image.shape)
+                h, w, c = image.shape
+                max_width = max(h, w)
+                b, g, r, a = cv2.split(image)
+
+                import ColorizerMain
+                colorizerWidget = ColorizerMain.IColoriTUI(
+                    None,
+                    color_model=output, 
+                    im_bgr=np.dstack((b, g, r)),
+                    load_size=224, win_size=max_width, device=torch.device("cuda" if torch.cuda.is_available() else "cpu"))
+                colorizerWidget.setWindowModality(Qt.WindowModality.ApplicationModal)
+                colorizerWidget.showMaximized()
+
+                # Create a local event loop for this widget
+                loop = QtCore.QEventLoop()
+                colorizerWidget.destroyed.connect(loop.quit)
+                loop.exec() # wait
+
+                # Check the result of
+                if colorizerWidget.drawWidget.saveResult:
+                    if colorizerWidget:
+                        output = colorizerWidget.visWidget.result
+                        print(output.shape)
+                        output = cv2.resize(output, (w, h))
+                        output = np.dstack((output, a))
+                        output = Image.fromarray(output.astype(np.uint8))
+                        updatedPixmap = self.ImageToQPixmap(output)
+                        self.image_viewer.setImage(updatedPixmap, True, "Interactive Colorization")
 
             self.ColorizerToolButton.setChecked(False)
             del self.currentTool
             self.currentTool = None
+            print("Cleaned up")
 
     def OnColorizerToolButton(self, checked):
         if checked and not self.currentTool:
-            currentPixmap = self.getCurrentLayerLatestPixmap()
-            image = self.QPixmapToImage(currentPixmap)
-
             from QToolColorizer import QToolColorizer
-            self.currentTool = QToolColorizer(None, image, self.OnColorizerCompleted)
+            self.currentTool = QToolColorizer(None, None, self.OnColorizerCompleted)
             self.currentTool.setWindowModality(Qt.WindowModality.ApplicationModal)
             self.currentTool.show()
 

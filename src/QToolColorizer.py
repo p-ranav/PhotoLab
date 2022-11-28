@@ -32,7 +32,7 @@ class QToolColorizer(QTool):
     def __init__(self, parent=None, toolInput=None, onCompleted=None):
         super(QToolColorizer, self).__init__(parent, "Interactive Colorization", 
                                              "Colorize image interactively by leveraging a vision transformer",
-                                             "images/Colorizer.jpg", 
+                                             "images/Colorizer_08_Interactive.png", 
                                              self.onRun, toolInput, onCompleted)
         self.parent = parent
         self.output = None

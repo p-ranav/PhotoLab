@@ -10,9 +10,12 @@ from ColorizerVis import GUI_VIS
 
 
 class IColoriTUI(QWidget):
-    def __init__(self, parent, color_model, im_bgr=None, load_size=224, win_size=256, device='cpu'):
+    def __init__(self, parent, viewer, alphaChannel, color_model, im_bgr=None, load_size=224, win_size=256, device='cpu'):
         # draw the layout
         QWidget.__init__(self, parent)
+
+        self.viewer = viewer
+        self.alphaChannel = alphaChannel
 
         # main layout
         mainLayout = QHBoxLayout()
@@ -141,9 +144,30 @@ class IColoriTUI(QWidget):
         print('time spent = %3.3f' % (time.time() - self.start_t))
         self.close()
 
+    def ImageToQPixmap(self, image):
+        from PyQt6.QtGui import QPixmap
+        from PIL.ImageQt import ImageQt
+        return QPixmap.fromImage(ImageQt(image))
+
     def save(self):
         print('time spent = %3.3f' % (time.time() - self.start_t))
         self.drawWidget.save_result()
+
+        import cv2
+        import numpy as np
+        from PIL import Image
+
+        h, w, _ = self.drawWidget.im_full.shape
+
+        output = self.visWidget.result
+        output = cv2.resize(output, (w, h))
+        output = np.dstack((output, self.alphaChannel))
+        output = Image.fromarray(output.astype(np.uint8))
+        updatedPixmap = self.ImageToQPixmap(output)
+        self.viewer.setImage(updatedPixmap, True, "Interactive Colorization")
+
+        self.close()
+        self.destroyed.emit()
 
     def load(self):
         self.drawWidget.load_image()

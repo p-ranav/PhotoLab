@@ -1264,9 +1264,11 @@ class Gui(QtWidgets.QMainWindow):
                 import ColorizerMain
                 colorizerWidget = ColorizerMain.IColoriTUI(
                     None,
+                    viewer=self.image_viewer,
+                    alphaChannel=a,
                     color_model=output, 
                     im_bgr=np.dstack((b, g, r)),
-                    load_size=224, win_size=max_width, device=torch.device("cuda" if torch.cuda.is_available() else "cpu"))
+                    load_size=224, win_size=720, device=torch.device("cuda" if torch.cuda.is_available() else "cpu"))
                 colorizerWidget.setWindowModality(Qt.WindowModality.ApplicationModal)
                 colorizerWidget.showMaximized()
 
@@ -1274,17 +1276,6 @@ class Gui(QtWidgets.QMainWindow):
                 loop = QtCore.QEventLoop()
                 colorizerWidget.destroyed.connect(loop.quit)
                 loop.exec() # wait
-
-                # Check the result of
-                if colorizerWidget.drawWidget.saveResult:
-                    if colorizerWidget:
-                        output = colorizerWidget.visWidget.result
-                        print(output.shape)
-                        output = cv2.resize(output, (w, h))
-                        output = np.dstack((output, a))
-                        output = Image.fromarray(output.astype(np.uint8))
-                        updatedPixmap = self.ImageToQPixmap(output)
-                        self.image_viewer.setImage(updatedPixmap, True, "Interactive Colorization")
 
             self.ColorizerToolButton.setChecked(False)
             del self.currentTool

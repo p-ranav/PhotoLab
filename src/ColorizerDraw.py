@@ -78,6 +78,8 @@ class GUIDraw(QWidget):
         self.im_full = im_bgr.copy()
         # get image for display
         h, w, c = self.im_full.shape
+        ar = float(w) / float(h)
+
         max_width = max(h, w)
         r = self.win_size / float(max_width)
         self.scale = float(self.win_size) / self.load_size
@@ -91,7 +93,12 @@ class GUIDraw(QWidget):
         self.dh = int((self.win_size - rh) // 2)
         self.win_w = rw
         self.win_h = rh
-        self.uiControl.setImageSize((w, h)) # (rw, rh))
+
+        print("rw,rh", (rw, rh))
+        print("dw,dh", (self.dw, self.dh))
+        print("w,h", (w, h))
+
+        self.uiControl.setImageSize((rw, rh))
         im_gray = cv2.cvtColor(im_bgr, cv2.COLOR_BGR2GRAY)
         self.im_gray3 = cv2.cvtColor(im_gray, cv2.COLOR_GRAY2BGR)
 
@@ -155,6 +162,7 @@ class GUIDraw(QWidget):
     def scale_point(self, pnt):
         x = int((pnt.x() - self.dw) / float(self.win_w) * self.load_size)
         y = int((pnt.y() - self.dh) / float(self.win_h) * self.load_size)
+        print(pnt, (x, y))
         return x, y
 
     def valid_point(self, pnt):
@@ -276,12 +284,11 @@ class GUIDraw(QWidget):
         self.uiControl.update_painter(painter)
         painter.end()
 
-    # def wheelEvent(self, event):
-    #     d = event.delta() / 120
-    #     self.brushWidth = min(4.05 * self.scale, max(0, self.brushWidth + d * self.scale))
-    #     print('update brushWidth = %f' % self.brushWidth)
-    #     self.update_ui(move_point=True)
-    #     self.update()
+    def wheelEvent(self, event):
+         d = event.angleDelta().y() / 120
+         self.brushWidth = min(4.05 * self.scale, max(0, self.brushWidth + d * self.scale))
+         self.update_ui(move_point=True)
+         self.update()
 
     def is_same_point(self, pos1, pos2):
         if pos1 is None or pos2 is None:

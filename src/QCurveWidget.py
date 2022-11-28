@@ -259,8 +259,8 @@ class QCurveWidget(QtWidgets.QWidget):
         canvas_height = self.height() - self._legend_border - self._bar_h
 
         # Draw field background
-        painter.setPen(QtGui.QColor(255, 255, 255))
-        painter.setBrush(QtGui.QColor(255, 255, 255))
+        painter.setPen(QtGui.QColor(25,35,45,255))
+        painter.setBrush(QtGui.QColor(25,35,45,255))
         painter.drawRect(0, 0, int(self.width() - 1), int(self.height() - 1))
 
         # Draw legend

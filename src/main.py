@@ -1536,7 +1536,7 @@ class Gui(QtWidgets.QMainWindow):
 def main():
     app = QApplication(sys.argv)
 
-    # app.setStyleSheet(qdarkstyle.load_stylesheet(qt_api="PyQt6"))
+    app.setStyleSheet(qdarkstyle.load_stylesheet(qt_api="PyQt6"))
 
     gui = Gui()
     sys.exit(app.exec())

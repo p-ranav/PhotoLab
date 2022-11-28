@@ -124,15 +124,7 @@ class QCurveWidget(QtWidgets.QWidget):
 
         # Append initial curve
         curve = Curve()
-        curve.set_color(255, 0, 0)
-        self.curves.append(curve)
-
-        curve = Curve()
-        curve.set_color(0, 255, 0)
-        self.curves.append(curve)
-
-        curve = Curve()
-        curve.set_color(0, 0, 255)
+        curve.set_color(0, 0, 0)
         self.curves.append(curve)
 
         # Widget render constants
@@ -221,18 +213,14 @@ class QCurveWidget(QtWidgets.QWidget):
         b, g, r, a = cv2.split(arr)
         arr = np.dstack((b, g, r))
 
-        bar_curve = self.curves[0:3]
+        bar_curve = self.curves[0]
         canvas_width = self.width() - self._legend_border
 
         colors = []
         for i in range(canvas_width - 1):
-            xpos = self._legend_border + i
             relv = float(i) / float(canvas_width)
-
-            r = max(0, min(255, int(bar_curve[0].get_value(relv) * 255.0)))
-            g = max(0, min(255, int(bar_curve[1].get_value(relv) * 255.0)))
-            b = max(0, min(255, int(bar_curve[2].get_value(relv) * 255.0)))
-            colors.append([r, g, b])
+            val = max(0, min(255, int(bar_curve.get_value(relv) * 255.0)))
+            colors.append([val, val, val])
 
         colorArray = np.array([colors], dtype=np.uint8)
 
@@ -268,8 +256,8 @@ class QCurveWidget(QtWidgets.QWidget):
         canvas_height = self.height() - self._legend_border - self._bar_h
 
         # Draw field background
-        painter.setPen(QtGui.QColor(170, 170, 170))
-        painter.setBrush(QtGui.QColor(230, 230, 230))
+        painter.setPen(QtGui.QColor(255, 255, 255))
+        painter.setBrush(QtGui.QColor(255, 255, 255))
         painter.drawRect(0, 0, int(self.width() - 1), int(self.height() - 1))
 
         # Draw legend
@@ -283,13 +271,13 @@ class QCurveWidget(QtWidgets.QWidget):
         num_horiz_lines = int(math.ceil(canvas_height / float(line_spacing_y)) + 1)
 
         # Draw vertical lines
-        painter.setPen(QtGui.QColor(200, 200, 200))
+        painter.setPen(QtGui.QColor(200, 200, 200, 100))
         for i in range(num_vert_lines):
             line_pos = i*line_spacing_x + self._legend_border 
             painter.drawLine(int(line_pos), int(self._bar_h), int(line_pos), int(canvas_height + self._bar_h))
 
         # Draw horizontal lines
-        painter.setPen(QtGui.QColor(200, 200, 200))
+        painter.setPen(QtGui.QColor(200, 200, 200, 100))
         for i in range(num_horiz_lines):
             line_pos = canvas_height - i*line_spacing_y + self._bar_h
             painter.drawLine(int(self._legend_border), int(line_pos), int(self.width()), int(line_pos))
@@ -352,7 +340,7 @@ class QCurveWidget(QtWidgets.QWidget):
             xpos = self._legend_border + i
             relv = float(i) / float(canvas_width)
 
-            if len(bar_curve) == 1:
+            if len(self.curves) == 1:
                 val = max(0, min(255, int(bar_curve.get_value(relv) * 255.0)))
                 painter.setPen(QtGui.QColor(val, val, val))
                 painter.drawLine(int(xpos), 6, int(xpos), int(self._bar_h - 6))
@@ -368,17 +356,8 @@ class QCurveWidget(QtWidgets.QWidget):
 
         # Append initial curve
         curve = Curve()
-        curve.set_color(255, 0, 0)
+        curve.set_color(0, 0, 0)
         self.curves.append(curve)
-
-        curve = Curve()
-        curve.set_color(0, 255, 0)
-        self.curves.append(curve)
-
-        curve = Curve()
-        curve.set_color(0, 0, 255)
-        self.curves.append(curve)
-
 
         # Widget render constants
         self._cv_point_size = 3

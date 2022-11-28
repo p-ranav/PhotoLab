@@ -21,6 +21,7 @@ from QFlowLayout import QFlowLayout
 from PIL import Image, ImageEnhance, ImageFilter
 from QWorker import QWorker
 import qdarkstyle
+import QCurveWidget
 
 def free_gpu_cache():
     import torch
@@ -642,6 +643,7 @@ class Gui(QtWidgets.QMainWindow):
         self.previousImage = None
         self.previousImageDock = None
         self.layerListDock = None
+        self.CurvesDock = None
 
         # Set viewer's aspect ratio mode.
         # !!! ONLY applies to full image view.
@@ -1439,6 +1441,7 @@ class Gui(QtWidgets.QMainWindow):
             self.resetSliderValues()
             self.createPreviousImageWidget()
             self.createLayersDock()
+            self.createCurvesDock()
 
     def createPreviousImageWidget(self):
         if self.previousImageDock:
@@ -1476,6 +1479,17 @@ class Gui(QtWidgets.QMainWindow):
         self.layerListDock = QLayerList("Layers", self)
         self.addDockWidget(QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.layerListDock)
         self.image_viewer.layerListDock = self.layerListDock
+
+    def createCurvesDock(self):
+        if self.CurvesDock:
+            self.removeDockWidget(self.CurvesDock)
+            self.CurveWidget.reset()
+
+        self.CurvesDock = QtWidgets.QDockWidget("Curves")
+        self.CurveWidget = QCurveWidget.QCurveWidget(self, self.image_viewer)
+        self.CurvesDock.setWidget(self.CurveWidget)
+        self.addDockWidget(QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.CurvesDock)
+        self.resizeDocks([self.CurvesDock], [240], Qt.Orientation.Vertical)
 
     def OnSave(self):
         if self.image_viewer._current_filename.lower().endswith(".nef"):
@@ -1515,6 +1529,9 @@ class Gui(QtWidgets.QMainWindow):
             self.updateHistogram()
             self.updateColorPicker()
             self.resetSliderValues()
+            self.createPreviousImageWidget()
+            self.createLayersDock()
+            self.createCurvesDock()
 
 def main():
     app = QApplication(sys.argv)

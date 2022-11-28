@@ -11,6 +11,9 @@ import numpy as np
 import cv2
 from PIL import Image
 
+# https://discourse.panda3d.org/t/pyqt-curve-editor-curvefitter-example/15207
+# https://stackoverflow.com/questions/64718236/how-to-perform-color-tone-adjustments-and-write-a-look-up-table
+
 
 class Curve:
 

@@ -620,6 +620,11 @@ class Gui(QtWidgets.QMainWindow):
         self.sliderObjectOfChange = None
         self.sliderChangeSignal.connect(self.onUpdateImageCompleted)
         self.sliderWorkers = []
+        self.timer_id = -1
+        self.sliderExplanationOfChange = None
+        self.sliderTypeOfChange = None
+        self.sliderValueOfChange = None
+        self.sliderObjectOfChange = None
 
         self.resizeDockWidgets()
 
@@ -699,18 +704,15 @@ class Gui(QtWidgets.QMainWindow):
         return self.image_viewer.getCurrentLayerLatestPixmap()
 
     def processSliderChange(self, explanationOfChange, typeOfChange, valueOfChange, objectOfChange):
-        if len(self.sliderWorkers):
-            pass
-        # Pass the function to execute
-        worker = QWorker(self.performUpdateImage, explanationOfChange, typeOfChange, valueOfChange, objectOfChange)
-        # worker.signals.result.connect(self.print_output)
-        # worker.signals.finished.connect(self.thread_complete)
-        # worker.signals.progress.connect(self.progress_fn)
+        self.sliderExplanationOfChange = explanationOfChange
+        self.sliderTypeOfChange = typeOfChange
+        self.sliderValueOfChange = valueOfChange
+        self.sliderObjectOfChange = objectOfChange
 
-        # Execute
-        self.threadpool.start(worker)
-        self.sliderWorkers.append(worker)
-        # self.UpdateImage(explanationOfChange, typeOfChange, valueOfChange, objectOfChange)
+        if self.timer_id != -1:
+            self.killTimer(self.timer_id)
+
+        self.timer_id = self.startTimer(500)
 
     def QPixmapToImage(self, pixmap):
         width = pixmap.width()
@@ -911,7 +913,10 @@ class Gui(QtWidgets.QMainWindow):
                                        self.sliderTypeOfChange, self.sliderValueOfChange, self.sliderObjectOfChange)
             self.UpdateHistogramPlot()
 
-    def performUpdateImage(self, explanationOfChange, typeOfChange, valueOfChange, objectOfChange):
+    def timerEvent(self, event):
+        self.killTimer(self.timer_id)
+        self.timer_id = -1
+
         Pixmap = self.image_viewer.getCurrentLayerLatestPixmapBeforeSliderChange()
         if Pixmap:
             if self.RedFactor != 100:
@@ -932,24 +937,11 @@ class Gui(QtWidgets.QMainWindow):
                 Pixmap = self.ApplyGaussianBlur(Pixmap, float(self.GaussianBlurRadius / 100))
 
             self.sliderChangedPixmap = Pixmap
-            self.sliderExplanationOfChange = explanationOfChange
-            self.sliderTypeOfChange = typeOfChange
-            self.sliderValueOfChange = valueOfChange
-            self.sliderObjectOfChange = objectOfChange
+            self.sliderExplanationOfChange = self.sliderExplanationOfChange
+            self.sliderTypeOfChange = self.sliderTypeOfChange
+            self.sliderValueOfChange = self.sliderValueOfChange
+            self.sliderObjectOfChange = self.sliderObjectOfChange
             self.sliderChangeSignal.emit()
-
-    def UpdateImage(self, explanationOfChange, typeOfChange, valueOfChange, objectOfChange):
-        ## if not self.progressBarThread.isRunning():
-        ## TODO: Figure out how to correctly do this when lots of slider changes are made 
-        ## in quick succession
-
-        #self.progressBarThread.taskFunctionArgs = [
-        #    explanationOfChange, 
-        #    typeOfChange, 
-        #    valueOfChange, 
-        #    objectOfChange]
-        #self.progressBarThread.start()
-        pass
 
     def OnCursorToolButton(self, checked):
         self.EnableTool("cursor") if checked else self.DisableTool("cursor")

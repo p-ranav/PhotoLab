@@ -1248,7 +1248,9 @@ class QtImageViewer(QGraphicsView):
         self.pointPainter = QtGui.QPainterPath()
         maxDim = max(self._image.pixmap().width(), self._image.pixmap().height())
         for point in self.selectPoints:
-            self.pointPainter.addEllipse(point, int(maxDim / 100), int(maxDim / 100))
+            squareSide = int(maxDim / 200)
+            self.pointPainter.addRect(point.x() - (squareSide / 2), point.y() - (squareSide / 2), squareSide, squareSide)
+            # self.pointPainter.addEllipse(point, int(maxDim / 100), int(maxDim / 100))
 
         for p, current in enumerate(self.selectPoints[1:-1], 1):
             # previous segment
@@ -1308,7 +1310,7 @@ class QtImageViewer(QGraphicsView):
 
         # Brush and Pen for the selected POINTS
         self.pathPointItem = self.scene.addPath(self.pointPainter)
-        self.pathPointItem.setBrush(QtGui.QColor(255, 255, 255, 255))
+        self.pathPointItem.setBrush(QtGui.QColor(0, 0, 0, 255))
         self.pathPointItem.setPen(QPen(Qt.PenStyle.NoPen))
         self.selectPainterPointPaths.append(self.pathPointItem)
 

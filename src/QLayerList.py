@@ -136,6 +136,7 @@ class QLayerList(QtWidgets.QDockWidget):
             titleBarLayout.setContentsMargins(0, 0, 0, 0)
             titleBar.setLayout(titleBarLayout)
             titleBar.setMinimumWidth(180)
+            titleBarLayout.setSpacing(0)
 
             duplicateLayerButton = QtWidgets.QPushButton()
             duplicateLayerButton.setIcon(QtGui.QIcon("icons/duplicate.svg"))
@@ -151,12 +152,13 @@ class QLayerList(QtWidgets.QDockWidget):
 
             tools = QtWidgets.QWidget()
             toolsLayout = QtWidgets.QHBoxLayout()
-            tools.setLayout(toolsLayout)
             toolsLayout.addWidget(duplicateLayerButton)
             toolsLayout.addWidget(deleteLayerButton)
+            tools.setLayout(toolsLayout)
 
             titleBarLayout.addWidget(tools)
-            titleBarLayout.setAlignment(tools, Qt.AlignmentFlag.AlignLeft)
+            titleBarLayout.setAlignment(tools, Qt.AlignmentFlag.AlignCenter)
+            titleBarLayout.setSpacing(0)
 
             self.layout.addWidget(titleBar)
 

@@ -139,16 +139,28 @@ class QLayerList(QtWidgets.QDockWidget):
             titleBarLayout.setSpacing(0)
 
             duplicateLayerButton = QtWidgets.QPushButton()
-            duplicateLayerButton.setIcon(QtGui.QIcon("icons/duplicate.svg"))
+            self.parent.setIconPixmapWithColor(duplicateLayerButton, "icons/duplicate.svg")
             duplicateLayerButton.setIconSize(QtCore.QSize(20, 20))
             duplicateLayerButton.setToolTip("Duplicate Layer")
             duplicateLayerButton.clicked.connect(self.onDuplicateLayer)
 
+            duplicateLayerButton.setStyleSheet('''
+                border: none;
+                color: white;
+                background-color: rgb(83, 83, 83);
+            ''')
+
             deleteLayerButton = QtWidgets.QPushButton()
-            deleteLayerButton.setIcon(QtGui.QIcon("icons/trash.svg"))
+            self.parent.setIconPixmapWithColor(deleteLayerButton, "icons/trash.svg")
             deleteLayerButton.setIconSize(QtCore.QSize(20, 20))
             deleteLayerButton.setToolTip("Delete Layer")
             deleteLayerButton.clicked.connect(self.onDeleteLayer)
+
+            deleteLayerButton.setStyleSheet('''
+                border: none;
+                color: white;
+                background-color: rgb(83, 83, 83);
+            ''')
 
             tools = QtWidgets.QWidget()
             toolsLayout = QtWidgets.QHBoxLayout()
@@ -172,6 +184,7 @@ class QLayerList(QtWidgets.QDockWidget):
             button.setCheckable(True)
             button.setObjectName("Layer " + str(i))
             button.clicked.connect(self.OnLayerSelect)
+            button.setStyleSheet("background-color: rgb(44, 44, 44);")
             if i == self.currentLayer:
                 button.setChecked(True)
                 self.currentButton = button

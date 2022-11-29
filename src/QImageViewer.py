@@ -492,10 +492,14 @@ class QtImageViewer(QGraphicsView):
             m, n = (int(w / 100), int(h / 100))             # Checker dimension (x, y)
 
             if m < 100:
+                if m == 0:
+                    m = 1
                 m *= 100/m
                 m = int(m)
                 n = int(m * h / w)
             elif n < 100:
+                if n == 0:
+                    n = 1
                 n *= 100/n 
                 n = int(n)
                 m = int(n * w / h)

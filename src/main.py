@@ -1,4 +1,5 @@
-﻿import PyQt6
+﻿from turtle import width
+import PyQt6
 from PyQt6 import QtWidgets, QtCore, QtGui
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
@@ -51,7 +52,7 @@ class Gui(QtWidgets.QMainWindow):
 
     def __init__(self, parent=None):
         super(Gui, self).__init__(parent)
-        self.setWindowTitle('Photo Editor')
+        self.setWindowTitle('pyfoto')
         self.setMinimumHeight(850)
 
         ##############################################################################################
@@ -144,7 +145,7 @@ class Gui(QtWidgets.QMainWindow):
         # self.CursorToolButton.setIconSize(QtCore.QSize(32, 32))
         self.CursorToolButton.setText("&Cursor")
         self.CursorToolButton.setToolTip("Cursor")
-        self.CursorToolButton.setIcon(QtGui.QIcon("icons/cursor.svg"))
+        self.setIconPixmapWithColor(self.CursorToolButton, "icons/cursor.svg")
         self.CursorToolButton.setCheckable(True)
         self.CursorToolButton.toggled.connect(self.OnCursorToolButton)
 
@@ -157,7 +158,7 @@ class Gui(QtWidgets.QMainWindow):
         self.ColorPickerToolButton = QToolButton(self)
         self.ColorPickerToolButton.setText("&Color Picker")
         self.ColorPickerToolButton.setToolTip("Color Picker")
-        self.ColorPickerToolButton.setIcon(QtGui.QIcon("icons/color_picker.svg"))
+        self.setIconPixmapWithColor(self.ColorPickerToolButton, "icons/color_picker.svg")
         self.ColorPickerToolButton.setCheckable(True)
         self.ColorPickerToolButton.toggled.connect(self.OnColorPickerToolButton)
 
@@ -170,7 +171,7 @@ class Gui(QtWidgets.QMainWindow):
         self.PaintToolButton = QToolButton(self)
         self.PaintToolButton.setText("&Paint")
         self.PaintToolButton.setToolTip("Paint")
-        self.PaintToolButton.setIcon(QtGui.QIcon("icons/paint.svg"))
+        self.setIconPixmapWithColor(self.PaintToolButton, "icons/paint.svg")
         self.PaintToolButton.setCheckable(True)
         self.PaintToolButton.toggled.connect(self.OnPaintToolButton)
 
@@ -183,7 +184,7 @@ class Gui(QtWidgets.QMainWindow):
         self.FillToolButton = QToolButton(self)
         self.FillToolButton.setText("&Fill")
         self.FillToolButton.setToolTip("Fill")
-        self.FillToolButton.setIcon(QtGui.QIcon("icons/fill.svg"))
+        self.setIconPixmapWithColor(self.FillToolButton, "icons/fill.svg")
         self.FillToolButton.setCheckable(True)
         self.FillToolButton.toggled.connect(self.OnFillToolButton)
 
@@ -196,7 +197,7 @@ class Gui(QtWidgets.QMainWindow):
         self.RectSelectToolButton = QToolButton(self)
         self.RectSelectToolButton.setText("&Rectangle Select")
         self.RectSelectToolButton.setToolTip("Rectangle Select")
-        self.RectSelectToolButton.setIcon(QtGui.QIcon("icons/select_rect.svg"))
+        self.setIconPixmapWithColor(self.RectSelectToolButton, "icons/select_rect.svg")
         self.RectSelectToolButton.setCheckable(True)
         self.RectSelectToolButton.toggled.connect(self.OnRectSelectToolButton)
 
@@ -209,7 +210,7 @@ class Gui(QtWidgets.QMainWindow):
         self.PathSelectToolButton = QToolButton(self)
         self.PathSelectToolButton.setText("&Path Select")
         self.PathSelectToolButton.setToolTip("Path Select")
-        self.PathSelectToolButton.setIcon(QtGui.QIcon("icons/select_path.svg"))
+        self.setIconPixmapWithColor(self.PathSelectToolButton, "icons/select_path.svg")
         self.PathSelectToolButton.setCheckable(True)
         self.PathSelectToolButton.toggled.connect(self.OnPathSelectToolButton)
 
@@ -221,7 +222,7 @@ class Gui(QtWidgets.QMainWindow):
 
         self.CropToolButton = QToolButton(self)
         self.CropToolButton.setText("&Crop")
-        self.CropToolButton.setIcon(QtGui.QIcon("icons/crop.svg"))
+        self.setIconPixmapWithColor(self.CropToolButton, "icons/crop.svg")
         self.CropToolButton.setToolTip("Crop")
         self.CropToolButton.setCheckable(True)
         self.CropToolButton.toggled.connect(self.OnCropToolButton)
@@ -237,7 +238,7 @@ class Gui(QtWidgets.QMainWindow):
 
         self.RotateLeftToolButton = QToolButton(self)
         self.RotateLeftToolButton.setText("&Rotate Left")
-        self.RotateLeftToolButton.setIcon(QtGui.QIcon("icons/rotate_left.svg"))
+        self.setIconPixmapWithColor(self.RotateLeftToolButton, "icons/rotate_left.svg")
         self.RotateLeftToolButton.setToolTip("Rotate Left")
         self.RotateLeftToolButton.setCheckable(True)
         self.RotateLeftToolButton.toggled.connect(self.OnRotateLeftToolButton)
@@ -250,7 +251,7 @@ class Gui(QtWidgets.QMainWindow):
 
         self.RotateRightToolButton = QToolButton(self)
         self.RotateRightToolButton.setText("&Rotate Right")
-        self.RotateRightToolButton.setIcon(QtGui.QIcon("icons/rotate_right.svg"))
+        self.setIconPixmapWithColor(self.RotateRightToolButton, "icons/rotate_right.svg")
         self.RotateRightToolButton.setToolTip("Rotate Right")
         self.RotateRightToolButton.setCheckable(True)
         self.RotateRightToolButton.toggled.connect(self.OnRotateRightToolButton)
@@ -263,7 +264,7 @@ class Gui(QtWidgets.QMainWindow):
 
         self.HStackToolButton = QToolButton(self)
         self.HStackToolButton.setText("&Horizontal Stack")
-        self.HStackToolButton.setIcon(QtGui.QIcon("icons/hstack.svg"))
+        self.setIconPixmapWithColor(self.HStackToolButton, "icons/hstack.svg")
         self.HStackToolButton.setToolTip("Horizontal Stack")
         self.HStackToolButton.setCheckable(True)
         self.HStackToolButton.toggled.connect(self.OnHStackToolButton)
@@ -276,7 +277,7 @@ class Gui(QtWidgets.QMainWindow):
 
         self.VStackToolButton = QToolButton(self)
         self.VStackToolButton.setText("&Vertical Stack")
-        self.VStackToolButton.setIcon(QtGui.QIcon("icons/vstack.svg"))
+        self.setIconPixmapWithColor(self.VStackToolButton, "icons/vstack.svg")
         self.VStackToolButton.setToolTip("Vertical Stack")
         self.VStackToolButton.setCheckable(True)
         self.VStackToolButton.toggled.connect(self.OnVStackToolButton)
@@ -289,7 +290,7 @@ class Gui(QtWidgets.QMainWindow):
 
         self.LandscapePanoramaToolButton = QToolButton(self)
         self.LandscapePanoramaToolButton.setText("&Landscape Panorama")
-        self.LandscapePanoramaToolButton.setIcon(QtGui.QIcon("icons/panorama.svg"))
+        self.setIconPixmapWithColor(self.LandscapePanoramaToolButton, "icons/panorama.svg")
         self.LandscapePanoramaToolButton.setToolTip("Landscape Panorama")
         self.LandscapePanoramaToolButton.setCheckable(True)
         self.LandscapePanoramaToolButton.toggled.connect(self.OnLandscapePanoramaToolButton)
@@ -302,7 +303,7 @@ class Gui(QtWidgets.QMainWindow):
 
         self.FlipLeftRightToolButton = QToolButton(self)
         self.FlipLeftRightToolButton.setText("&Flip Left-Right")
-        self.FlipLeftRightToolButton.setIcon(QtGui.QIcon("icons/flip_left_right.svg"))
+        self.setIconPixmapWithColor(self.FlipLeftRightToolButton, "icons/flip_left_right.svg")
         self.FlipLeftRightToolButton.setToolTip("Flip Left-Right")
         self.FlipLeftRightToolButton.setCheckable(True)
         self.FlipLeftRightToolButton.toggled.connect(self.OnFlipLeftRightToolButton)
@@ -315,7 +316,7 @@ class Gui(QtWidgets.QMainWindow):
 
         self.FlipTopBottomToolButton = QToolButton(self)
         self.FlipTopBottomToolButton.setText("&Flip Top-Bottom")
-        self.FlipTopBottomToolButton.setIcon(QtGui.QIcon("icons/flip_top_bottom.svg"))
+        self.setIconPixmapWithColor(self.FlipTopBottomToolButton, "icons/flip_top_bottom.svg")
         self.FlipTopBottomToolButton.setToolTip("Flip Top-Bottom")
         self.FlipTopBottomToolButton.setCheckable(True)
         self.FlipTopBottomToolButton.toggled.connect(self.OnFlipTopBottomToolButton)
@@ -329,7 +330,7 @@ class Gui(QtWidgets.QMainWindow):
         self.SpotRemovalToolButton = QToolButton(self)
         self.SpotRemovalToolButton.setText("&Spot Removal")
         self.SpotRemovalToolButton.setToolTip("Spot Removal")
-        self.SpotRemovalToolButton.setIcon(QtGui.QIcon("icons/spot_removal.svg"))
+        self.setIconPixmapWithColor(self.SpotRemovalToolButton, "icons/spot_removal.svg")
         self.SpotRemovalToolButton.setCheckable(True)
         self.SpotRemovalToolButton.toggled.connect(self.OnSpotRemovalToolButton)
 
@@ -342,7 +343,7 @@ class Gui(QtWidgets.QMainWindow):
         self.BlurToolButton = QToolButton(self)
         self.BlurToolButton.setText("&Blur")
         self.BlurToolButton.setToolTip("Blur")
-        self.BlurToolButton.setIcon(QtGui.QIcon("icons/blur.svg"))
+        self.setIconPixmapWithColor(self.BlurToolButton, "icons/blur.svg")
         self.BlurToolButton.setCheckable(True)
         self.BlurToolButton.toggled.connect(self.OnBlurToolButton)
 
@@ -355,7 +356,7 @@ class Gui(QtWidgets.QMainWindow):
         self.BackgroundRemovalToolButton = QToolButton(self)
         self.BackgroundRemovalToolButton.setText("&Background Removal")
         self.BackgroundRemovalToolButton.setToolTip("Background Removal")
-        self.BackgroundRemovalToolButton.setIcon(QtGui.QIcon("icons/background_removal.svg"))
+        self.setIconPixmapWithColor(self.BackgroundRemovalToolButton, "icons/background_removal.svg")
         self.BackgroundRemovalToolButton.setCheckable(True)
         self.BackgroundRemovalToolButton.toggled.connect(self.OnBackgroundRemovalToolButton)
 
@@ -368,7 +369,7 @@ class Gui(QtWidgets.QMainWindow):
         self.PortraitModeBackgroundBlurToolButton = QToolButton(self)
         self.PortraitModeBackgroundBlurToolButton.setText("&Portrait Mode")
         self.PortraitModeBackgroundBlurToolButton.setToolTip("Portrait Mode")
-        self.PortraitModeBackgroundBlurToolButton.setIcon(QtGui.QIcon("icons/portrait_mode.svg"))
+        self.setIconPixmapWithColor(self.PortraitModeBackgroundBlurToolButton, "icons/portrait_mode.svg")
         self.PortraitModeBackgroundBlurToolButton.setCheckable(True)
         self.PortraitModeBackgroundBlurToolButton.toggled.connect(self.OnPortraitModeBackgroundBlurToolButton)
 
@@ -381,7 +382,7 @@ class Gui(QtWidgets.QMainWindow):
         self.GrayscaleBackgroundToolButton = QToolButton(self)
         self.GrayscaleBackgroundToolButton.setText("&Grayscale Background")
         self.GrayscaleBackgroundToolButton.setToolTip("Grayscale Background")
-        self.GrayscaleBackgroundToolButton.setIcon(QtGui.QIcon("icons/grayscale_background.svg"))
+        self.setIconPixmapWithColor(self.GrayscaleBackgroundToolButton, "icons/grayscale_background.svg")
         self.GrayscaleBackgroundToolButton.setCheckable(True)
         self.GrayscaleBackgroundToolButton.toggled.connect(self.OnGrayscaleBackgroundToolButton)
 
@@ -394,7 +395,7 @@ class Gui(QtWidgets.QMainWindow):
         self.HumanSegmentationToolButton = QToolButton(self)
         self.HumanSegmentationToolButton.setText("&Human Segmentation")
         self.HumanSegmentationToolButton.setToolTip("Human Segmentation")
-        self.HumanSegmentationToolButton.setIcon(QtGui.QIcon("icons/human_segmentation.svg"))
+        self.setIconPixmapWithColor(self.HumanSegmentationToolButton, "icons/human_segmentation.svg")
         self.HumanSegmentationToolButton.setCheckable(True)
         self.HumanSegmentationToolButton.toggled.connect(self.OnHumanSegmentationToolButton)
 
@@ -407,7 +408,7 @@ class Gui(QtWidgets.QMainWindow):
         self.ColorizerToolButton = QToolButton(self)
         self.ColorizerToolButton.setText("&Colorizer")
         self.ColorizerToolButton.setToolTip("Colorizer")
-        self.ColorizerToolButton.setIcon(QtGui.QIcon("icons/colorizer.svg"))
+        self.setIconPixmapWithColor(self.ColorizerToolButton, "icons/colorizer.svg")
         self.ColorizerToolButton.setCheckable(True)
         self.ColorizerToolButton.toggled.connect(self.OnColorizerToolButton)
 
@@ -420,7 +421,7 @@ class Gui(QtWidgets.QMainWindow):
         self.SuperResolutionToolButton = QToolButton(self)
         self.SuperResolutionToolButton.setText("&Super Resolution")
         self.SuperResolutionToolButton.setToolTip("Super-Resolution")
-        self.SuperResolutionToolButton.setIcon(QtGui.QIcon("icons/super_resolution.svg"))
+        self.setIconPixmapWithColor(self.SuperResolutionToolButton, "icons/super_resolution.svg")
         self.SuperResolutionToolButton.setCheckable(True)
         self.SuperResolutionToolButton.toggled.connect(self.OnSuperResolutionToolButton)
 
@@ -434,7 +435,7 @@ class Gui(QtWidgets.QMainWindow):
         self.AnimeGanV2ToolButton = QToolButton(self)
         self.AnimeGanV2ToolButton.setText("&Anime GAN v2")
         self.AnimeGanV2ToolButton.setToolTip("Anime GAN v2")
-        self.AnimeGanV2ToolButton.setIcon(QtGui.QIcon("icons/anime.svg"))
+        self.setIconPixmapWithColor(self.AnimeGanV2ToolButton, "icons/anime.svg")
         self.AnimeGanV2ToolButton.setCheckable(True)
         self.AnimeGanV2ToolButton.toggled.connect(self.OnAnimeGanV2ToolButton)
 
@@ -448,7 +449,7 @@ class Gui(QtWidgets.QMainWindow):
         self.WhiteBalanceToolButton = QToolButton(self)
         self.WhiteBalanceToolButton.setText("&White Balance")
         self.WhiteBalanceToolButton.setToolTip("White Balance")
-        self.WhiteBalanceToolButton.setIcon(QtGui.QIcon("icons/white_balance.svg"))
+        self.setIconPixmapWithColor(self.WhiteBalanceToolButton, "icons/white_balance.svg")
         self.WhiteBalanceToolButton.setCheckable(True)
         self.WhiteBalanceToolButton.toggled.connect(self.OnWhiteBalanceToolButton)
 
@@ -461,7 +462,7 @@ class Gui(QtWidgets.QMainWindow):
         self.EraserToolButton = QToolButton(self)
         self.EraserToolButton.setText("&Eraser")
         self.EraserToolButton.setToolTip("Eraser")
-        self.EraserToolButton.setIcon(QtGui.QIcon("icons/eraser.svg"))
+        self.setIconPixmapWithColor(self.EraserToolButton, "icons/eraser.svg")
         self.EraserToolButton.setCheckable(True)
         self.EraserToolButton.toggled.connect(self.OnEraserToolButton)
 
@@ -474,7 +475,7 @@ class Gui(QtWidgets.QMainWindow):
         self.SlidersToolButton = QToolButton(self)
         self.SlidersToolButton.setText("&Sliders")
         self.SlidersToolButton.setToolTip("Sliders")
-        self.SlidersToolButton.setIcon(QtGui.QIcon("icons/sliders.svg"))
+        self.setIconPixmapWithColor(self.SlidersToolButton, "icons/sliders.svg")
         self.SlidersToolButton.setCheckable(True)
         self.SlidersToolButton.toggled.connect(self.OnSlidersToolButton)
 
@@ -487,7 +488,7 @@ class Gui(QtWidgets.QMainWindow):
         self.CurveEditorToolButton = QToolButton(self)
         self.CurveEditorToolButton.setText("&Curves")
         self.CurveEditorToolButton.setToolTip("Curves")
-        self.CurveEditorToolButton.setIcon(QtGui.QIcon("icons/curve.svg"))
+        self.setIconPixmapWithColor(self.CurveEditorToolButton, "icons/curve.svg")
         self.CurveEditorToolButton.setCheckable(True)
         self.CurveEditorToolButton.toggled.connect(self.OnCurveEditorToolButton)
 
@@ -500,7 +501,7 @@ class Gui(QtWidgets.QMainWindow):
         self.HistogramToolButton = QToolButton(self)
         self.HistogramToolButton.setText("&Histogram")
         self.HistogramToolButton.setToolTip("Histogram")
-        self.HistogramToolButton.setIcon(QtGui.QIcon("icons/histogram.svg"))
+        self.setIconPixmapWithColor(self.HistogramToolButton, "icons/histogram.svg")
         self.HistogramToolButton.setCheckable(True)
         self.HistogramToolButton.toggled.connect(self.OnHistogramToolButton)
 
@@ -561,12 +562,11 @@ class Gui(QtWidgets.QMainWindow):
 
         self.ToolbarDockWidget = QtWidgets.QDockWidget("Tools")
         self.ToolbarDockWidget.setTitleBarWidget(QtWidgets.QWidget())
-        self.ToolbarDockWidget.setMinimumWidth(145)
         ToolbarContent = QtWidgets.QWidget()
         ToolbarLayout = QFlowLayout(ToolbarContent)
         ToolbarLayout.setSpacing(0)
 
-        tool_buttons = [
+        self.ToolButtons = [
             self.CursorToolButton, self.ColorPickerToolButton, self.PaintToolButton, self.EraserToolButton, 
             self.FillToolButton, self.RectSelectToolButton, self.PathSelectToolButton, self.CropToolButton, 
             self.RotateLeftToolButton, self.RotateRightToolButton,
@@ -578,8 +578,9 @@ class Gui(QtWidgets.QMainWindow):
             self.ColorizerToolButton, self.SuperResolutionToolButton, self.AnimeGanV2ToolButton, 
         ]
 
-        for button in tool_buttons:
+        for button in self.ToolButtons:
             button.setIconSize(QtCore.QSize(20, 20))
+            button.setEnabled(False)
             ToolbarLayout.addWidget(button)
 
         ToolbarContent.setLayout(ToolbarLayout)
@@ -592,7 +593,9 @@ class Gui(QtWidgets.QMainWindow):
         ##############################################################################################
         ##############################################################################################
 
-        self.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, self.ToolbarDockWidget)
+        self.addDockWidget(QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.ToolbarDockWidget)
+        self.ToolbarDockWidget.setFloating(True)
+        self.ToolbarDockWidget.setGeometry(QtCore.QRect(20, 20, 75, 420))
 
         ##############################################################################################
         ##############################################################################################
@@ -601,6 +604,7 @@ class Gui(QtWidgets.QMainWindow):
         ##############################################################################################
 
         self.initImageViewer()
+        self.ToolbarDockWidget.setParent(self.image_viewer)
         self.showMaximized()
 
         self.threadpool = QtCore.QThreadPool()
@@ -614,8 +618,26 @@ class Gui(QtWidgets.QMainWindow):
 
         self.resizeDockWidgets()
 
+    def setIconPixmapWithColor(self, button, filename, findColor='black', newColor='white'):
+        pixmap = QPixmap(filename)
+        mask = pixmap.createMaskFromColor(QtGui.QColor(findColor), Qt.MaskMode.MaskOutColor)
+        pixmap.fill((QtGui.QColor(newColor)))
+        pixmap.setMask(mask)
+        button.setIcon(QtGui.QIcon(pixmap))
+
+    def setToolButtonStyleChecked(self, button):
+        button.setStyleSheet('''
+            border-color: rgb(44, 44, 44);
+            background-color: rgb(44, 44, 44);
+            border-style: solid;
+        ''')
+
+    def setToolButtonStyleUnchecked(self, button):
+        button.setStyleSheet("")
+
     def resizeDockWidgets(self):
-        self.resizeDocks([self.ToolbarDockWidget], [200], Qt.Orientation.Vertical)
+        pass
+        # self.resizeDocks([self.ToolbarDockWidget], [200], Qt.Orientation.Vertical)
 
     @QtCore.pyqtSlot(int, str)
     def updateProgressBar(self, e, label):
@@ -962,7 +984,6 @@ class Gui(QtWidgets.QMainWindow):
 
     def OnHistogramToolButton(self, checked):
         if checked:
-            print("Here")
             class HistogrmaWidget(QtWidgets.QWidget):
                 def __init__(self, parent, mainWindow):
                     QtWidgets.QWidget.__init__(self, parent)
@@ -1581,11 +1602,15 @@ class Gui(QtWidgets.QMainWindow):
     def EnableTool(self, tool):
         for key, value in self.tools.items():
             if key == tool:
-                getattr(self, value["tool"]).setChecked(True)
+                button = getattr(self, value["tool"])
+                button.setChecked(True)
+                self.setToolButtonStyleChecked(button)
                 setattr(self.image_viewer, value["var"], True)
             else:
                 # Disable the other tools
-                getattr(self, value["tool"]).setChecked(False)
+                button = getattr(self, value["tool"])
+                button.setChecked(False)
+                self.setToolButtonStyleUnchecked(button)
                 setattr(self.image_viewer, value["var"], False)
                 if "destructor" in value:
                     getattr(self.image_viewer, value["destructor"])()
@@ -1649,6 +1674,8 @@ class Gui(QtWidgets.QMainWindow):
             # self.image_viewer.OriginalImage = self.image_viewer.pixmap()
             self.updateHistogram()
             self.createLayersDock()
+            for button in self.ToolButtons:
+                button.setEnabled(True)
 
     def createLayersDock(self):
         if self.layerListDock:
@@ -1660,7 +1687,7 @@ class Gui(QtWidgets.QMainWindow):
         from QLayerList import QLayerList
         self.layerListDock = QLayerList("Layers", self)
         self.layerListDock.setTitleBarWidget(QtWidgets.QWidget())
-        self.addDockWidget(QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.layerListDock)
+        self.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, self.layerListDock)
         self.image_viewer.layerListDock = self.layerListDock
 
     def OnSave(self):
@@ -1700,10 +1727,42 @@ class Gui(QtWidgets.QMainWindow):
 
             self.updateHistogram()
             self.createLayersDock()
+            for button in self.ToolButtons:
+                button.setEnabled(True)
 
 def main():
     app = QApplication(sys.argv)
     gui = Gui()
+    app.setStyleSheet('''
+    QWidget {
+        background-color: rgb(83, 83, 83);
+        color: white;
+    }
+    QMainWindow { 
+        background-color: rgb(83, 83, 83); 
+    }
+    QGraphicsView { 
+        background-color: rgb(44, 44, 44); 
+    }
+    QDockWidget { 
+        background-color: rgb(83, 83, 83); 
+    }
+    QToolButton {
+        border: none;
+        color: white;
+        background-color: rgb(83, 83, 83);
+    }
+    QToolButton:pressed {
+        border-width: 1px;
+        border-color: rgb(44, 44, 44);
+        background-color: rgb(44, 44, 44);
+        border-style: solid;
+    }
+    QLabel {
+        background-color: rgb(44, 44, 44);
+        color: white;
+    }
+    ''');
     sys.exit(app.exec())
 
 if __name__ == '__main__':

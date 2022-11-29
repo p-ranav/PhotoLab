@@ -22,12 +22,15 @@ class QLayerList(QtWidgets.QDockWidget):
     def OnLayerSelect(self):
         button = self.sender()
         button.setIconSize(QtCore.QSize(100, 100))
+        self.currentButton.setStyleSheet("background-color: rgb(44, 44, 44);")
+        
         selectedLayerIndex = button.objectName().split("Layer ")[-1]
         selectedLayerIndex = int(selectedLayerIndex)
         self.parent.image_viewer.currentLayer = selectedLayerIndex
         for lb in self.layerButtons:
             if lb.objectName() == button.objectName():
                 lb.setChecked(True)
+                lb.setStyleSheet("background-color: rgb(22, 22, 22);")
                 self.currentButton = lb
                 pixmap = self.parent.image_viewer.getCurrentLayerLatestPixmap()
                 self.parent.image_viewer.setImage(pixmap, False)
@@ -37,6 +40,7 @@ class QLayerList(QtWidgets.QDockWidget):
             else:
                 lb.setChecked(False)
                 lb.setIconSize(QtCore.QSize(50, 50))
+                lb.setStyleSheet("background-color: rgb(44, 44, 44);")
 
     def updateScrollView(self):
         self.scroll = QtWidgets.QScrollArea()
@@ -56,6 +60,7 @@ class QLayerList(QtWidgets.QDockWidget):
         self.parent.image_viewer.duplicateCurrentLayer()
         self.currentButton.setChecked(False)
         self.currentButton.setIconSize(QtCore.QSize(50, 50))
+        self.currentButton.setStyleSheet("background-color: rgb(44, 44, 44);")
 
         self.currentLayer = self.parent.image_viewer.currentLayer
         pixmap = self.parent.getCurrentLayerLatestPixmap()
@@ -71,6 +76,7 @@ class QLayerList(QtWidgets.QDockWidget):
         button.setObjectName("Layer " + str(self.currentLayer))
         button.clicked.connect(self.OnLayerSelect)
         button.setChecked(True)
+        button.setStyleSheet("background-color: rgb(22, 22, 22);")
         self.currentButton = button
 
         self.layerButtons.append(button)
@@ -138,17 +144,11 @@ class QLayerList(QtWidgets.QDockWidget):
             titleBar.setMinimumWidth(180)
             titleBarLayout.setSpacing(0)
 
-            duplicateLayerButton = QtWidgets.QPushButton()
-            self.parent.setIconPixmapWithColor(duplicateLayerButton, "icons/duplicate.svg")
-            duplicateLayerButton.setIconSize(QtCore.QSize(20, 20))
-            duplicateLayerButton.setToolTip("Duplicate Layer")
-            duplicateLayerButton.clicked.connect(self.onDuplicateLayer)
-
-            duplicateLayerButton.setStyleSheet('''
-                border: none;
-                color: white;
-                background-color: rgb(83, 83, 83);
-            ''')
+            self.duplicateLayerButton = QtWidgets.QPushButton()
+            self.parent.setIconPixmapWithColor(self.duplicateLayerButton, "icons/duplicate.svg")
+            self.duplicateLayerButton.setIconSize(QtCore.QSize(20, 20))
+            self.duplicateLayerButton.setToolTip("Duplicate Layer")
+            self.duplicateLayerButton.clicked.connect(self.onDuplicateLayer)
 
             deleteLayerButton = QtWidgets.QPushButton()
             self.parent.setIconPixmapWithColor(deleteLayerButton, "icons/trash.svg")
@@ -156,15 +156,9 @@ class QLayerList(QtWidgets.QDockWidget):
             deleteLayerButton.setToolTip("Delete Layer")
             deleteLayerButton.clicked.connect(self.onDeleteLayer)
 
-            deleteLayerButton.setStyleSheet('''
-                border: none;
-                color: white;
-                background-color: rgb(83, 83, 83);
-            ''')
-
             tools = QtWidgets.QWidget()
             toolsLayout = QtWidgets.QHBoxLayout()
-            toolsLayout.addWidget(duplicateLayerButton)
+            toolsLayout.addWidget(self.duplicateLayerButton)
             toolsLayout.addWidget(deleteLayerButton)
             tools.setLayout(toolsLayout)
 
@@ -184,7 +178,7 @@ class QLayerList(QtWidgets.QDockWidget):
             button.setCheckable(True)
             button.setObjectName("Layer " + str(i))
             button.clicked.connect(self.OnLayerSelect)
-            button.setStyleSheet("background-color: rgb(44, 44, 44);")
+            button.setStyleSheet("background-color: rgb(22, 22, 22);")
             if i == self.currentLayer:
                 button.setChecked(True)
                 self.currentButton = button

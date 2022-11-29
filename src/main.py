@@ -627,8 +627,8 @@ class Gui(QtWidgets.QMainWindow):
 
     def setToolButtonStyleChecked(self, button):
         button.setStyleSheet('''
-            border-color: rgb(44, 44, 44);
-            background-color: rgb(44, 44, 44);
+            border-color: rgb(22, 22, 22);
+            background-color: rgb(22, 22, 22);
             border-style: solid;
         ''')
 
@@ -1735,31 +1735,42 @@ def main():
     gui = Gui()
     app.setStyleSheet('''
     QWidget {
-        background-color: rgb(83, 83, 83);
+        background-color: rgb(44, 44, 44);
         color: white;
     }
     QMainWindow { 
-        background-color: rgb(83, 83, 83); 
-    }
-    QGraphicsView { 
         background-color: rgb(44, 44, 44); 
     }
+    QGraphicsView { 
+        background-color: rgb(22, 22, 22); 
+    }
     QDockWidget { 
-        background-color: rgb(83, 83, 83); 
+        background-color: rgb(44, 44, 44); 
     }
     QToolButton {
         border: none;
         color: white;
-        background-color: rgb(83, 83, 83);
+        background-color: rgb(44, 44, 44);
     }
     QToolButton:pressed {
         border-width: 1px;
-        border-color: rgb(44, 44, 44);
+        border-color: rgb(22, 22, 22);
+        background-color: rgb(22, 22, 22);
+        border-style: solid;
+    }
+    QPushButton {
+        border: none;
+        color: white;
         background-color: rgb(44, 44, 44);
+    }
+    QPushButton:pressed {
+        border-width: 1px;
+        border-color: rgb(22, 22, 22);
+        background-color: rgb(22, 22, 22);
         border-style: solid;
     }
     QLabel {
-        background-color: rgb(44, 44, 44);
+        background-color: rgb(22, 22, 22);
         color: white;
     }
     ''');

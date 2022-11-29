@@ -1366,7 +1366,7 @@ class Gui(QtWidgets.QMainWindow):
             updatedPixmap = self.ImageToQPixmap(output)
             self.image_viewer.setImage(updatedPixmap, True, "Super Resolution")
 
-        self.AnimeGanV2ToolButton.setChecked(False)
+        self.SuperResolutionToolButton.setChecked(False)
         del self.currentTool
         self.currentTool = None
 

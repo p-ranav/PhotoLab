@@ -79,27 +79,7 @@ class Gui(QtWidgets.QMainWindow):
         self.ImageHistogramPlot.addItem(self.ImageHistogramGraphGreen)
         self.ImageHistogramPlot.addItem(self.ImageHistogramGraphBlue)
         self.ImageHistogramPlot.addItem(self.ImageHistogramGraphLuma)
-
-        ##############################################################################################
-        ##############################################################################################
-        # Histogram Dock
-        ##############################################################################################
-        ##############################################################################################
-
-        # Create histogram dock
-        self.HistogramDock = QtWidgets.QDockWidget("Histogram")
-        # TODO: Change these numbers on dock resize
-        # These are just the starting value
-        #self.HistogramDock.setMinimumWidth(100)
-        #self.HistogramDock.setMinimumHeight(220)
-        #self.HistogramDock.setMaximumHeight(220)
-        #self.HistogramDock.setMaximumWidth(380)
-
-        content = QtWidgets.QWidget()
-        HistogramLayout = QtWidgets.QVBoxLayout(content)
-        self.HistogramDock.setWidget(content)
-
-        HistogramLayout.addWidget(self.ImageHistogramPlot)
+        self.HistogramContent = None
 
         ##############################################################################################
         ##############################################################################################
@@ -517,6 +497,19 @@ class Gui(QtWidgets.QMainWindow):
 
         ##############################################################################################
         ##############################################################################################
+        # Histogram Viewer Tool
+        ##############################################################################################
+        ##############################################################################################
+
+        self.HistogramToolButton = QToolButton(self)
+        self.HistogramToolButton.setText("&Histogram")
+        self.HistogramToolButton.setToolTip("Histogram")
+        self.HistogramToolButton.setIcon(QtGui.QIcon("icons/histogram.svg"))
+        self.HistogramToolButton.setCheckable(True)
+        self.HistogramToolButton.toggled.connect(self.OnHistogramToolButton)
+
+        ##############################################################################################
+        ##############################################################################################
         # Toolbar
         ##############################################################################################
         ##############################################################################################
@@ -529,6 +522,10 @@ class Gui(QtWidgets.QMainWindow):
             "color_picker": {
                 "tool": "ColorPickerToolButton",
                 "var": '_isColorPicking'
+            },
+            "histogram": {
+                "tool": "HistogramToolButton",
+                "var": '_isShowingHistogram'
             },
             "paint": {
                 "tool": "PaintToolButton",
@@ -578,14 +575,14 @@ class Gui(QtWidgets.QMainWindow):
             self.RotateLeftToolButton, self.RotateRightToolButton,
             self.HStackToolButton, self.VStackToolButton, 
             self.FlipLeftRightToolButton, self.FlipTopBottomToolButton,
-            self.SpotRemovalToolButton, self.BlurToolButton, self.CurveEditorToolButton, self.WhiteBalanceToolButton, 
-            self.BackgroundRemovalToolButton, self.HumanSegmentationToolButton, self.GrayscaleBackgroundToolButton,
+            self.SpotRemovalToolButton, self.BlurToolButton, self.CurveEditorToolButton, self.HistogramToolButton, 
+            self.WhiteBalanceToolButton, self.BackgroundRemovalToolButton, self.HumanSegmentationToolButton, self.GrayscaleBackgroundToolButton,
             self.PortraitModeBackgroundBlurToolButton, 
             self.ColorizerToolButton, self.SuperResolutionToolButton, self.AnimeGanV2ToolButton, 
         ]
 
         for button in tool_buttons:
-            button.setIconSize(QtCore.QSize(30, 30))
+            button.setIconSize(QtCore.QSize(20, 20))
             ToolbarLayout.addWidget(button)
 
         ToolbarContent.setLayout(ToolbarLayout)
@@ -600,7 +597,6 @@ class Gui(QtWidgets.QMainWindow):
 
         self.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, self.ToolbarDockWidget)
         self.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, self.SlidersDock)
-        self.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, self.HistogramDock)
 
         ##############################################################################################
         ##############################################################################################
@@ -628,8 +624,7 @@ class Gui(QtWidgets.QMainWindow):
         self.resizeDockWidgets()
 
     def resizeDockWidgets(self):
-        self.resizeDocks([self.HistogramDock], [380], Qt.Orientation.Horizontal)
-        self.resizeDocks([self.ToolbarDockWidget, self.SlidersDock, self.HistogramDock], [200, 400, 280], Qt.Orientation.Vertical)
+        self.resizeDocks([self.ToolbarDockWidget, self.SlidersDock], [200, 400], Qt.Orientation.Vertical)
 
     @QtCore.pyqtSlot(int, str)
     def updateProgressBar(self, e, label):
@@ -959,19 +954,52 @@ class Gui(QtWidgets.QMainWindow):
                     self.closed = True
                     self.mainWindow.DisableTool("color_picker")
 
-            content = ColorPickerWidget(None, self)
-            ColorPickerLayout = QtWidgets.QVBoxLayout(content)
-            self.color_picker = QColorPicker(content, rgb=(173, 36, 207))
+            self.ColorPickerContent = ColorPickerWidget(None, self)
+            ColorPickerLayout = QtWidgets.QVBoxLayout(self.ColorPickerContent)
+            self.color_picker = QColorPicker(self.ColorPickerContent, rgb=(173, 36, 207))
             self.image_viewer.ColorPicker = self.color_picker
             ColorPickerLayout.addWidget(self.color_picker)
             self.EnableTool("color_picker") if checked else self.DisableTool("color_picker")
 
-            content.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)
-            content.show()
+            self.ColorPickerContent.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)
+            self.ColorPickerContent.show()
             # Create a local event loop for this widget
             loop = QtCore.QEventLoop()
-            content.destroyed.connect(loop.quit)
+            self.ColorPickerContent.destroyed.connect(loop.quit)
             loop.exec() # wait
+        else:
+            self.DisableTool("color_picker")
+            self.ColorPickerContent.hide()
+
+    def OnHistogramToolButton(self, checked):
+        if checked:
+            class HistogrmaWidget(QtWidgets.QWidget):
+                def __init__(self, parent, mainWindow):
+                    QtWidgets.QWidget.__init__(self, parent)
+                    self.parent = parent
+                    self.closed = False
+                    self.mainWindow = mainWindow
+
+                def closeEvent(self, event):
+                    self.destroyed.emit()
+                    event.accept()
+                    self.closed = True
+                    self.mainWindow.DisableTool("histogram")
+            if not self.HistogramContent:
+                self.HistogramContent = HistogrmaWidget(None, self)
+                self.HistogramLayout = QtWidgets.QVBoxLayout(self.HistogramContent)
+                self.HistogramLayout.addWidget(self.ImageHistogramPlot)
+                self.HistogramContent.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)
+            self.HistogramContent.show()
+            # Create a local event loop for this widget
+            loop = QtCore.QEventLoop()
+            self.HistogramContent.destroyed.connect(loop.quit)
+            loop.exec() # wait
+        else:
+            self.DisableTool("histogram")
+            self.HistogramContent.hide()
+            #del self.HistogramContent
+            #del self.HistogramLayout
 
     def OnPaintToolButton(self, checked):
         if checked:
@@ -988,19 +1016,22 @@ class Gui(QtWidgets.QMainWindow):
                     self.closed = True
                     self.mainWindow.DisableTool("paint")
 
-            content = ColorPickerWidget(None, self)
-            ColorPickerLayout = QtWidgets.QVBoxLayout(content)
-            self.color_picker = QColorPicker(content, rgb=(173, 36, 207))
+            self.PaintContent = ColorPickerWidget(None, self)
+            ColorPickerLayout = QtWidgets.QVBoxLayout(self.PaintContent)
+            self.color_picker = QColorPicker(self.PaintContent, rgb=(173, 36, 207))
             self.image_viewer.ColorPicker = self.color_picker
             ColorPickerLayout.addWidget(self.color_picker)
             self.EnableTool("paint") if checked else self.DisableTool("paint")
 
-            content.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)
-            content.show()
+            self.PaintContent.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)
+            self.PaintContent.show()
             # Create a local event loop for this widget
             loop = QtCore.QEventLoop()
-            content.destroyed.connect(loop.quit)
+            self.PaintContent.destroyed.connect(loop.quit)
             loop.exec() # wait
+        else:
+            self.DisableTool("paint")
+            self.PaintContent.hide()
 
     def OnFillToolButton(self, checked):
         if checked:
@@ -1017,19 +1048,22 @@ class Gui(QtWidgets.QMainWindow):
                     self.closed = True
                     self.mainWindow.DisableTool("fill")
 
-            content = ColorPickerWidget(None, self)
-            ColorPickerLayout = QtWidgets.QVBoxLayout(content)
-            self.color_picker = QColorPicker(content, rgb=(173, 36, 207))
+            self.FillContent = ColorPickerWidget(None, self)
+            ColorPickerLayout = QtWidgets.QVBoxLayout(self.FillContent)
+            self.color_picker = QColorPicker(self.FillContent, rgb=(173, 36, 207))
             self.image_viewer.ColorPicker = self.color_picker
             ColorPickerLayout.addWidget(self.color_picker)
             self.EnableTool("fill") if checked else self.DisableTool("fill")
 
-            content.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)
-            content.show()
+            self.FillContent.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)
+            self.FillContent.show()
             # Create a local event loop for this widget
             loop = QtCore.QEventLoop()
-            content.destroyed.connect(loop.quit)
+            self.FillContent.destroyed.connect(loop.quit)
             loop.exec() # wait
+        else:
+            self.DisableTool("fill")
+            self.FillContent.hide()
 
     def OnCropToolButton(self, checked):
         if checked:
@@ -1425,14 +1459,16 @@ class Gui(QtWidgets.QMainWindow):
 
     def OnCurveEditorToolButton(self, checked):
         if checked and not self.currentTool:
-            curveWidget = QCurveWidget.QCurveWidget(None, self.image_viewer)
-            curveWidget.setWindowModality(Qt.WindowModality.ApplicationModal)
-            curveWidget.show()
+            self.CurveWidget = QCurveWidget.QCurveWidget(None, self.image_viewer)
+            self.CurveWidget.setWindowModality(Qt.WindowModality.ApplicationModal)
+            self.CurveWidget.show()
 
             # Create a local event loop for this widget
             loop = QtCore.QEventLoop()
-            curveWidget.destroyed.connect(loop.quit)
+            self.CurveWidget.destroyed.connect(loop.quit)
             loop.exec() # wait
+        else:
+            self.CurveWidget.hide()
 
         self.CurveEditorToolButton.setChecked(False)
         del self.currentTool

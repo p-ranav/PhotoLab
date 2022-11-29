@@ -21,6 +21,7 @@ class QLayerList(QtWidgets.QDockWidget):
 
     def OnLayerSelect(self):
         button = self.sender()
+        button.setIconSize(QtCore.QSize(100, 100))
         selectedLayerIndex = button.objectName().split("Layer ")[-1]
         selectedLayerIndex = int(selectedLayerIndex)
         self.parent.image_viewer.currentLayer = selectedLayerIndex
@@ -35,6 +36,7 @@ class QLayerList(QtWidgets.QDockWidget):
                     self.parent.previousImage.setImage(previous, False)
             else:
                 lb.setChecked(False)
+                lb.setIconSize(QtCore.QSize(50, 50))
 
     def updateScrollView(self):
         self.scroll = QtWidgets.QScrollArea()
@@ -53,6 +55,7 @@ class QLayerList(QtWidgets.QDockWidget):
     def onDuplicateLayer(self):
         self.parent.image_viewer.duplicateCurrentLayer()
         self.currentButton.setChecked(False)
+        self.currentButton.setIconSize(QtCore.QSize(50, 50))
 
         self.currentLayer = self.parent.image_viewer.currentLayer
         pixmap = self.parent.getCurrentLayerLatestPixmap()
@@ -60,9 +63,9 @@ class QLayerList(QtWidgets.QDockWidget):
         button = QtWidgets.QToolButton(self)
         button.setText("Layer " + str(self.currentLayer + 1))
         button.setIcon(QtGui.QIcon(pixmap))
-        button.setIconSize(QtCore.QSize(50, 50))
+        button.setIconSize(QtCore.QSize(100, 100))
         button.setMinimumHeight(50)
-        button.setMinimumWidth(260)
+        button.setMinimumWidth(180)
         button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         button.setCheckable(True)
         button.setObjectName("Layer " + str(self.currentLayer))
@@ -108,6 +111,7 @@ class QLayerList(QtWidgets.QDockWidget):
                             if nextLayerIndex is not None:
                                 self.layout.removeWidget(l)
                                 self.currentButton = nextLayer
+                                self.currentButton.setIconSize(QtCore.QSize(100, 100))
                                 self.parent.image_viewer.currentLayer = nextLayerIndex
                                 pixmap = self.parent.image_viewer.getCurrentLayerLatestPixmap()
                                 self.parent.image_viewer.setImage(pixmap, False)
@@ -128,11 +132,10 @@ class QLayerList(QtWidgets.QDockWidget):
         if not self.currentButton:
             titleBar = QtWidgets.QWidget()
             titleBar.setContentsMargins(0, 0, 0, 0)
-            titleBar.setMinimumWidth(260)
-            titleBar.setMinimumHeight(20)
             titleBarLayout = QtWidgets.QHBoxLayout()
             titleBarLayout.setContentsMargins(0, 0, 0, 0)
             titleBar.setLayout(titleBarLayout)
+            titleBar.setMinimumWidth(180)
 
             duplicateLayerButton = QtWidgets.QPushButton()
             duplicateLayerButton.setIcon(QtGui.QIcon("icons/duplicate.svg"))
@@ -149,11 +152,11 @@ class QLayerList(QtWidgets.QDockWidget):
             tools = QtWidgets.QWidget()
             toolsLayout = QtWidgets.QHBoxLayout()
             tools.setLayout(toolsLayout)
-            toolsLayout.addWidget(deleteLayerButton)
             toolsLayout.addWidget(duplicateLayerButton)
+            toolsLayout.addWidget(deleteLayerButton)
 
             titleBarLayout.addWidget(tools)
-            titleBarLayout.setAlignment(tools, Qt.AlignmentFlag.AlignRight)
+            titleBarLayout.setAlignment(tools, Qt.AlignmentFlag.AlignLeft)
 
             self.layout.addWidget(titleBar)
 
@@ -161,9 +164,9 @@ class QLayerList(QtWidgets.QDockWidget):
             button = QtWidgets.QToolButton(self)
             button.setText("Layer " + str(i + 1))
             button.setIcon(QtGui.QIcon(pixmap))
-            button.setIconSize(QtCore.QSize(50, 50))
+            button.setIconSize(QtCore.QSize(100, 100))
             button.setMinimumHeight(50)
-            button.setMinimumWidth(260)
+            button.setMinimumWidth(180)
             button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
             button.setCheckable(True)
             button.setObjectName("Layer " + str(i))

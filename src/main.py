@@ -95,28 +95,6 @@ class Gui(QtWidgets.QMainWindow):
         ##############################################################################################
         ##############################################################################################
 
-        self.SlidersDock = QtWidgets.QDockWidget("Adjust")
-
-        scroll = QtWidgets.QScrollArea()
-        self.SlidersDock.setWidget(scroll)
-        content = QtWidgets.QWidget()
-        scroll.setWidget(content)
-        scroll.setWidgetResizable(True)
-        lay = QtWidgets.QFormLayout(content)
-
-        # Filter sliders
-        filter_label = QLabel("Basic")
-        lay.addWidget(filter_label)
-        
-        # Enhance sliders
-        self.AddRedColorSlider(lay)
-        self.AddGreenColorSlider(lay)
-        self.AddBlueColorSlider(lay)
-        self.AddColorSlider(lay)
-        self.AddBrightnessSlider(lay)
-        self.AddContrastSlider(lay)
-        self.AddSharpnessSlider(lay)
-
         # State of enhance sliders
         self.RedFactor = 100
         self.GreenFactor = 100
@@ -126,23 +104,14 @@ class Gui(QtWidgets.QMainWindow):
         self.Contrast = 100
         self.Sharpness = 100
 
-        # Filter sliders
-        filter_label = QLabel("Filter")
-        lay.addWidget(filter_label)
-
-        self.AddGaussianBlurSlider(lay)
-
         # State of filter sliders
         self.GaussianBlurRadius = 0
 
-        #self.SliderTimerId = -1
-        ## create the shared queue
-        #self.sliderQueue = Queue()
-
-        #self.sliderQueueConsumeTimer = QtCore.QTimer()
-        #self.sliderQueueConsumeTimer.setInterval(2500)
-        #self.sliderQueueConsumeTimer.timeout.connect(self.sliderConsumer)
-        #self.sliderQueueConsumeTimer.start()
+        self.timer_id = -1
+        self.sliderExplanationOfChange = None
+        self.sliderTypeOfChange = None
+        self.sliderValueOfChange = None
+        self.sliderObjectOfChange = None
 
         ##############################################################################################
         ##############################################################################################
@@ -498,6 +467,19 @@ class Gui(QtWidgets.QMainWindow):
 
         ##############################################################################################
         ##############################################################################################
+        # Sliders Tool
+        ##############################################################################################
+        ##############################################################################################
+
+        self.SlidersToolButton = QToolButton(self)
+        self.SlidersToolButton.setText("&Sliders")
+        self.SlidersToolButton.setToolTip("Sliders")
+        self.SlidersToolButton.setIcon(QtGui.QIcon("icons/sliders.svg"))
+        self.SlidersToolButton.setCheckable(True)
+        self.SlidersToolButton.toggled.connect(self.OnSlidersToolButton)
+
+        ##############################################################################################
+        ##############################################################################################
         # Curve Editor Tool
         ##############################################################################################
         ##############################################################################################
@@ -578,7 +560,8 @@ class Gui(QtWidgets.QMainWindow):
         }
 
         self.ToolbarDockWidget = QtWidgets.QDockWidget("Tools")
-        # self.ToolbarDockWidget.setMinimumWidth(145)
+        self.ToolbarDockWidget.setTitleBarWidget(QtWidgets.QWidget())
+        self.ToolbarDockWidget.setMinimumWidth(145)
         ToolbarContent = QtWidgets.QWidget()
         ToolbarLayout = QFlowLayout(ToolbarContent)
         ToolbarLayout.setSpacing(0)
@@ -589,7 +572,7 @@ class Gui(QtWidgets.QMainWindow):
             self.RotateLeftToolButton, self.RotateRightToolButton,
             self.HStackToolButton, self.VStackToolButton, self.LandscapePanoramaToolButton,
             self.FlipLeftRightToolButton, self.FlipTopBottomToolButton,
-            self.SpotRemovalToolButton, self.BlurToolButton, self.CurveEditorToolButton, self.HistogramToolButton, 
+            self.SpotRemovalToolButton, self.BlurToolButton, self.CurveEditorToolButton, self.SlidersToolButton, self.HistogramToolButton, 
             self.WhiteBalanceToolButton, self.BackgroundRemovalToolButton, self.HumanSegmentationToolButton, self.GrayscaleBackgroundToolButton,
             self.PortraitModeBackgroundBlurToolButton, 
             self.ColorizerToolButton, self.SuperResolutionToolButton, self.AnimeGanV2ToolButton, 
@@ -610,7 +593,6 @@ class Gui(QtWidgets.QMainWindow):
         ##############################################################################################
 
         self.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, self.ToolbarDockWidget)
-        self.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, self.SlidersDock)
 
         ##############################################################################################
         ##############################################################################################
@@ -629,16 +611,11 @@ class Gui(QtWidgets.QMainWindow):
         self.sliderObjectOfChange = None
         self.sliderChangeSignal.connect(self.onUpdateImageCompleted)
         self.sliderWorkers = []
-        self.timer_id = -1
-        self.sliderExplanationOfChange = None
-        self.sliderTypeOfChange = None
-        self.sliderValueOfChange = None
-        self.sliderObjectOfChange = None
 
         self.resizeDockWidgets()
 
     def resizeDockWidgets(self):
-        self.resizeDocks([self.ToolbarDockWidget, self.SlidersDock], [200, 400], Qt.Orientation.Vertical)
+        self.resizeDocks([self.ToolbarDockWidget], [200], Qt.Orientation.Vertical)
 
     @QtCore.pyqtSlot(int, str)
     def updateProgressBar(self, e, label):
@@ -914,7 +891,7 @@ class Gui(QtWidgets.QMainWindow):
     @QtCore.pyqtSlot()
     def onUpdateImageCompleted(self):
         if self.sliderChangedPixmap:
-            self.image_viewer.setImage(self.sliderChangedPixmap, True, self.sliderExplanationOfChange, 
+            self.image_viewer.setImage(self.sliderChangedPixmap, False, self.sliderExplanationOfChange, 
                                        self.sliderTypeOfChange, self.sliderValueOfChange, self.sliderObjectOfChange)
             self.UpdateHistogramPlot()
 
@@ -922,7 +899,7 @@ class Gui(QtWidgets.QMainWindow):
         self.killTimer(self.timer_id)
         self.timer_id = -1
 
-        Pixmap = self.image_viewer.getCurrentLayerLatestPixmapBeforeSliderChange()
+        Pixmap = self.image_viewer.getCurrentLayerLatestPixmap()
         if Pixmap:
             if self.RedFactor != 100:
                 Pixmap = self.UpdateReds(Pixmap, float(self.RedFactor / 100))
@@ -1511,6 +1488,73 @@ class Gui(QtWidgets.QMainWindow):
             self.currentTool.setWindowModality(Qt.WindowModality.ApplicationModal)
             self.currentTool.show()
 
+    def OnSlidersToolButton(self, checked):
+        if checked and not self.currentTool:
+
+            class SlidersScrollWidget(QtWidgets.QScrollArea):
+                def __init__(self, parent, mainWindow):
+                    QtWidgets.QScrollArea.__init__(self, parent)
+                    self.parent = parent
+                    self.closed = False
+                    self.mainWindow = mainWindow
+
+                def closeEvent(self, event):
+                    self.destroyed.emit()
+                    event.accept()
+                    self.closed = True
+                    self.mainWindow.SlidersToolButton.setChecked(False)
+                    self.mainWindow.image_viewer.setImage(self.mainWindow.image_viewer.pixmap(), True, "Sliders")
+
+            self.slidersScroll = SlidersScrollWidget(None, self)
+            self.slidersContent = QtWidgets.QWidget()
+            self.slidersScroll.setWidget(self.slidersContent)
+            self.slidersScroll.setWidgetResizable(True)
+            self.slidersLayout = QtWidgets.QFormLayout(self.slidersContent)
+
+            # Filter sliders
+            filter_label = QLabel("Basic")
+            self.slidersLayout.addWidget(filter_label)
+        
+            # Enhance sliders
+            self.AddRedColorSlider(self.slidersLayout)
+            self.AddGreenColorSlider(self.slidersLayout)
+            self.AddBlueColorSlider(self.slidersLayout)
+            self.AddColorSlider(self.slidersLayout)
+            self.AddBrightnessSlider(self.slidersLayout)
+            self.AddContrastSlider(self.slidersLayout)
+            self.AddSharpnessSlider(self.slidersLayout)
+
+            # State of enhance sliders
+            self.RedFactor = 100
+            self.GreenFactor = 100
+            self.BlueFactor = 100
+            self.Color = 100
+            self.Brightness = 100
+            self.Contrast = 100
+            self.Sharpness = 100
+
+            # Filter sliders
+            filter_label = QLabel("Filter")
+            self.slidersLayout.addWidget(filter_label)
+
+            # State of filter sliders
+            self.GaussianBlurRadius = 0
+
+            self.AddGaussianBlurSlider(self.slidersLayout)
+
+            self.slidersScroll.show()
+
+            # Create a local event loop for this widget
+            loop = QtCore.QEventLoop()
+            self.slidersScroll.destroyed.connect(loop.quit)
+            loop.exec() # wait
+        else:
+            self.slidersScroll.hide()
+
+        self.SlidersToolButton.setChecked(False)
+        del self.currentTool
+        self.currentTool = None
+
     def OnCurveEditorToolButton(self, checked):
         if checked and not self.currentTool:
             self.CurveWidget = QCurveWidget.QCurveWidget(None, self.image_viewer)
@@ -1604,7 +1648,6 @@ class Gui(QtWidgets.QMainWindow):
             self.setWindowTitle(filename)
             # self.image_viewer.OriginalImage = self.image_viewer.pixmap()
             self.updateHistogram()
-            self.resetSliderValues()
             self.createLayersDock()
 
     def createLayersDock(self):
@@ -1616,6 +1659,7 @@ class Gui(QtWidgets.QMainWindow):
 
         from QLayerList import QLayerList
         self.layerListDock = QLayerList("Layers", self)
+        self.layerListDock.setTitleBarWidget(QtWidgets.QWidget())
         self.addDockWidget(QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.layerListDock)
         self.image_viewer.layerListDock = self.layerListDock
 
@@ -1655,7 +1699,6 @@ class Gui(QtWidgets.QMainWindow):
             # self.image_viewer.OriginalImage = self.image_viewer.pixmap()
 
             self.updateHistogram()
-            self.resetSliderValues()
             self.createLayersDock()
 
 def main():

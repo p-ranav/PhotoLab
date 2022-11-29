@@ -10,6 +10,7 @@ class QToolPortraitMode(QTool):
 
         self.parent = parent
         self.output = None
+        self.backgroundRemoved = None
 
     def onRun(self, progressSignal, args):
         image = args[0].copy()

@@ -505,7 +505,7 @@ class QtImageViewer(QGraphicsView):
                 m = int(n * w / h)
 
             c1 = (225, 255, 255, 0)                  # First color
-            c2 = (44, 44, 44)                        # Second color
+            c2 = (83, 83, 83)                        # Second color
             mode = 'L' if isinstance(c1, int) else 'RGBA'   # Mode from first color
 
             # Generate pixel-wise checker, even x dimension
@@ -1035,16 +1035,6 @@ class QtImageViewer(QGraphicsView):
             self.ROIs.append(spot)
 
     def keyPressEvent(self, event):
-
-        if event.key() == Qt.Key.Key_B:
-            # B as in "Before"
-            if self.currentLayer in self.layerHistory:
-                history = self.layerHistory[self.currentLayer]
-                if len(history) > 1:
-                    previous = history[-2]
-                    previousPixmap = previous["pixmap"]
-                    self.setImage(previousPixmap, False, "Look Behind")
-
         if self._isPainting:
             if event.key() == Qt.Key.Key_BracketLeft:
                 self.paintBrushSize -= 3
@@ -1083,18 +1073,6 @@ class QtImageViewer(QGraphicsView):
                 self.renderCursorOverlay(self._lastMousePositionInScene, self.blurBrushSize)
 
         event.accept()
-
-
-    def keyReleaseEvent(self, event):
-
-        if event.key() == Qt.Key.Key_B:
-            # B as in "Before"
-            if self.currentLayer in self.layerHistory:
-                history = self.layerHistory[self.currentLayer]
-                if len(history) > 1:
-                    current = history[-1]
-                    currentPixmap = current["pixmap"]
-                    self.setImage(currentPixmap, False, "Look Behind Complete")
 
     def performColorPick(self, event):
         currentPixmap = self.getCurrentLayerLatestPixmap()

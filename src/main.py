@@ -80,6 +80,7 @@ class Gui(QtWidgets.QMainWindow):
         self.ImageHistogramPlot.addItem(self.ImageHistogramGraphBlue)
         self.ImageHistogramPlot.addItem(self.ImageHistogramGraphLuma)
         self.HistogramContent = None
+        self.ImageHistogramPlot.hide()
 
         ##############################################################################################
         ##############################################################################################
@@ -633,8 +634,6 @@ class Gui(QtWidgets.QMainWindow):
 
     def initImageViewer(self):
         self.image_viewer = QtImageViewer(self)
-        self.previousImage = None
-        self.previousImageDock = None
         self.layerListDock = None
         self.CurvesDock = None
 
@@ -973,6 +972,7 @@ class Gui(QtWidgets.QMainWindow):
 
     def OnHistogramToolButton(self, checked):
         if checked:
+            print("Here")
             class HistogrmaWidget(QtWidgets.QWidget):
                 def __init__(self, parent, mainWindow):
                     QtWidgets.QWidget.__init__(self, parent)
@@ -990,6 +990,7 @@ class Gui(QtWidgets.QMainWindow):
                 self.HistogramLayout = QtWidgets.QVBoxLayout(self.HistogramContent)
                 self.HistogramLayout.addWidget(self.ImageHistogramPlot)
                 self.HistogramContent.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)
+            self.ImageHistogramPlot.show()
             self.HistogramContent.show()
             # Create a local event loop for this widget
             loop = QtCore.QEventLoop()
@@ -1538,9 +1539,6 @@ class Gui(QtWidgets.QMainWindow):
 
     def OnOpen(self):
         # Load an image file to be displayed (will popup a file dialog).
-        self.image_viewer.previousImage = None
-        if self.previousImage:
-            self.previousImage.setImage(QPixmap())
         self.image_viewer.numLayersCreated = 1
         self.image_viewer.currentLayer = 0
         self.image_viewer.layerHistory = {
@@ -1554,33 +1552,7 @@ class Gui(QtWidgets.QMainWindow):
             # self.image_viewer.OriginalImage = self.image_viewer.pixmap()
             self.updateHistogram()
             self.resetSliderValues()
-            self.createPreviousImageWidget()
             self.createLayersDock()
-
-    def createPreviousImageWidget(self):
-        if self.previousImageDock:
-            self.removeDockWidget(self.previousImageDock)
-
-        def multipleOfXClosestToN(x, n):
-            n = n + x/2
-            n = n - (n % x)
-            return int(n)
-
-        # Create previous image dock
-        pixmap = self.getCurrentLayerLatestPixmap()
-        self.previousImageDock = QtWidgets.QDockWidget("Previous")
-        width = multipleOfXClosestToN(pixmap.width() / 1000, 300)
-        height = int(pixmap.height() * width / pixmap.width())
-        self.previousImageDock.setFixedWidth(width)
-        self.previousImageDock.setFixedHeight(height)
-
-        self.previousImage = QtImageViewer(self.previousImageDock)
-        self.previousImage.setImage(pixmap)
-
-        self.previousImageDock.setWidget(self.previousImage)
-            
-        self.addDockWidget(QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.previousImageDock)
-        self.image_viewer.previousImage = self.previousImage
 
     def createLayersDock(self):
         if self.layerListDock:
@@ -1631,7 +1603,6 @@ class Gui(QtWidgets.QMainWindow):
 
             self.updateHistogram()
             self.resetSliderValues()
-            self.createPreviousImageWidget()
             self.createLayersDock()
 
 def main():

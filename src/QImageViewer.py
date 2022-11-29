@@ -218,8 +218,7 @@ class QtImageViewer(QGraphicsView):
         self.checkerBoardWidth = 0
         self.checkerBoardHeight = 0
 
-        # Reference to dock widget that shows previous image
-        self.previousImage = None
+        # Reference to dock widget that shows layer list
         self.layerListDock = None
 
     def sizeHint(self):
@@ -475,10 +474,6 @@ class QtImageViewer(QGraphicsView):
 
         # Add to layer history
         if addToHistory:
-            if self.previousImage:
-                currentPixmap = self.getCurrentLayerLatestPixmap()
-                if currentPixmap:
-                    self.previousImage.setImage(currentPixmap)
             if self.layerListDock:
                 # Update the layer button pixmap to the new 
                 self.layerListDock.setButtonPixmap(pixmap)

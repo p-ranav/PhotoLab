@@ -1252,6 +1252,7 @@ class Gui(QtWidgets.QMainWindow):
                             # Save result
                             updatedPixmap = self.ImageToQPixmap(dst)
                             self.image_viewer.setImage(updatedPixmap, True, "Landscape Panorama", "Tool", None, None)
+        self.LandscapePanoramaToolButton.setChecked(False)
 
     def OnFlipLeftRightToolButton(self, checked):
         if checked:

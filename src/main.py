@@ -581,6 +581,7 @@ class Gui(QtWidgets.QMainWindow):
         for button in self.ToolButtons:
             button.setIconSize(QtCore.QSize(20, 20))
             button.setEnabled(False)
+            button.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.ArrowCursor))
             ToolbarLayout.addWidget(button)
 
         ToolbarContent.setLayout(ToolbarLayout)

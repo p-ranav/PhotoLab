@@ -34,9 +34,6 @@ class QLayerList(QtWidgets.QDockWidget):
                 self.currentButton = lb
                 pixmap = self.parent.image_viewer.getCurrentLayerLatestPixmap()
                 self.parent.image_viewer.setImage(pixmap, False)
-                previous = self.parent.image_viewer.getCurrentLayerPreviousPixmap()
-                if previous:
-                    self.parent.previousImage.setImage(previous, False)
             else:
                 lb.setChecked(False)
                 lb.setIconSize(QtCore.QSize(50, 50))
@@ -50,7 +47,7 @@ class QLayerList(QtWidgets.QDockWidget):
         self.content.setContentsMargins(0, 0, 0, 0)
 
         #Scroll Area Properties
-        self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
+        self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         # self.scroll.setWidgetResizable(True)
         self.scroll.setWidget(self.content)
@@ -121,9 +118,6 @@ class QLayerList(QtWidgets.QDockWidget):
                                 self.parent.image_viewer.currentLayer = nextLayerIndex
                                 pixmap = self.parent.image_viewer.getCurrentLayerLatestPixmap()
                                 self.parent.image_viewer.setImage(pixmap, False)
-                                previous = self.parent.image_viewer.getCurrentLayerPreviousPixmap()
-                                if previous:
-                                    self.parent.previousImage.setImage(previous, False)
                                 del self.parent.image_viewer.layerHistory[layerIndex]
                     else:
                         newLayerButtons.append(l)

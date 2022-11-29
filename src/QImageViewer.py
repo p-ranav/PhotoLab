@@ -504,8 +504,8 @@ class QtImageViewer(QGraphicsView):
                 n = int(n)
                 m = int(n * w / h)
 
-            c1 = (225, 255, 255, 0)                         # First color
-            c2 = (10, 100, 100, 100)                        # Second color
+            c1 = (225, 255, 255, 0)                  # First color
+            c2 = (44, 44, 44)                        # Second color
             mode = 'L' if isinstance(c1, int) else 'RGBA'   # Mode from first color
 
             # Generate pixel-wise checker, even x dimension
@@ -1244,7 +1244,7 @@ class QtImageViewer(QGraphicsView):
         elif self._isSelectingPath:
             self.performSelectCrop()
             self.exitSelectPath()
-            self.updateViewer()
+            self.clearZoom()
             self.viewChanged.emit()
             # Clean up history
             # Remove the "Path Select" entries

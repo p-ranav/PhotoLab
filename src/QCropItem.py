@@ -208,5 +208,5 @@ class QCropItem(QGraphicsPathItem):
         return self.intern_rect
 
     def setRect(self, rect):
-        self._intern = rect
+        self.intern_rect = rect
         self.create_path()

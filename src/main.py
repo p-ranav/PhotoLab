@@ -1618,7 +1618,9 @@ class Gui(QtWidgets.QMainWindow):
 
     def DisableTool(self, tool):
         value = self.tools[tool]
-        getattr(self, value["tool"]).setChecked(False)
+        button = getattr(self, value["tool"])
+        button.setChecked(False)
+        self.setToolButtonStyleUnchecked(button)
         setattr(self.image_viewer, value["var"], False)
         if "destructor" in value:
             getattr(self.image_viewer, value["destructor"])()

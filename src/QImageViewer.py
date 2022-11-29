@@ -1169,6 +1169,7 @@ class QtImageViewer(QGraphicsView):
             if self._selectRectItem in self.scene.items():
                 self.scene.removeItem(self._selectRectItem)
         # Reset variables
+        self._selectRect = None
         self._selectRectItem = None
         self._isSelectingRect = False
         self._isSelectingRectStarted = False
@@ -1229,15 +1230,16 @@ class QtImageViewer(QGraphicsView):
         self.pathPointItem = None
 
     def performCrop(self):
-        if self._selectRect and self._isSelectingRect and self._isSelectingRectStarted:
-            rect = self._selectRect.toAlignedRect()
+        if self._isSelectingRect and self._isSelectingRectStarted:
+            rect = self._selectRectItem.intern_rect.toAlignedRect()
+
             # Crop the pixmap
             cropQPixmap = self.getCurrentLayerLatestPixmap().copy(rect)
 
             self.setImage(cropQPixmap, True, "RectCrop")
 
             self.exitSelectRect()
-            self.updateViewer()
+            self.clearZoom()
             self.viewChanged.emit()
         elif self._isSelectingPath:
             self.performSelectCrop()

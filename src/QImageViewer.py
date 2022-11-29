@@ -1154,7 +1154,7 @@ class QtImageViewer(QGraphicsView):
         r, g, b, _ = pixelAccess[x, y]
         cr, cg, cb = self.ColorPicker.getRGB()
 
-        mask = currentPixmap.createMaskFromColor(QtGui.QColor(r, g, b), Qt.MaskOutColor)
+        mask = currentPixmap.createMaskFromColor(QtGui.QColor(r, g, b), Qt.MaskMode.MaskOutColor)
 
         p = QPainter(currentPixmap)
         p.setPen(QtGui.QColor(int(cr), int(cg), int(cb)))

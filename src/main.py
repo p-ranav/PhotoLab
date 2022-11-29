@@ -20,7 +20,6 @@ import os
 from QFlowLayout import QFlowLayout
 from PIL import Image, ImageEnhance, ImageFilter
 from QWorker import QWorker
-import qdarkstyle
 import QCurveWidget
 
 def free_gpu_cache():
@@ -107,19 +106,7 @@ class Gui(QtWidgets.QMainWindow):
         # Color Picker
         ##############################################################################################
         ##############################################################################################
-
-        # Create color picker dock
-        self.ColorPickerDock = QtWidgets.QDockWidget("ColorPicker")
-        #ColorPickerDock.setMinimumWidth(100)
-        #ColorPickerDock.setMinimumHeight(100)
-        #ColorPickerDock.setMaximumHeight(260)
-
-        content = QtWidgets.QWidget()
-        ColorPickerLayout = QtWidgets.QVBoxLayout(content)
-        self.ColorPickerDock.setWidget(content)
-
-        self.color_picker = QColorPicker(content, rgb=(173, 36, 207))
-        ColorPickerLayout.addWidget(self.color_picker)
+        self.color_picker = None
 
         ##############################################################################################
         ##############################################################################################
@@ -517,6 +504,19 @@ class Gui(QtWidgets.QMainWindow):
 
         ##############################################################################################
         ##############################################################################################
+        # Curve Editor Tool
+        ##############################################################################################
+        ##############################################################################################
+
+        self.CurveEditorToolButton = QToolButton(self)
+        self.CurveEditorToolButton.setText("&Curves")
+        self.CurveEditorToolButton.setToolTip("Curves")
+        self.CurveEditorToolButton.setIcon(QtGui.QIcon("icons/curve.svg"))
+        self.CurveEditorToolButton.setCheckable(True)
+        self.CurveEditorToolButton.toggled.connect(self.OnCurveEditorToolButton)
+
+        ##############################################################################################
+        ##############################################################################################
         # Toolbar
         ##############################################################################################
         ##############################################################################################
@@ -578,7 +578,7 @@ class Gui(QtWidgets.QMainWindow):
             self.RotateLeftToolButton, self.RotateRightToolButton,
             self.HStackToolButton, self.VStackToolButton, 
             self.FlipLeftRightToolButton, self.FlipTopBottomToolButton,
-            self.SpotRemovalToolButton, self.BlurToolButton, self.WhiteBalanceToolButton, 
+            self.SpotRemovalToolButton, self.BlurToolButton, self.CurveEditorToolButton, self.WhiteBalanceToolButton, 
             self.BackgroundRemovalToolButton, self.HumanSegmentationToolButton, self.GrayscaleBackgroundToolButton,
             self.PortraitModeBackgroundBlurToolButton, 
             self.ColorizerToolButton, self.SuperResolutionToolButton, self.AnimeGanV2ToolButton, 
@@ -590,7 +590,6 @@ class Gui(QtWidgets.QMainWindow):
 
         ToolbarContent.setLayout(ToolbarLayout)
         self.ToolbarDockWidget.setWidget(ToolbarContent)
-        # self.ToolbarDockWidget.setMaximumHeight(180)
         self.currentTool = None
 
         ##############################################################################################
@@ -602,7 +601,6 @@ class Gui(QtWidgets.QMainWindow):
         self.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, self.ToolbarDockWidget)
         self.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, self.SlidersDock)
         self.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, self.HistogramDock)
-        self.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, self.ColorPickerDock)
 
         ##############################################################################################
         ##############################################################################################
@@ -631,7 +629,7 @@ class Gui(QtWidgets.QMainWindow):
 
     def resizeDockWidgets(self):
         self.resizeDocks([self.HistogramDock], [380], Qt.Orientation.Horizontal)
-        self.resizeDocks([self.ToolbarDockWidget, self.SlidersDock, self.HistogramDock, self.ColorPickerDock], [200, 400, 280, 230], Qt.Orientation.Vertical)
+        self.resizeDocks([self.ToolbarDockWidget, self.SlidersDock, self.HistogramDock], [200, 400, 280], Qt.Orientation.Vertical)
 
     @QtCore.pyqtSlot(int, str)
     def updateProgressBar(self, e, label):
@@ -675,8 +673,6 @@ class Gui(QtWidgets.QMainWindow):
     
         # Allow panning with the middle mouse button.
         self.image_viewer.panButton = Qt.MouseButton.MiddleButton  # set to None to disable
-
-        self.image_viewer.ColorPicker = self.color_picker
 
         # Set the central widget of the Window. Widget will expand
         # to take up all the space in the window by default.
@@ -949,13 +945,91 @@ class Gui(QtWidgets.QMainWindow):
         self.EnableTool("cursor") if checked else self.DisableTool("cursor")
 
     def OnColorPickerToolButton(self, checked):
-        self.EnableTool("color_picker") if checked else self.DisableTool("color_picker")
+        if checked:
+            class ColorPickerWidget(QtWidgets.QWidget):
+                def __init__(self, parent, mainWindow):
+                    QtWidgets.QWidget.__init__(self, parent)
+                    self.parent = parent
+                    self.closed = False
+                    self.mainWindow = mainWindow
+
+                def closeEvent(self, event):
+                    self.destroyed.emit()
+                    event.accept()
+                    self.closed = True
+                    self.mainWindow.DisableTool("color_picker")
+
+            content = ColorPickerWidget(None, self)
+            ColorPickerLayout = QtWidgets.QVBoxLayout(content)
+            self.color_picker = QColorPicker(content, rgb=(173, 36, 207))
+            self.image_viewer.ColorPicker = self.color_picker
+            ColorPickerLayout.addWidget(self.color_picker)
+            self.EnableTool("color_picker") if checked else self.DisableTool("color_picker")
+
+            content.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)
+            content.show()
+            # Create a local event loop for this widget
+            loop = QtCore.QEventLoop()
+            content.destroyed.connect(loop.quit)
+            loop.exec() # wait
 
     def OnPaintToolButton(self, checked):
-        self.EnableTool("paint") if checked else self.DisableTool("paint")
+        if checked:
+            class ColorPickerWidget(QtWidgets.QWidget):
+                def __init__(self, parent, mainWindow):
+                    QtWidgets.QWidget.__init__(self, parent)
+                    self.parent = parent
+                    self.closed = False
+                    self.mainWindow = mainWindow
+
+                def closeEvent(self, event):
+                    self.destroyed.emit()
+                    event.accept()
+                    self.closed = True
+                    self.mainWindow.DisableTool("paint")
+
+            content = ColorPickerWidget(None, self)
+            ColorPickerLayout = QtWidgets.QVBoxLayout(content)
+            self.color_picker = QColorPicker(content, rgb=(173, 36, 207))
+            self.image_viewer.ColorPicker = self.color_picker
+            ColorPickerLayout.addWidget(self.color_picker)
+            self.EnableTool("paint") if checked else self.DisableTool("paint")
+
+            content.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)
+            content.show()
+            # Create a local event loop for this widget
+            loop = QtCore.QEventLoop()
+            content.destroyed.connect(loop.quit)
+            loop.exec() # wait
 
     def OnFillToolButton(self, checked):
-        self.EnableTool("fill") if checked else self.DisableTool("fill")
+        if checked:
+            class ColorPickerWidget(QtWidgets.QWidget):
+                def __init__(self, parent, mainWindow):
+                    QtWidgets.QWidget.__init__(self, parent)
+                    self.parent = parent
+                    self.closed = False
+                    self.mainWindow = mainWindow
+
+                def closeEvent(self, event):
+                    self.destroyed.emit()
+                    event.accept()
+                    self.closed = True
+                    self.mainWindow.DisableTool("fill")
+
+            content = ColorPickerWidget(None, self)
+            ColorPickerLayout = QtWidgets.QVBoxLayout(content)
+            self.color_picker = QColorPicker(content, rgb=(173, 36, 207))
+            self.image_viewer.ColorPicker = self.color_picker
+            ColorPickerLayout.addWidget(self.color_picker)
+            self.EnableTool("fill") if checked else self.DisableTool("fill")
+
+            content.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)
+            content.show()
+            # Create a local event loop for this widget
+            loop = QtCore.QEventLoop()
+            content.destroyed.connect(loop.quit)
+            loop.exec() # wait
 
     def OnCropToolButton(self, checked):
         if checked:
@@ -1349,6 +1423,21 @@ class Gui(QtWidgets.QMainWindow):
             self.currentTool.setWindowModality(Qt.WindowModality.ApplicationModal)
             self.currentTool.show()
 
+    def OnCurveEditorToolButton(self, checked):
+        if checked and not self.currentTool:
+            curveWidget = QCurveWidget.QCurveWidget(None, self.image_viewer)
+            curveWidget.setWindowModality(Qt.WindowModality.ApplicationModal)
+            curveWidget.show()
+
+            # Create a local event loop for this widget
+            loop = QtCore.QEventLoop()
+            curveWidget.destroyed.connect(loop.quit)
+            loop.exec() # wait
+
+        self.CurveEditorToolButton.setChecked(False)
+        del self.currentTool
+        self.currentTool = None
+
     def OnEraserToolButton(self, checked):
         self.EnableTool("eraser") if checked else self.DisableTool("eraser")
 
@@ -1411,15 +1500,6 @@ class Gui(QtWidgets.QMainWindow):
         self.ImageHistogramPlot.addItem(self.ImageHistogramGraphBlue)
         self.ImageHistogramPlot.addItem(self.ImageHistogramGraphLuma)
 
-    def updateColorPicker(self):
-        # Set the RGB in the color picker to the value in the middle of the image
-        currentPixmap = self.getCurrentLayerLatestPixmap()
-        pixelAccess = self.QPixmapToImage(currentPixmap).load()
-        middle_pixel_x = int(currentPixmap.width() / 2)
-        middle_pixel_y = int(currentPixmap.height() / 2)
-        r, g, b, a = pixelAccess[middle_pixel_x, middle_pixel_y]
-        self.color_picker.setRGB((r, g, b))
-
     def OnOpen(self):
         # Load an image file to be displayed (will popup a file dialog).
         self.image_viewer.previousImage = None
@@ -1437,11 +1517,9 @@ class Gui(QtWidgets.QMainWindow):
             self.setWindowTitle(filename)
             # self.image_viewer.OriginalImage = self.image_viewer.pixmap()
             self.updateHistogram()
-            self.updateColorPicker()
             self.resetSliderValues()
             self.createPreviousImageWidget()
             self.createLayersDock()
-            self.createCurvesDock()
 
     def createPreviousImageWidget(self):
         if self.previousImageDock:
@@ -1480,17 +1558,6 @@ class Gui(QtWidgets.QMainWindow):
         self.addDockWidget(QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.layerListDock)
         self.image_viewer.layerListDock = self.layerListDock
 
-    def createCurvesDock(self):
-        if self.CurvesDock:
-            self.removeDockWidget(self.CurvesDock)
-            self.CurveWidget.reset()
-
-        self.CurvesDock = QtWidgets.QDockWidget("Curves")
-        self.CurveWidget = QCurveWidget.QCurveWidget(self, self.image_viewer)
-        self.CurvesDock.setWidget(self.CurveWidget)
-        self.addDockWidget(QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.CurvesDock)
-        self.resizeDocks([self.CurvesDock], [240], Qt.Orientation.Vertical)
-
     def OnSave(self):
         if self.image_viewer._current_filename.lower().endswith(".nef"):
             # Cannot save pixmap as .NEF (yet)
@@ -1527,17 +1594,12 @@ class Gui(QtWidgets.QMainWindow):
             # self.image_viewer.OriginalImage = self.image_viewer.pixmap()
 
             self.updateHistogram()
-            self.updateColorPicker()
             self.resetSliderValues()
             self.createPreviousImageWidget()
             self.createLayersDock()
-            self.createCurvesDock()
 
 def main():
     app = QApplication(sys.argv)
-
-    app.setStyleSheet(qdarkstyle.load_stylesheet(qt_api="PyQt6"))
-
     gui = Gui()
     sys.exit(app.exec())
 

@@ -7,6 +7,7 @@ class QTool(QtWidgets.QWidget):
 
     def __init__(self, parent=None, name="", description="", demoImagePath=None, onRun=None, toolInput=None, onCompleted=None):
         super(QTool, self).__init__(parent)
+        self.setStyleSheet("background-color: rgb(22, 22, 22);")
 
         self.parent = parent
         self.onRun = onRun
@@ -16,6 +17,7 @@ class QTool(QtWidgets.QWidget):
         self.titleLabel.setText(name)
         self.titleLabel.setStyleSheet("""
             QLabel {
+                background-color: rgb(22, 22, 22);
                 font-size: 40px;
                 }
             """)
@@ -25,6 +27,7 @@ class QTool(QtWidgets.QWidget):
         self.subTitleLabel.setText(description)
         self.subTitleLabel.setStyleSheet("""
             QLabel {
+                background-color: rgb(22, 22, 22);
                 font-size: 20px;
                 }
             """)
@@ -57,11 +60,15 @@ class QTool(QtWidgets.QWidget):
         self.startButton.setFont(font)
         self.startButton.setMinimumHeight(25)
         self.startButton.clicked.connect(self.start)
+        self.startButton.setStyleSheet("border: 1px solid; background-color: rgb(44, 44, 44);")
+
         self.cancelButton = QtWidgets.QPushButton(self)
         self.cancelButton.setText("Cancel")
         self.cancelButton.setFont(font)
         self.cancelButton.setMinimumHeight(25)
         self.cancelButton.clicked.connect(self.stop)
+        self.cancelButton.setStyleSheet("border: 1px solid; background-color: rgb(44, 44, 44);")
+
         self.hbox.addWidget(self.startButton, QtCore.Qt.AlignmentFlag.AlignRight)
         self.hbox.addWidget(self.cancelButton, QtCore.Qt.AlignmentFlag.AlignRight)
         self.controlButtons.setLayout(self.hbox)

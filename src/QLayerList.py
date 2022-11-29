@@ -158,7 +158,6 @@ class QLayerList(QtWidgets.QDockWidget):
 
             titleBarLayout.addWidget(tools)
             titleBarLayout.setAlignment(tools, Qt.AlignmentFlag.AlignCenter)
-            titleBarLayout.setSpacing(0)
 
             self.layout.addWidget(titleBar)
 

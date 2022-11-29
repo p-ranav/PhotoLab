@@ -314,6 +314,19 @@ class Gui(QtWidgets.QMainWindow):
 
         ##############################################################################################
         ##############################################################################################
+        # Horizontal Panorama Tool
+        ##############################################################################################
+        ##############################################################################################
+
+        self.LandscapePanoramaToolButton = QToolButton(self)
+        self.LandscapePanoramaToolButton.setText("&Landscape Panorama")
+        self.LandscapePanoramaToolButton.setIcon(QtGui.QIcon("icons/panorama.svg"))
+        self.LandscapePanoramaToolButton.setToolTip("Landscape Panorama")
+        self.LandscapePanoramaToolButton.setCheckable(True)
+        self.LandscapePanoramaToolButton.toggled.connect(self.OnLandscapePanoramaToolButton)
+
+        ##############################################################################################
+        ##############################################################################################
         # Flip Left Right Tool
         ##############################################################################################
         ##############################################################################################
@@ -574,7 +587,7 @@ class Gui(QtWidgets.QMainWindow):
             self.CursorToolButton, self.ColorPickerToolButton, self.PaintToolButton, self.EraserToolButton, 
             self.FillToolButton, self.RectSelectToolButton, self.PathSelectToolButton, self.CropToolButton, 
             self.RotateLeftToolButton, self.RotateRightToolButton,
-            self.HStackToolButton, self.VStackToolButton, 
+            self.HStackToolButton, self.VStackToolButton, self.LandscapePanoramaToolButton,
             self.FlipLeftRightToolButton, self.FlipTopBottomToolButton,
             self.SpotRemovalToolButton, self.BlurToolButton, self.CurveEditorToolButton, self.HistogramToolButton, 
             self.WhiteBalanceToolButton, self.BackgroundRemovalToolButton, self.HumanSegmentationToolButton, self.GrayscaleBackgroundToolButton,
@@ -1200,6 +1213,45 @@ class Gui(QtWidgets.QMainWindow):
                         self.image_viewer.setImage(updatedPixmap, True, "VStack", "Tool", None, None)
 
         self.VStackToolButton.setChecked(False)
+
+    def OnLandscapePanoramaToolButton(self, checked):
+        if checked:
+            if self.image_viewer._current_filename:
+
+                pixmap = self.getCurrentLayerLatestPixmap()
+                first = self.QPixmapToImage(pixmap)
+
+                if pixmap:
+
+                    # Open second image
+                    filepath, _ = QFileDialog.getOpenFileName(self, "Open image file.")
+                    if len(filepath) and os.path.isfile(filepath):
+                        import cv2
+                        second = cv2.imread(filepath)
+
+                        # Stitch the pair of images
+                        import ImageStitching
+                        import numpy as np
+                        import cv2
+                        first = np.asarray(first)
+                        print(first.shape, second.shape)
+                        b1, g1, r1, _ = cv2.split(np.asarray(first))
+                        dst = None
+                        try:
+                            dst = ImageStitching.stitch_image_pair(np.dstack((r1, g1, b1)), second, stitch_direc=1)
+                        except ImageStitching.NotEnoughMatchPointsError as e:
+                            # show dialog with error
+                            pass
+                        
+                        if dst is not None:
+                            dst = cv2.cvtColor(dst, cv2.COLOR_BGR2RGB)
+
+                            print(dst.shape)
+                            dst = Image.fromarray(dst).convert("RGBA")
+
+                            # Save result
+                            updatedPixmap = self.ImageToQPixmap(dst)
+                            self.image_viewer.setImage(updatedPixmap, True, "Landscape Panorama", "Tool", None, None)
 
     def OnFlipLeftRightToolButton(self, checked):
         if checked:

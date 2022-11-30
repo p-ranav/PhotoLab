@@ -28,7 +28,7 @@ class Curve:
         self._border_points = 1
 
         # Curve color, used for displaying the curve
-        self._color = (0, 0, 0)
+        self._color = (255, 255, 255)
 
         # Control points, those are some demo values
         self._cv_points = [
@@ -127,7 +127,7 @@ class QCurveWidget(QtWidgets.QWidget):
 
         # Append initial curve
         curve = Curve()
-        curve.set_color(0, 0, 0)
+        curve.set_color(255, 255, 255)
         self.curves.append(curve)
 
         # Widget render constants
@@ -259,8 +259,8 @@ class QCurveWidget(QtWidgets.QWidget):
         canvas_height = self.height() - self._legend_border - self._bar_h
 
         # Draw field background
-        painter.setPen(QtGui.QColor(255, 255, 255))
-        painter.setBrush(QtGui.QColor(255, 255, 255))
+        painter.setPen(QtGui.QColor(22, 22, 22))
+        painter.setBrush(QtGui.QColor(22, 22, 22))
         painter.drawRect(0, 0, int(self.width() - 1), int(self.height() - 1))
 
         # Draw legend
@@ -274,19 +274,19 @@ class QCurveWidget(QtWidgets.QWidget):
         num_horiz_lines = int(math.ceil(canvas_height / float(line_spacing_y)) + 1)
 
         # Draw vertical lines
-        painter.setPen(QtGui.QColor(200, 200, 200, 100))
+        painter.setPen(QtGui.QColor(44, 44, 44))
         for i in range(num_vert_lines):
             line_pos = i*line_spacing_x + self._legend_border 
             painter.drawLine(int(line_pos), int(self._bar_h), int(line_pos), int(canvas_height + self._bar_h))
 
         # Draw horizontal lines
-        painter.setPen(QtGui.QColor(200, 200, 200, 100))
+        painter.setPen(QtGui.QColor(44, 44, 44))
         for i in range(num_horiz_lines):
             line_pos = canvas_height - i*line_spacing_y + self._bar_h
             painter.drawLine(int(self._legend_border), int(line_pos), int(self.width()), int(line_pos))
 
-        # Draw vetical legend labels
-        painter.setPen(QtGui.QColor(120, 120, 120))
+        # Draw vertical legend labels
+        painter.setPen(QtGui.QColor(83, 83, 83))
         for i in range(num_horiz_lines):
             if i % 2 == 0:
                 line_pos = canvas_height - i*line_spacing_y + self._bar_h
@@ -320,7 +320,7 @@ class QCurveWidget(QtWidgets.QWidget):
                 last_value = curve_height
         
             # Draw the CV points of the curve
-            painter.setBrush(QtGui.QColor(240, 240, 240))
+            painter.setBrush(QtGui.QColor(255, 255, 255))
 
             for cv_index, (x, y) in enumerate(curve.get_cv_points()):
                 offs_x = x * canvas_width + self._legend_border

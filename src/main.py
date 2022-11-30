@@ -1564,6 +1564,12 @@ class Gui(QtWidgets.QMainWindow):
 
             self.AddGaussianBlurSlider(self.slidersLayout)
 
+            self.slidersScroll.setStyleSheet('''
+                background-color: rgb(44, 44, 44);
+            ''')
+            self.slidersScroll.setMinimumWidth(300)
+            self.slidersScroll.setWindowTitle("Adjust")
+
             self.slidersScroll.show()
 
             # Create a local event loop for this widget

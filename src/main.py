@@ -1425,6 +1425,11 @@ class Gui(QtWidgets.QMainWindow):
                     im_bgr=np.dstack((b, g, r)),
                     load_size=224, win_size=720, device=torch.device("cuda" if torch.cuda.is_available() else "cpu"))
                 colorizerWidget.setWindowModality(Qt.WindowModality.ApplicationModal)
+
+                colorizerWidget.setStyleSheet('''
+                    background-color: rgb(44, 44, 44)
+                ''')
+
                 colorizerWidget.showMaximized()
 
                 # Create a local event loop for this widget

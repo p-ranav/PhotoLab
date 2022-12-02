@@ -1304,11 +1304,13 @@ class Gui(QtWidgets.QMainWindow):
 
     @QtCore.pyqtSlot()
     def onPortraitModeBackgroundBlurCompleted(self):
-        backgroundRemoved = self.currentTool.backgroundRemoved
-        backgroundRemoved = self.ImageToQPixmap(backgroundRemoved)
+        backgroundRemoved = None
+        if self.currentTool.backgroundRemoved:
+            backgroundRemoved = self.currentTool.backgroundRemoved
+            backgroundRemoved = self.ImageToQPixmap(backgroundRemoved)
 
         output = self.currentTool.output
-        if output is not None:
+        if output is not None and backgroundRemoved is not None:
 
             # Depth prediction output
             # Blurred based on predicted depth
@@ -1339,8 +1341,12 @@ class Gui(QtWidgets.QMainWindow):
 
     @QtCore.pyqtSlot()
     def onGrayscaleBackgroundCompleted(self):
-        foreground = self.currentTool.output
-        foregroundPixmap = self.ImageToQPixmap(foreground)
+        foreground = None
+        foregroundPixmap = None
+
+        if self.currentTool.output:
+            foreground = self.currentTool.output
+            foregroundPixmap = self.ImageToQPixmap(foreground)
 
         background = self.QPixmapToImage(self.getCurrentLayerLatestPixmap())
         if foreground is not None and background is not None:

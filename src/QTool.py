@@ -13,6 +13,8 @@ class QTool(QtWidgets.QWidget):
         self.onRun = onRun
         self.toolInput = toolInput
 
+        self.setWindowTitle(name)
+
         self.titleLabel = QtWidgets.QLabel()
         self.titleLabel.setText(name)
         self.titleLabel.setStyleSheet("""
@@ -35,13 +37,13 @@ class QTool(QtWidgets.QWidget):
         self.progressWidgetLayout = QtWidgets.QVBoxLayout()
         self.progressBarLabel = QtWidgets.QLabel("")
 
-        self.setMaximumWidth(500)
-        self.setMaximumHeight(500)
+        #self.setMaximumWidth(250)
+        #self.setMaximumHeight(250)
 
         self.toolImageLabel = QtWidgets.QLabel()
         image = QtGui.QImage()
         image.load(demoImagePath)
-        image = image.scaled(800, 800, QtCore.Qt.AspectRatioMode.KeepAspectRatio)
+        image = image.scaled(400, 400, QtCore.Qt.AspectRatioMode.KeepAspectRatioByExpanding)
         pixmap = QtGui.QPixmap.fromImage(image)
         self.toolImageLabel.setPixmap(pixmap)
 

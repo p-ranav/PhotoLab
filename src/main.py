@@ -948,11 +948,23 @@ class Gui(QtWidgets.QMainWindow):
             self.sliderObjectOfChange = self.sliderObjectOfChange
             self.sliderChangeSignal.emit()
 
+    def RemoveRenderedCursor(self):
+        # The cursor overlay is being rendered in the view
+        # Remove it
+        if any([self.image_viewer._isBlurring, self.image_viewer._isRemovingSpots]):
+            pixmap = self.getCurrentLayerLatestPixmap()
+            self.image_viewer.setImage(pixmap, False)
+
+    def InitTool(self):
+        self.RemoveRenderedCursor()
+
     def OnCursorToolButton(self, checked):
+        self.InitTool()
         self.EnableTool("cursor") if checked else self.DisableTool("cursor")
 
     def OnColorPickerToolButton(self, checked):
         if checked:
+            self.InitTool()
             class ColorPickerWidget(QtWidgets.QWidget):
                 def __init__(self, parent, mainWindow):
                     QtWidgets.QWidget.__init__(self, parent)
@@ -985,6 +997,7 @@ class Gui(QtWidgets.QMainWindow):
 
     def OnHistogramToolButton(self, checked):
         if checked:
+            self.InitTool()
             class HistogrmaWidget(QtWidgets.QWidget):
                 def __init__(self, parent, mainWindow):
                     QtWidgets.QWidget.__init__(self, parent)
@@ -1016,6 +1029,7 @@ class Gui(QtWidgets.QMainWindow):
 
     def OnPaintToolButton(self, checked):
         if checked:
+            self.InitTool()
             class ColorPickerWidget(QtWidgets.QWidget):
                 def __init__(self, parent, mainWindow):
                     QtWidgets.QWidget.__init__(self, parent)
@@ -1048,6 +1062,7 @@ class Gui(QtWidgets.QMainWindow):
 
     def OnFillToolButton(self, checked):
         if checked:
+            self.InitTool()
             class ColorPickerWidget(QtWidgets.QWidget):
                 def __init__(self, parent, mainWindow):
                     QtWidgets.QWidget.__init__(self, parent)
@@ -1080,6 +1095,7 @@ class Gui(QtWidgets.QMainWindow):
 
     def OnCropToolButton(self, checked):
         if checked:
+            self.InitTool()
             self.image_viewer._isCropping = True
             self.image_viewer.performCrop()
             self.DisableAllTools()
@@ -1087,6 +1103,7 @@ class Gui(QtWidgets.QMainWindow):
 
     def OnRotateLeftToolButton(self, checked):
         if checked:
+            self.InitTool()
             pixmap = self.getCurrentLayerLatestPixmap()
             pil = self.QPixmapToImage(pixmap)
             pil = pil.rotate(90, expand=True)
@@ -1096,6 +1113,7 @@ class Gui(QtWidgets.QMainWindow):
 
     def OnRotateRightToolButton(self, checked):
         if checked:
+            self.InitTool()
             pixmap = self.getCurrentLayerLatestPixmap()
             pil = self.QPixmapToImage(pixmap)
             pil = pil.rotate(-90, expand=True)
@@ -1105,6 +1123,7 @@ class Gui(QtWidgets.QMainWindow):
 
     def OnHStackToolButton(self, checked):
         if checked:
+            self.InitTool()
             if self.image_viewer._current_filename:
 
                 pixmap = self.getCurrentLayerLatestPixmap()
@@ -1160,6 +1179,7 @@ class Gui(QtWidgets.QMainWindow):
 
     def OnVStackToolButton(self, checked):
         if checked:
+            self.InitTool()
             if self.image_viewer._current_filename:
 
                 pixmap = self.getCurrentLayerLatestPixmap()
@@ -1215,6 +1235,7 @@ class Gui(QtWidgets.QMainWindow):
 
     def OnLandscapePanoramaToolButton(self, checked):
         if checked:
+            self.InitTool()
             if self.image_viewer._current_filename:
 
                 pixmap = self.getCurrentLayerLatestPixmap()
@@ -1255,6 +1276,7 @@ class Gui(QtWidgets.QMainWindow):
 
     def OnFlipLeftRightToolButton(self, checked):
         if checked:
+            self.InitTool()
             pixmap = self.getCurrentLayerLatestPixmap()
             pil = self.QPixmapToImage(pixmap)
             pil = pil.transpose(Image.FLIP_LEFT_RIGHT)
@@ -1264,6 +1286,7 @@ class Gui(QtWidgets.QMainWindow):
 
     def OnFlipTopBottomToolButton(self, checked):
         if checked:
+            self.InitTool()
             pixmap = self.getCurrentLayerLatestPixmap()
             pil = self.QPixmapToImage(pixmap)
             pil = pil.transpose(Image.FLIP_TOP_BOTTOM)
@@ -1272,12 +1295,15 @@ class Gui(QtWidgets.QMainWindow):
         self.FlipTopBottomToolButton.setChecked(False)
 
     def OnRectSelectToolButton(self, checked):
+        self.InitTool()
         self.EnableTool("select_rect") if checked else self.DisableTool("select_rect")
 
     def OnPathSelectToolButton(self, checked):
+        self.InitTool()
         self.EnableTool("select_path") if checked else self.DisableTool("select_path")
 
     def OnSpotRemovalToolButton(self, checked):
+        self.InitTool()
         self.EnableTool("spot_removal") if checked else self.DisableTool("spot_removal")
 
     @QtCore.pyqtSlot()
@@ -1294,6 +1320,7 @@ class Gui(QtWidgets.QMainWindow):
 
     def OnBackgroundRemovalToolButton(self, checked):
         if checked and not self.currentTool:
+            self.InitTool()
             currentPixmap = self.getCurrentLayerLatestPixmap()
             image = self.QPixmapToImage(currentPixmap)
 
@@ -1329,6 +1356,7 @@ class Gui(QtWidgets.QMainWindow):
 
     def OnPortraitModeBackgroundBlurToolButton(self, checked):
         if checked and not self.currentTool:
+            self.InitTool()
             currentPixmap = self.getCurrentLayerLatestPixmap()
             image = self.QPixmapToImage(currentPixmap)
 
@@ -1371,6 +1399,7 @@ class Gui(QtWidgets.QMainWindow):
 
     def OnGrayscaleBackgroundToolButton(self, checked):
         if checked and not self.currentTool:
+            self.InitTool()
             currentPixmap = self.getCurrentLayerLatestPixmap()
             image = self.QPixmapToImage(currentPixmap)
 
@@ -1395,6 +1424,7 @@ class Gui(QtWidgets.QMainWindow):
 
     def OnHumanSegmentationToolButton(self, checked):
         if checked and not self.currentTool:
+            self.InitTool()
             currentPixmap = self.getCurrentLayerLatestPixmap()
             image = self.QPixmapToImage(currentPixmap)
 
@@ -1450,6 +1480,7 @@ class Gui(QtWidgets.QMainWindow):
 
     def OnColorizerToolButton(self, checked):
         if checked and not self.currentTool:
+            self.InitTool()
             from QToolColorizer import QToolColorizer
             self.currentTool = QToolColorizer(None, None, self.OnColorizerCompleted)
             self.currentTool.setWindowModality(Qt.WindowModality.ApplicationModal)
@@ -1470,6 +1501,7 @@ class Gui(QtWidgets.QMainWindow):
 
     def OnSuperResolutionToolButton(self, checked):
         if checked and not self.currentTool:
+            self.InitTool()
             currentPixmap = self.getCurrentLayerLatestPixmap()
             image = self.QPixmapToImage(currentPixmap)
             from QToolSuperResolution import QToolSuperResolution
@@ -1491,6 +1523,7 @@ class Gui(QtWidgets.QMainWindow):
 
     def OnAnimeGanV2ToolButton(self, checked):
         if checked and not self.currentTool:
+            self.InitTool()
             currentPixmap = self.getCurrentLayerLatestPixmap()
             image = self.QPixmapToImage(currentPixmap)
 
@@ -1513,6 +1546,7 @@ class Gui(QtWidgets.QMainWindow):
 
     def OnWhiteBalanceToolButton(self, checked):
         if checked and not self.currentTool:
+            self.InitTool()
             currentPixmap = self.getCurrentLayerLatestPixmap()
             image = self.QPixmapToImage(currentPixmap)
 
@@ -1523,7 +1557,7 @@ class Gui(QtWidgets.QMainWindow):
 
     def OnSlidersToolButton(self, checked):
         if checked and not self.currentTool:
-
+            self.InitTool()
             class SlidersScrollWidget(QtWidgets.QScrollArea):
                 def __init__(self, parent, mainWindow):
                     QtWidgets.QScrollArea.__init__(self, parent)
@@ -1596,6 +1630,7 @@ class Gui(QtWidgets.QMainWindow):
 
     def OnCurveEditorToolButton(self, checked):
         if checked and not self.currentTool:
+            self.InitTool()
             self.CurveWidget = QCurveWidget.QCurveWidget(None, self.image_viewer)
             self.CurveWidget.setWindowModality(Qt.WindowModality.ApplicationModal)
             self.CurveWidget.show()
@@ -1612,9 +1647,11 @@ class Gui(QtWidgets.QMainWindow):
         self.currentTool = None
 
     def OnEraserToolButton(self, checked):
+        self.InitTool()
         self.EnableTool("eraser") if checked else self.DisableTool("eraser")
 
     def OnBlurToolButton(self, checked):
+        self.InitTool()
         self.EnableTool("blur") if checked else self.DisableTool("blur")
 
     def EnableTool(self, tool):
@@ -1641,6 +1678,12 @@ class Gui(QtWidgets.QMainWindow):
         setattr(self.image_viewer, value["var"], False)
         if "destructor" in value:
             getattr(self.image_viewer, value["destructor"])()
+
+        if tool in ["blur", "spot_removal"]:
+            # The cursor overlay is being rendered in the view
+            # Remove it
+            pixmap = self.getCurrentLayerLatestPixmap()
+            self.image_viewer.setImage(pixmap, False)
 
     def DisableAllTools(self):
         for _, value in self.tools.items():

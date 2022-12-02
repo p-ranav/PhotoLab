@@ -125,6 +125,8 @@ class QCurveWidget(QtWidgets.QWidget):
         self.curves = []
         self.viewer = viewer
 
+        self.setWindowTitle("Curves")
+
         # Append initial curve
         curve = Curve()
         curve.set_color(255, 255, 255)

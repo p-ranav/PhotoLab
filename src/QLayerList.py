@@ -115,6 +115,7 @@ class QLayerList(QtWidgets.QDockWidget):
                                 self.layout.removeWidget(l)
                                 self.currentButton = nextLayer
                                 self.currentButton.setIconSize(QtCore.QSize(100, 100))
+                                self.currentButton.setStyleSheet("background-color: rgb(22, 22, 22);")
                                 self.parent.image_viewer.currentLayer = nextLayerIndex
                                 pixmap = self.parent.image_viewer.getCurrentLayerLatestPixmap()
                                 self.parent.image_viewer.setImage(pixmap, False)
@@ -167,7 +168,7 @@ class QLayerList(QtWidgets.QDockWidget):
             button.setIcon(QtGui.QIcon(pixmap))
             button.setIconSize(QtCore.QSize(100, 100))
             button.setMinimumHeight(50)
-            button.setMinimumWidth(180)
+            # button.setMinimumWidth(180)
             button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
             button.setCheckable(True)
             button.setObjectName("Layer " + str(i))

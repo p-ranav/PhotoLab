@@ -52,7 +52,7 @@ class Gui(QtWidgets.QMainWindow):
 
     def __init__(self, parent=None):
         super(Gui, self).__init__(parent)
-        self.setWindowTitle('Samurai Photo Editor')
+        self.setWindowTitle('PhotoLab')
         self.setMinimumHeight(850)
 
         ##############################################################################################
@@ -1746,6 +1746,7 @@ class Gui(QtWidgets.QMainWindow):
         from QLayerList import QLayerList
         self.layerListDock = QLayerList("Layers", self)
         self.layerListDock.setTitleBarWidget(QtWidgets.QWidget())
+        self.layerListDock.setFixedWidth(170)
         self.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, self.layerListDock)
         self.image_viewer.layerListDock = self.layerListDock
 

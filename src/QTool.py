@@ -56,24 +56,29 @@ class QTool(QtWidgets.QWidget):
         self.controlButtons = QtWidgets.QWidget()
         self.hbox = QtWidgets.QHBoxLayout()
         self.startButton = QtWidgets.QPushButton(self)
-        font = self.startButton.font()
-        font.setPointSize(12)
         self.startButton.setText("Start")
-        self.startButton.setFont(font)
         self.startButton.setMinimumHeight(25)
         self.startButton.clicked.connect(self.start)
-        self.startButton.setStyleSheet("border: 1px solid; background-color: rgb(44, 44, 44);")
 
         self.cancelButton = QtWidgets.QPushButton(self)
         self.cancelButton.setText("Cancel")
-        self.cancelButton.setFont(font)
         self.cancelButton.setMinimumHeight(25)
         self.cancelButton.clicked.connect(self.stop)
-        self.cancelButton.setStyleSheet("border: 1px solid; background-color: rgb(44, 44, 44);")
+
+        buttons = [self.startButton, self.cancelButton]
+        for b in buttons:
+            b.setStyleSheet('''
+                background-color: rgb(44, 44, 44);
+                height: 30px;
+                width: 100px;
+            ''')
 
         self.hbox.addWidget(self.startButton, QtCore.Qt.AlignmentFlag.AlignRight)
         self.hbox.addWidget(self.cancelButton, QtCore.Qt.AlignmentFlag.AlignRight)
         self.controlButtons.setLayout(self.hbox)
+        self.controlButtons.setStyleSheet('''
+            height: 30px;
+        ''')
 
         self.progressWidgetLayout.addWidget(self.titleLabel, QtCore.Qt.AlignmentFlag.AlignCenter)
         self.progressWidgetLayout.addWidget(self.subTitleLabel)

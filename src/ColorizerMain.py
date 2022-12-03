@@ -76,6 +76,17 @@ class IColoriTUI(QWidget):
         visWidgetMenu = QHBoxLayout()
         visWidgetMenu.addWidget(self.bRestart)
 
+        self.setStyleSheet('''
+            background-color: rgb(22, 22, 22);
+        ''')
+        buttons = [self.bSave, self.bRestart, self.bQuit]
+        for b in buttons:
+            b.setStyleSheet('''
+                background-color: rgb(44, 44, 44);
+                height: 30px;
+                width: 100px;
+            ''')
+
         visWidgetMenu.addWidget(self.bQuit)
         visWidgetLayout.addLayout(visWidgetMenu)
 

@@ -1193,10 +1193,27 @@ class Gui(QtWidgets.QMainWindow):
                             msgBox = QtWidgets.QMessageBox()
                             msgBox.setText('First Image is ' + str(first.width) + "x" + str(first.height) + '\n'
                                            'Second Image is ' + str(second.width) + "x" + str(second.height))
-                            msgBox.addButton(QtWidgets.QPushButton('Resize First'), QtWidgets.QMessageBox.ButtonRole.YesRole)
-                            msgBox.addButton(QtWidgets.QPushButton('Resize Second'), QtWidgets.QMessageBox.ButtonRole.NoRole)
-                            msgBox.addButton(QtWidgets.QPushButton("Stack As Is"), QtWidgets.QMessageBox.ButtonRole.DestructiveRole)
-                            msgBox.addButton(QtWidgets.QPushButton('Cancel'), QtWidgets.QMessageBox.ButtonRole.RejectRole)
+
+                            resizeFirst = QtWidgets.QPushButton('Resize First')
+                            resizeSecond = QtWidgets.QPushButton('Resize Second')
+                            stackAsIs = QtWidgets.QPushButton("Stack As Is")
+                            cancel = QtWidgets.QPushButton('Cancel')
+
+                            for button in [resizeFirst, resizeSecond, stackAsIs, cancel]:
+                                button.setStyleSheet('''
+                                    border: 1px solid;
+                                    background-color: rgb(44, 44, 44);
+                                    height: 30px;
+                                    width: 100px;
+                                ''')
+
+                            msgBox.addButton(resizeFirst, QtWidgets.QMessageBox.ButtonRole.YesRole)
+                            msgBox.addButton(resizeSecond, QtWidgets.QMessageBox.ButtonRole.NoRole)
+                            msgBox.addButton(stackAsIs, QtWidgets.QMessageBox.ButtonRole.DestructiveRole)
+                            msgBox.addButton(cancel, QtWidgets.QMessageBox.ButtonRole.RejectRole)
+                            msgBox.setStyleSheet('''
+                                background-color: rgb(22, 22, 22);
+                            ''')
                             ret = msgBox.exec()
 
                             from PIL import ImageOps
@@ -1249,10 +1266,27 @@ class Gui(QtWidgets.QMainWindow):
                             msgBox = QtWidgets.QMessageBox()
                             msgBox.setText('First Image is ' + str(first.width) + "x" + str(first.height) + '\n'
                                            'Second Image is ' + str(second.width) + "x" + str(second.height))
-                            msgBox.addButton(QtWidgets.QPushButton('Resize First'), QtWidgets.QMessageBox.ButtonRole.YesRole)
-                            msgBox.addButton(QtWidgets.QPushButton('Resize Second'), QtWidgets.QMessageBox.ButtonRole.NoRole)
-                            msgBox.addButton(QtWidgets.QPushButton("Stack As Is"), QtWidgets.QMessageBox.ButtonRole.DestructiveRole)
-                            msgBox.addButton(QtWidgets.QPushButton('Cancel'), QtWidgets.QMessageBox.ButtonRole.RejectRole)
+
+                            resizeFirst = QtWidgets.QPushButton('Resize First')
+                            resizeSecond = QtWidgets.QPushButton('Resize Second')
+                            stackAsIs = QtWidgets.QPushButton("Stack As Is")
+                            cancel = QtWidgets.QPushButton('Cancel')
+
+                            for button in [resizeFirst, resizeSecond, stackAsIs, cancel]:
+                                button.setStyleSheet('''
+                                    border: 1px solid;
+                                    background-color: rgb(44, 44, 44);
+                                    height: 30px;
+                                    width: 100px;
+                                ''')
+
+                            msgBox.addButton(resizeFirst, QtWidgets.QMessageBox.ButtonRole.YesRole)
+                            msgBox.addButton(resizeSecond, QtWidgets.QMessageBox.ButtonRole.NoRole)
+                            msgBox.addButton(stackAsIs, QtWidgets.QMessageBox.ButtonRole.DestructiveRole)
+                            msgBox.addButton(cancel, QtWidgets.QMessageBox.ButtonRole.RejectRole)
+                            msgBox.setStyleSheet('''
+                                background-color: rgb(22, 22, 22);
+                            ''')
                             ret = msgBox.exec()
 
                             from PIL import ImageOps

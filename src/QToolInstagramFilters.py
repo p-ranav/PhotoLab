@@ -119,8 +119,8 @@ class QToolInstagramFilters(QScrollArea):
         import pilgram
         button = self.sender()
         filterName = button.objectName()
-        filterFunction = getattr(pilgram, filterName)
         if filterName != "unfiltered":
+            filterFunction = getattr(pilgram, filterName)
             self.output = filterFunction(self.toolInput).convert("RGBA")
         else:
             self.output = self.toolInput

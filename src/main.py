@@ -1700,13 +1700,28 @@ class Gui(QtWidgets.QMainWindow):
     def OnInstagramFiltersToolButton(self, checked):
         if checked and not self.currentTool:
             self.InitTool()
+
+            class QInstagramToolDockWidget(QtWidgets.QDockWidget):
+                def __init__(self, parent, mainWindow):
+                    QtWidgets.QDockWidget.__init__(self, parent)
+                    self.parent = parent
+                    self.closed = False
+                    self.mainWindow = mainWindow
+
+                def closeEvent(self, event):
+                    self.destroyed.emit()
+                    event.accept()
+                    self.closed = True
+                    self.mainWindow.InstagramFiltersToolButton.setChecked(False)
+                    self.mainWindow.image_viewer.setImage(self.mainWindow.image_viewer.pixmap(), True, "Instagram Filters")
+
             self.EnableTool("instagram_filters") if checked else self.DisableTool("instagram_filters")
             currentPixmap = self.getCurrentLayerLatestPixmap()
             image = self.QPixmapToImage(currentPixmap)
 
             from QToolInstagramFilters import QToolInstagramFilters
             tool = QToolInstagramFilters(self, image)
-            self.filtersDock = QtWidgets.QDockWidget()
+            self.filtersDock = QInstagramToolDockWidget(None, self)
             self.filtersDock.setWidget(tool)
             self.addDockWidget(QtCore.Qt.DockWidgetArea.BottomDockWidgetArea, self.filtersDock)
 
@@ -1717,6 +1732,7 @@ class Gui(QtWidgets.QMainWindow):
             # Create a local event loop for this widget
             loop = QtCore.QEventLoop()
             self.filtersDock.destroyed.connect(loop.quit)
+            tool.destroyed.connect(loop.quit)
             loop.exec() # wait
         else:
             self.DisableTool("instagram_filters")

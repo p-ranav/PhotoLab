@@ -131,3 +131,4 @@ class QToolInstagramFilters(QScrollArea):
         event.accept()
         self.closed = True
         self.parent.DisableTool("instagram_filters")
+        print("Closed")

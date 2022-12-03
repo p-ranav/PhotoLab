@@ -100,6 +100,7 @@ class Gui(QtWidgets.QMainWindow):
         self.RedFactor = 100
         self.GreenFactor = 100
         self.BlueFactor = 100
+        self.Temperature = 6000 # Kelvin, maps to (255,255,255), direct sunlight
         self.Color = 100
         self.Brightness = 100
         self.Contrast = 100
@@ -690,6 +691,7 @@ class Gui(QtWidgets.QMainWindow):
         self.RedFactor = 100
         self.BlueFactor = 100
         self.GreenFactor = 100
+        self.Temperature = 6000
         self.Color = 100
         self.Brightness = 100
         self.Contrast = 100
@@ -698,7 +700,8 @@ class Gui(QtWidgets.QMainWindow):
 
         self.RedColorSlider.setValue(self.RedFactor)        
         self.GreenColorSlider.setValue(self.GreenFactor)        
-        self.BlueColorSlider.setValue(self.BlueFactor)        
+        self.BlueColorSlider.setValue(self.BlueFactor) 
+        self.TemperatureSlider.setValue(self.Temperature)
         self.ColorSlider.setValue(self.Color)        
         self.BrightnessSlider.setValue(self.Brightness)
         self.ContrastSlider.setValue(self.Contrast)
@@ -826,6 +829,20 @@ class Gui(QtWidgets.QMainWindow):
         self.BlueFactor = value
         self.processSliderChange("Blue", "Slider", value, "BlueColorSlider")
 
+    def AddTemperatureSlider(self, layout):
+        self.TemperatureSlider = QSlider(QtCore.Qt.Orientation.Horizontal)
+        self.TemperatureSlider.setRange(0, 12000)
+        layout.addRow("Temperature", self.TemperatureSlider)
+
+        # Default value of the Temperature slider
+        self.TemperatureSlider.setValue(6000)
+
+        self.TemperatureSlider.valueChanged.connect(self.OnTemperatureChanged)
+
+    def OnTemperatureChanged(self, value):
+        self.Temperature = value
+        self.processSliderChange("Temperature", "Slider", value, "TemperatureSlider")
+
     def AddColorSlider(self, layout):
         self.ColorSlider = QSlider(QtCore.Qt.Orientation.Horizontal)
         self.ColorSlider.setRange(0, 200) # 1 is original image, 0 is black image
@@ -930,6 +947,23 @@ class Gui(QtWidgets.QMainWindow):
                 Pixmap = self.UpdateGreens(Pixmap, float(self.GreenFactor / 100))
             if self.BlueFactor != 100:
                 Pixmap = self.UpdateBlues(Pixmap, float(self.BlueFactor / 100))
+            if self.Temperature != 6000:
+                import AdjustTemperature
+                img = self.QPixmapToImage(Pixmap)
+                import numpy as np
+                import cv2
+                arr = np.asarray(img)
+                b, g, r, a = cv2.split(arr)
+                img = Image.fromarray(np.dstack((b, g, r)))
+
+                def FindClosest(lst, K):
+                    return lst[min(range(len(lst)), key = lambda i: abs(lst[i]-K))]
+
+                img = AdjustTemperature.convert_temp(img, FindClosest(list(AdjustTemperature.kelvin_table.keys()), self.Temperature))
+                img = np.asarray(img)
+                img = np.dstack((img, a))
+                img = Image.fromarray(img)
+                Pixmap = self.ImageToQPixmap(img)
             if self.Color != 100:
                 Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Color, self.Color)
             if self.Brightness != 100:
@@ -1583,6 +1617,7 @@ class Gui(QtWidgets.QMainWindow):
             self.AddRedColorSlider(self.slidersLayout)
             self.AddGreenColorSlider(self.slidersLayout)
             self.AddBlueColorSlider(self.slidersLayout)
+            self.AddTemperatureSlider(self.slidersLayout)
             self.AddColorSlider(self.slidersLayout)
             self.AddBrightnessSlider(self.slidersLayout)
             self.AddContrastSlider(self.slidersLayout)

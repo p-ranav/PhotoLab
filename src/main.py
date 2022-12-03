@@ -127,7 +127,7 @@ class Gui(QtWidgets.QMainWindow):
         self.PasteShortcut.activated.connect(self.OnPaste)
 
         self.SaveShortcut = QtGui.QShortcut(QKeySequence("Ctrl+S"), self)
-        self.SaveShortcut.activated.connect(self.OnSave)
+        self.SaveShortcut.activated.connect(self.OnSaveAs)
 
         self.SaveAsShortcut = QtGui.QShortcut(QKeySequence("Ctrl+Shift+S"), self)
         self.SaveAsShortcut.activated.connect(self.OnSaveAs)
@@ -1733,7 +1733,6 @@ class Gui(QtWidgets.QMainWindow):
         if self.image_viewer._current_filename != None:
             filename = self.image_viewer._current_filename
             filename = os.path.basename(filename)
-            self.setWindowTitle(filename)
             # self.image_viewer.OriginalImage = self.image_viewer.pixmap()
             self.updateHistogram()
             self.createLayersDock()
@@ -1785,7 +1784,6 @@ class Gui(QtWidgets.QMainWindow):
             self.image_viewer._current_filename = "Untitled.png"
             self.image_viewer.setImage(img, True, "Paste")
             filename = self.image_viewer._current_filename
-            self.setWindowTitle(filename)
             # self.image_viewer.OriginalImage = self.image_viewer.pixmap()
 
             self.updateHistogram()

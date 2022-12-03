@@ -1707,6 +1707,7 @@ class Gui(QtWidgets.QMainWindow):
                     self.parent = parent
                     self.closed = False
                     self.mainWindow = mainWindow
+                    self.setWindowTitle("Filters")
 
                 def closeEvent(self, event):
                     self.destroyed.emit()

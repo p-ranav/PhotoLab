@@ -52,7 +52,7 @@ class Gui(QtWidgets.QMainWindow):
 
     def __init__(self, parent=None):
         super(Gui, self).__init__(parent)
-        self.setWindowTitle('pyfoto')
+        self.setWindowTitle('Kabuto')
         self.setMinimumHeight(850)
 
         ##############################################################################################
@@ -1132,7 +1132,7 @@ class Gui(QtWidgets.QMainWindow):
                 if pixmap:
 
                     # Open second image
-                    filepath, _ = QFileDialog.getOpenFileName(self, "Open image file.")
+                    filepath, _ = QFileDialog.getOpenFileName(self, "Open Image")
                     if len(filepath) and os.path.isfile(filepath):
                         second = Image.open(filepath)
 
@@ -1188,7 +1188,7 @@ class Gui(QtWidgets.QMainWindow):
                 if pixmap:
 
                     # Open second image
-                    filepath, _ = QFileDialog.getOpenFileName(self, "Open image file.")
+                    filepath, _ = QFileDialog.getOpenFileName(self, "Open Image")
                     if len(filepath) and os.path.isfile(filepath):
                         second = Image.open(filepath)
 
@@ -1244,7 +1244,7 @@ class Gui(QtWidgets.QMainWindow):
                 if pixmap:
 
                     # Open second image
-                    filepath, _ = QFileDialog.getOpenFileName(self, "Open image file.")
+                    filepath, _ = QFileDialog.getOpenFileName(self, "Open Image")
                     if len(filepath) and os.path.isfile(filepath):
                         import cv2
                         second = cv2.imread(filepath)
@@ -1837,6 +1837,7 @@ def main():
         color: white;
     }
     ''');
+    app.setWindowIcon(QtGui.QIcon("icons/logo.png"))
     sys.exit(app.exec())
 
 if __name__ == '__main__':

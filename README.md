@@ -1,4 +1,4 @@
-![image](https://user-images.githubusercontent.com/8450091/205416740-8a602d77-cee5-4c51-b9aa-597b97ad999d.png)
+![image](https://user-images.githubusercontent.com/8450091/205450952-2c23a413-cdf0-4412-9d24-6a4ef08e3d78.png)
 
 ### Quick Start
 

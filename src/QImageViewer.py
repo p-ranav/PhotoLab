@@ -983,9 +983,6 @@ class QtImageViewer(QGraphicsView):
             if self.scene:
                 self._lastMousePositionInScene = QPointF(self.mapToScene(event.pos()))
             self.renderCursorOverlay(self._lastMousePositionInScene, self.blurBrushSize)
-        elif self._isCropping:
-            self.performCrop()
-            self._isCropping = False
 
         scenePos = self.mapToScene(event.pos())
         if self.sceneRect().contains(scenePos):
@@ -1514,6 +1511,12 @@ class QtImageViewer(QGraphicsView):
             cursorPainter.drawEllipse(scenePosition, brushSize, brushSize)
             cursorPainter.end() 
             self.setImage(pixmapTmp, False, "Cursor Overlay")
+
+    def paintEvent(self, event):
+        if self._isCropping:
+            self.performCrop()
+            self._isCropping = False
+        QGraphicsView.paintEvent(self, event)
 
 class EllipseROI(QGraphicsEllipseItem):
 

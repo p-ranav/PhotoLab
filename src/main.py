@@ -1837,4 +1837,8 @@ def main():
     sys.exit(app.exec())
 
 if __name__ == '__main__':
+    # https://stackoverflow.com/questions/71458968/pyqt6-how-to-set-allocation-limit-in-qimagereader
+    os.environ['QT_IMAGEIO_MAXALLOC'] = "1024"
+    # QtGui.QImageReader.setAllocationLimit(0)
+
     main()

@@ -39,8 +39,8 @@ class QFlowLayout(QtWidgets.QLayout):
         if 0 <= index < len(self._items):
             return self._items.pop(index)
 
-    def expandingDirections(self):
-        return QtCore.Qt.Orientations(0)
+    #def expandingDirections(self):
+    #    return QtCore.Qt.Orientations(0)
 
     def hasHeightForWidth(self):
         return True
@@ -75,12 +75,12 @@ class QFlowLayout(QtWidgets.QLayout):
             if hspace == -1:
                 hspace = widget.style().layoutSpacing(
                     QtWidgets.QSizePolicy.PushButton,
-                    QtWidgets.QSizePolicy.PushButton, QtCore.Qt.Horizontal)
+                    QtWidgets.QSizePolicy.PushButton, QtCore.Qt.Orientation.Horizontal)
             vspace = self.verticalSpacing()
             if vspace == -1:
                 vspace = widget.style().layoutSpacing(
                     QtWidgets.QSizePolicy.PushButton,
-                    QtWidgets.QSizePolicy.PushButton, QtCore.Qt.Vertical)
+                    QtWidgets.QSizePolicy.PushButton, QtCore.Qt.Orientation.Vertical)
             nextX = x + item.sizeHint().width() + hspace
             if nextX - hspace > effective.right() and lineheight > 0:
                 x = effective.x()

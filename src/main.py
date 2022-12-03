@@ -495,6 +495,19 @@ class Gui(QtWidgets.QMainWindow):
 
         ##############################################################################################
         ##############################################################################################
+        # Instagram Filters Tool
+        ##############################################################################################
+        ##############################################################################################
+
+        self.InstagramFiltersToolButton = QToolButton(self)
+        self.InstagramFiltersToolButton.setText("&Instagram Filters")
+        self.InstagramFiltersToolButton.setToolTip("Instagram Filters")
+        self.setIconPixmapWithColor(self.InstagramFiltersToolButton, "icons/instagram.svg")
+        self.InstagramFiltersToolButton.setCheckable(True)
+        self.InstagramFiltersToolButton.toggled.connect(self.OnInstagramFiltersToolButton)
+
+        ##############################################################################################
+        ##############################################################################################
         # Histogram Viewer Tool
         ##############################################################################################
         ##############################################################################################
@@ -559,6 +572,10 @@ class Gui(QtWidgets.QMainWindow):
                 "tool": "BlurToolButton",
                 "var": '_isBlurring'
             },
+            "instagram_filters": {
+                "tool": "InstagramFiltersToolButton",
+                "var": '_isApplyingFilter'
+            },
         }
 
         self.ToolbarDockWidget = QtWidgets.QDockWidget("Tools")
@@ -574,6 +591,7 @@ class Gui(QtWidgets.QMainWindow):
             self.HStackToolButton, self.VStackToolButton, self.LandscapePanoramaToolButton,
             self.FlipLeftRightToolButton, self.FlipTopBottomToolButton,
             self.SpotRemovalToolButton, self.BlurToolButton, self.CurveEditorToolButton, self.SlidersToolButton, self.HistogramToolButton, 
+            self.InstagramFiltersToolButton,
             self.WhiteBalanceToolButton, self.BackgroundRemovalToolButton, self.HumanSegmentationToolButton, self.GrayscaleBackgroundToolButton,
             self.PortraitModeBackgroundBlurToolButton, 
             self.ColorizerToolButton, self.SuperResolutionToolButton, self.AnimeGanV2ToolButton, 
@@ -597,7 +615,7 @@ class Gui(QtWidgets.QMainWindow):
 
         self.addDockWidget(QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.ToolbarDockWidget)
         self.ToolbarDockWidget.setFloating(True)
-        self.ToolbarDockWidget.setGeometry(QtCore.QRect(20, 20, 75, 420))
+        self.ToolbarDockWidget.setGeometry(QtCore.QRect(20, 20, 75, 450))
 
         ##############################################################################################
         ##############################################################################################
@@ -1535,6 +1553,7 @@ class Gui(QtWidgets.QMainWindow):
             self.InitTool()
             currentPixmap = self.getCurrentLayerLatestPixmap()
             image = self.QPixmapToImage(currentPixmap)
+
             from QToolSuperResolution import QToolSuperResolution
             self.currentTool = QToolSuperResolution(None, image, self.onSuperResolutionCompleted)
             self.currentTool.setWindowModality(Qt.WindowModality.ApplicationModal)
@@ -1675,6 +1694,34 @@ class Gui(QtWidgets.QMainWindow):
             self.CurveWidget.hide()
 
         self.CurveEditorToolButton.setChecked(False)
+        del self.currentTool
+        self.currentTool = None
+
+    def OnInstagramFiltersToolButton(self, checked):
+        if checked and not self.currentTool:
+            self.InitTool()
+            self.EnableTool("instagram_filters") if checked else self.DisableTool("instagram_filters")
+            currentPixmap = self.getCurrentLayerLatestPixmap()
+            image = self.QPixmapToImage(currentPixmap)
+
+            from QToolInstagramFilters import QToolInstagramFilters
+            tool = QToolInstagramFilters(self, image)
+            self.filtersDock = QtWidgets.QDockWidget()
+            self.filtersDock.setWidget(tool)
+            self.addDockWidget(QtCore.Qt.DockWidgetArea.BottomDockWidgetArea, self.filtersDock)
+
+            self.currentTool = self.filtersDock
+
+            self.currentTool.show()
+
+            # Create a local event loop for this widget
+            loop = QtCore.QEventLoop()
+            self.filtersDock.destroyed.connect(loop.quit)
+            loop.exec() # wait
+        else:
+            self.DisableTool("instagram_filters")
+            self.filtersDock.hide()
+
         del self.currentTool
         self.currentTool = None
 

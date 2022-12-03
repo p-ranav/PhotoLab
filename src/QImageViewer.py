@@ -166,6 +166,8 @@ class QtImageViewer(QGraphicsView):
         self.pathPointItem = None
         self.selectPainterPointPaths = []
 
+        self._isCropping = False
+
         # Flags for spot removal tool
         self._isRemovingSpots = False
         self._targetSelected = False
@@ -938,9 +940,6 @@ class QtImageViewer(QGraphicsView):
 
     def mouseMoveEvent(self, event):
 
-        if self.scene:
-            self._lastMousePositionInScene = QPointF(self.mapToScene(event.pos()))
-
         # Emit updated view during panning.
         if self._isPanning:
             QGraphicsView.mouseMoveEvent(self, event)
@@ -953,10 +952,14 @@ class QtImageViewer(QGraphicsView):
                 self.updateViewer()
                 self.viewChanged.emit()
         elif self._isPainting:
+            if self.scene:
+                self._lastMousePositionInScene = QPointF(self.mapToScene(event.pos()))
             self.renderCursorOverlay(self._lastMousePositionInScene, self.paintBrushSize)
             if self._isLeftMouseButtonPressed:
                 self.performPaint(event)
         elif self._isErasing:
+            if self.scene:
+                self._lastMousePositionInScene = QPointF(self.mapToScene(event.pos()))
             self.renderCursorOverlay(self._lastMousePositionInScene, self.eraserBrushSize)
             if self._isLeftMouseButtonPressed:
                 self.performErase(event)
@@ -967,6 +970,8 @@ class QtImageViewer(QGraphicsView):
             if not self._targetSelected:
                 # Show ROI
                 # Make mouse red
+                if self.scene:
+                    self._lastMousePositionInScene = QPointF(self.mapToScene(event.pos()))
                 self.renderCursorOverlay(self._lastMousePositionInScene, self.spotsBrushSize)
             if self._targetSelected:
                 # A target has been selected
@@ -975,7 +980,12 @@ class QtImageViewer(QGraphicsView):
                 # will be placed
                 self.showSpotRemovalResultAtMousePosition(event)
         elif self._isBlurring:
+            if self.scene:
+                self._lastMousePositionInScene = QPointF(self.mapToScene(event.pos()))
             self.renderCursorOverlay(self._lastMousePositionInScene, self.blurBrushSize)
+        elif self._isCropping:
+            self.performCrop()
+            self._isCropping = False
 
         scenePos = self.mapToScene(event.pos())
         if self.sceneRect().contains(scenePos):
@@ -1208,29 +1218,33 @@ class QtImageViewer(QGraphicsView):
         self.pathPointItem = None
 
     def performCrop(self):
-        if self._isSelectingRect and self._isSelectingRectStarted:
-            rect = self._selectRectItem.intern_rect.toAlignedRect()
+        try:
+            if self._isSelectingRect and self._isSelectingRectStarted:
+                rect = self._selectRectItem.intern_rect.toAlignedRect()
 
-            # Crop the pixmap
-            cropQPixmap = self.getCurrentLayerLatestPixmap().copy(rect)
+                # Crop the pixmap
+                cropQPixmap = self.getCurrentLayerLatestPixmap().copy(rect)
 
-            self.setImage(cropQPixmap, True, "RectCrop")
+                self.setImage(cropQPixmap, True, "RectCrop")
 
-            self.exitSelectRect()
-            self.clearZoom()
-            self.viewChanged.emit()
-        elif self._isSelectingPath:
-            self.performSelectCrop()
-            self.exitSelectPath()
-            self.clearZoom()
-            self.viewChanged.emit()
-            # Clean up history
-            # Remove the "Path Select" entries
-            if self.currentLayer in self.layerHistory:
-                history = self.layerHistory[self.currentLayer]
-                if len(history) > 1:
-                    history = [h for h in history if h["note"] != "Path Select"]
-                    self.layerHistory[self.currentLayer] = history
+                self.exitSelectRect()
+                self.clearZoom()
+                self.viewChanged.emit()
+            elif self._isSelectingPath:
+                self.performSelectCrop()
+                self.exitSelectPath()
+                self.clearZoom()
+                self.viewChanged.emit()
+                # Clean up history
+                # Remove the "Path Select" entries
+                if self.currentLayer in self.layerHistory:
+                    history = self.layerHistory[self.currentLayer]
+                    if len(history) > 1:
+                        history = [h for h in history if h["note"] != "Path Select"]
+                        self.layerHistory[self.currentLayer] = history
+            self.parent.DisableAllTools()
+        except RuntimeError as e:
+            print(e)
 
     def buildPath(self, addToHistory=True):
         '''

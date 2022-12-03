@@ -52,7 +52,7 @@ class Gui(QtWidgets.QMainWindow):
 
     def __init__(self, parent=None):
         super(Gui, self).__init__(parent)
-        self.setWindowTitle('Kabuto')
+        self.setWindowTitle('Samurai Photo Editor')
         self.setMinimumHeight(850)
 
         ##############################################################################################
@@ -1097,9 +1097,6 @@ class Gui(QtWidgets.QMainWindow):
         if checked:
             self.InitTool()
             self.image_viewer._isCropping = True
-            self.image_viewer.performCrop()
-            self.DisableAllTools()
-            # self.DisableTool("crop")
 
     def OnRotateLeftToolButton(self, checked):
         if checked:

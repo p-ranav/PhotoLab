@@ -24,7 +24,7 @@
 
 | Spot Removal | Exposure Adjustment |
 | -------------| --------------------|
-| <img width="500" src="https://user-images.githubusercontent.com/8450091/205468098-5fadd963-6c4e-4b1c-b430-4e989dab6fff.jpeg"> | <img width="500" src="https://user-images.githubusercontent.com/8450091/205467986-4ff088c9-6a33-467b-9f0f-c753864c9d66.png"> |
+| <img width="500" src="https://user-images.githubusercontent.com/8450091/205468098-5fadd963-6c4e-4b1c-b430-4e989dab6fff.jpeg"> | <img width="500" src="https://user-images.githubusercontent.com/8450091/205470366-d85543ce-8d4a-4f02-926d-df1df0c4c07f.png"> |
 
 ### Quick Start
 

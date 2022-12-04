@@ -5,7 +5,7 @@ class QToolSuperResolution(QTool):
         super(QToolSuperResolution, self).__init__(parent, "Super-Resolution", 
                                              "Reconstruct detailed high-res counterpart from a low-res image\nhttps://github.com/cszn/BSRGAN", 
                                              "images/SuperResolution.jpg", 
-                                             self.onRun, toolInput, onCompleted)
+                                             self.onRun, toolInput, onCompleted, self)
 
         self.parent = parent
         self.output = None

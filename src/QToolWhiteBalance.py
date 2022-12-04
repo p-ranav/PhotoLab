@@ -6,7 +6,7 @@ class QToolWhiteBalance(QTool):
         super(QToolWhiteBalance, self).__init__(parent, "White Balance Correction", 
                                              "Correct a camera image that has been improperly white balanced\nhttps://github.com/mahmoudnafifi/WB_sRGB",
                                              "images/WhiteBalance_08.jpg", 
-                                             self.onRun, toolInput, onCompleted)
+                                             self.onRun, toolInput, onCompleted, self)
 
         self.parent = parent
         self.output = None

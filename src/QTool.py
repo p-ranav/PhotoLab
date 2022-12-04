@@ -1,11 +1,12 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
 from QProgressBarThread import QProgressBarThread
+import functools
 
 class QTool(QtWidgets.QWidget):
 
     completedSignal = QtCore.pyqtSignal()
 
-    def __init__(self, parent=None, name="", description="", demoImagePath=None, onRun=None, toolInput=None, onCompleted=None):
+    def __init__(self, parent=None, name="", description="", demoImagePath=None, onRun=None, toolInput=None, onCompleted=None, toolReference=None):
         super(QTool, self).__init__(parent)
         self.setStyleSheet("background-color: rgb(22, 22, 22);")
 
@@ -90,7 +91,7 @@ class QTool(QtWidgets.QWidget):
 
         # Initialize the thread
         self.progressBarThread = QProgressBarThread()
-        self.completedSignal.connect(onCompleted)
+        self.completedSignal.connect(functools.partial(onCompleted, toolReference))
 
     @QtCore.pyqtSlot(int, str)
     def updateProgressBar(self, e, label):

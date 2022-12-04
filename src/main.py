@@ -609,7 +609,6 @@ class Gui(QtWidgets.QMainWindow):
 
         ToolbarContent.setLayout(ToolbarLayout)
         self.ToolbarDockWidget.setWidget(ToolbarContent)
-        self.currentTool = None
 
         ##############################################################################################
         ##############################################################################################
@@ -1394,36 +1393,35 @@ class Gui(QtWidgets.QMainWindow):
         self.EnableTool("spot_removal") if checked else self.DisableTool("spot_removal")
 
     @QtCore.pyqtSlot()
-    def onBackgroundRemovalCompleted(self):
-        output = self.currentTool.output
+    def onBackgroundRemovalCompleted(self, tool):
+        output = tool.output
         if output is not None:
             # Save new pixmap
             updatedPixmap = self.ImageToQPixmap(output)
             self.image_viewer.setImage(updatedPixmap, True, "Background Removal")
 
         self.BackgroundRemovalToolButton.setChecked(False)
-        del self.currentTool
-        self.currentTool = None
+        del tool
+        tool = None
 
     def OnBackgroundRemovalToolButton(self, checked):
-        if checked and not self.currentTool:
+        if checked:
             self.InitTool()
             currentPixmap = self.getCurrentLayerLatestPixmap()
             image = self.QPixmapToImage(currentPixmap)
 
             from QToolBackgroundRemoval import QToolBackgroundRemoval
-            self.currentTool = QToolBackgroundRemoval(None, image, self.onBackgroundRemovalCompleted)
-            self.currentTool.setWindowModality(Qt.WindowModality.ApplicationModal)
-            self.currentTool.show()
+            widget = QToolBackgroundRemoval(None, image, self.onBackgroundRemovalCompleted)
+            widget.show()
 
     @QtCore.pyqtSlot()
-    def onPortraitModeBackgroundBlurCompleted(self):
+    def onPortraitModeBackgroundBlurCompleted(self, tool):
         backgroundRemoved = None
-        if self.currentTool.backgroundRemoved:
-            backgroundRemoved = self.currentTool.backgroundRemoved
+        if tool.backgroundRemoved:
+            backgroundRemoved = tool.backgroundRemoved
             backgroundRemoved = self.ImageToQPixmap(backgroundRemoved)
 
-        output = self.currentTool.output
+        output = tool.output
         if output is not None and backgroundRemoved is not None:
 
             # Depth prediction output
@@ -1438,11 +1436,11 @@ class Gui(QtWidgets.QMainWindow):
             self.image_viewer.setImage(updatedPixmap, True, "Portrait Mode Background Blur")
 
         self.PortraitModeBackgroundBlurToolButton.setChecked(False)
-        del self.currentTool
-        self.currentTool = None
+        del tool
+        tool = None
 
     def OnPortraitModeBackgroundBlurToolButton(self, checked):
-        if checked and not self.currentTool:
+        if checked:
             self.InitTool()
             currentPixmap = self.getCurrentLayerLatestPixmap()
             image = self.QPixmapToImage(currentPixmap)
@@ -1450,17 +1448,16 @@ class Gui(QtWidgets.QMainWindow):
             from QToolPortraitMode import QToolPortraitMode
 
             # Run human segmentation with alpha matting
-            self.currentTool = QToolPortraitMode(None, image, self.onPortraitModeBackgroundBlurCompleted)
-            self.currentTool.setWindowModality(Qt.WindowModality.ApplicationModal)
-            self.currentTool.show()
+            widget = QToolPortraitMode(None, image, self.onPortraitModeBackgroundBlurCompleted)
+            widget.show()
 
     @QtCore.pyqtSlot()
-    def onGrayscaleBackgroundCompleted(self):
+    def onGrayscaleBackgroundCompleted(self, tool):
         foreground = None
         foregroundPixmap = None
 
-        if self.currentTool.output:
-            foreground = self.currentTool.output
+        if tool.output:
+            foreground = tool.output
             foregroundPixmap = self.ImageToQPixmap(foreground)
 
         background = self.QPixmapToImage(self.getCurrentLayerLatestPixmap())
@@ -1481,11 +1478,11 @@ class Gui(QtWidgets.QMainWindow):
             self.image_viewer.setImage(backgroundPixmap, True, "Grayscale Background")
 
         self.GrayscaleBackgroundToolButton.setChecked(False)
-        del self.currentTool
-        self.currentTool = None
+        del tool
+        tool = None
 
     def OnGrayscaleBackgroundToolButton(self, checked):
-        if checked and not self.currentTool:
+        if checked:
             self.InitTool()
             currentPixmap = self.getCurrentLayerLatestPixmap()
             image = self.QPixmapToImage(currentPixmap)
@@ -1493,37 +1490,35 @@ class Gui(QtWidgets.QMainWindow):
             from QToolGrayscaleBackground import QToolGrayscaleBackground
 
             # Run human segmentation with alpha matting
-            self.currentTool = QToolGrayscaleBackground(None, image, self.onGrayscaleBackgroundCompleted)
-            self.currentTool.setWindowModality(Qt.WindowModality.ApplicationModal)
-            self.currentTool.show()
+            widget = QToolGrayscaleBackground(None, image, self.onGrayscaleBackgroundCompleted)
+            widget.show()
 
     @QtCore.pyqtSlot()
-    def onHumanSegmentationCompleted(self):
-        output = self.currentTool.output
+    def onHumanSegmentationCompleted(self, tool):
+        output = tool.output
         if output is not None:
             # Save new pixmap
             updatedPixmap = self.ImageToQPixmap(output)
             self.image_viewer.setImage(updatedPixmap, True, "Human Segmentation")
 
         self.HumanSegmentationToolButton.setChecked(False)
-        del self.currentTool
-        self.currentTool = None
+        del tool
+        tool = None
 
     def OnHumanSegmentationToolButton(self, checked):
-        if checked and not self.currentTool:
+        if checked:
             self.InitTool()
             currentPixmap = self.getCurrentLayerLatestPixmap()
             image = self.QPixmapToImage(currentPixmap)
 
             from QToolHumanSegmentation import QToolHumanSegmentation
-            self.currentTool = QToolHumanSegmentation(None, image, self.onHumanSegmentationCompleted)
-            self.currentTool.setWindowModality(Qt.WindowModality.ApplicationModal)
-            self.currentTool.show()
+            widget = QToolHumanSegmentation(None, image, self.onHumanSegmentationCompleted)
+            widget.show()
 
     @QtCore.pyqtSlot()
-    def OnColorizerCompleted(self):
-        if self.currentTool:
-            output = self.currentTool.output
+    def OnColorizerCompleted(self, tool):
+        if tool:
+            output = tool.output
             if output is not None:
 
                 # Show Interactive Colorization widget
@@ -1561,21 +1556,19 @@ class Gui(QtWidgets.QMainWindow):
                 loop.exec() # wait
 
             self.ColorizerToolButton.setChecked(False)
-            del self.currentTool
-            self.currentTool = None
-            print("Cleaned up")
+            del tool
+            tool = None
 
     def OnColorizerToolButton(self, checked):
-        if checked and not self.currentTool:
+        if checked:
             self.InitTool()
             from QToolColorizer import QToolColorizer
-            self.currentTool = QToolColorizer(None, None, self.OnColorizerCompleted)
-            self.currentTool.setWindowModality(Qt.WindowModality.ApplicationModal)
-            self.currentTool.show()
+            widget = QToolColorizer(None, None, self.OnColorizerCompleted)
+            widget.show()
 
     @QtCore.pyqtSlot()
-    def onSuperResolutionCompleted(self):
-        output = self.currentTool.output
+    def onSuperResolutionCompleted(self, tool):
+        output = tool.output
         if output is not None:
             # Save new pixmap
             output = Image.fromarray(output)
@@ -1583,68 +1576,65 @@ class Gui(QtWidgets.QMainWindow):
             self.image_viewer.setImage(updatedPixmap, True, "Super Resolution")
 
         self.SuperResolutionToolButton.setChecked(False)
-        del self.currentTool
-        self.currentTool = None
+        del tool
+        tool = None
 
     def OnSuperResolutionToolButton(self, checked):
-        if checked and not self.currentTool:
+        if checked:
             self.InitTool()
             currentPixmap = self.getCurrentLayerLatestPixmap()
             image = self.QPixmapToImage(currentPixmap)
 
             from QToolSuperResolution import QToolSuperResolution
-            self.currentTool = QToolSuperResolution(None, image, self.onSuperResolutionCompleted)
-            self.currentTool.setWindowModality(Qt.WindowModality.ApplicationModal)
-            self.currentTool.show()
+            widget = QToolSuperResolution(None, image, self.onSuperResolutionCompleted)
+            widget.show()
 
     @QtCore.pyqtSlot()
-    def OnAnimeGanV2Completed(self):
-        output = self.currentTool.output
+    def OnAnimeGanV2Completed(self, tool):
+        output = tool.output
         if output is not None:
             # Save new pixmap
             updatedPixmap = self.ImageToQPixmap(output)
             self.image_viewer.setImage(updatedPixmap, True, "Anime GAN v2")
 
         self.AnimeGanV2ToolButton.setChecked(False)
-        del self.currentTool
-        self.currentTool = None
+        del tool
+        tool = None
 
     def OnAnimeGanV2ToolButton(self, checked):
-        if checked and not self.currentTool:
+        if checked:
             self.InitTool()
             currentPixmap = self.getCurrentLayerLatestPixmap()
             image = self.QPixmapToImage(currentPixmap)
 
             from QToolAnimeGANv2 import QToolAnimeGANv2
-            self.currentTool = QToolAnimeGANv2(None, image, self.OnAnimeGanV2Completed)
-            self.currentTool.setWindowModality(Qt.WindowModality.ApplicationModal)
-            self.currentTool.show()
+            widget = QToolAnimeGANv2(None, image, self.OnAnimeGanV2Completed)
+            widget.show()
 
     @QtCore.pyqtSlot()
-    def onWhiteBalanceCompleted(self):
-        output = self.currentTool.output
+    def onWhiteBalanceCompleted(self, tool):
+        output = tool.output
         if output is not None:
             # Save new pixmap
             updatedPixmap = self.ImageToQPixmap(output)
             self.image_viewer.setImage(updatedPixmap, True, "White Balance")
 
         self.WhiteBalanceToolButton.setChecked(False)
-        del self.currentTool
-        self.currentTool = None
+        del tool
+        tool = None
 
     def OnWhiteBalanceToolButton(self, checked):
-        if checked and not self.currentTool:
+        if checked:
             self.InitTool()
             currentPixmap = self.getCurrentLayerLatestPixmap()
             image = self.QPixmapToImage(currentPixmap)
 
             from QToolWhiteBalance import QToolWhiteBalance
-            self.currentTool = QToolWhiteBalance(None, image, self.onWhiteBalanceCompleted)
-            self.currentTool.setWindowModality(Qt.WindowModality.ApplicationModal)
-            self.currentTool.show()
+            widget = QToolWhiteBalance(None, image, self.onWhiteBalanceCompleted)
+            widget.show()
 
     def OnSlidersToolButton(self, checked):
-        if checked and not self.currentTool:
+        if checked:
             self.InitTool()
             class SlidersScrollWidget(QtWidgets.QScrollArea):
                 def __init__(self, parent, mainWindow):
@@ -1714,11 +1704,9 @@ class Gui(QtWidgets.QMainWindow):
             self.slidersScroll.hide()
 
         self.SlidersToolButton.setChecked(False)
-        del self.currentTool
-        self.currentTool = None
 
     def OnCurveEditorToolButton(self, checked):
-        if checked and not self.currentTool:
+        if checked:
             self.InitTool()
             self.CurveWidget = QCurveWidget.QCurveWidget(None, self.image_viewer)
             self.CurveWidget.setWindowModality(Qt.WindowModality.ApplicationModal)
@@ -1732,11 +1720,9 @@ class Gui(QtWidgets.QMainWindow):
             self.CurveWidget.hide()
 
         self.CurveEditorToolButton.setChecked(False)
-        del self.currentTool
-        self.currentTool = None
 
     def OnInstagramFiltersToolButton(self, checked):
-        if checked and not self.currentTool:
+        if checked:
             self.InitTool()
 
             class QInstagramToolDockWidget(QtWidgets.QDockWidget):
@@ -1764,9 +1750,9 @@ class Gui(QtWidgets.QMainWindow):
             self.filtersDock.setWidget(tool)
             self.addDockWidget(QtCore.Qt.DockWidgetArea.BottomDockWidgetArea, self.filtersDock)
 
-            self.currentTool = self.filtersDock
+            widget = self.filtersDock
 
-            self.currentTool.show()
+            widget.show()
 
             # Create a local event loop for this widget
             loop = QtCore.QEventLoop()
@@ -1776,9 +1762,6 @@ class Gui(QtWidgets.QMainWindow):
         else:
             self.DisableTool("instagram_filters")
             self.filtersDock.hide()
-
-        del self.currentTool
-        self.currentTool = None
 
     def OnEraserToolButton(self, checked):
         self.InitTool()

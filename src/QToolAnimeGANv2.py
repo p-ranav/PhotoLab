@@ -7,7 +7,7 @@ class QToolAnimeGANv2(QTool):
     def __init__(self, parent=None, toolInput=None, onCompleted=None):
         super(QToolAnimeGANv2, self).__init__(parent, "Anime GAN v2", 
                                               "Transform photos of real-world scenes into anime style images\nhttps://github.com/bryandlee/animegan2-pytorch",
-                                              "images/AnimeGanV2_05.jpg", self.onRun, toolInput, onCompleted)
+                                              "images/AnimeGanV2_05.jpg", self.onRun, toolInput, onCompleted, self)
 
         self.parent = parent
         self.output = None

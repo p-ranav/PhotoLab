@@ -6,7 +6,7 @@ class QToolGrayscaleBackground(QTool):
         super(QToolGrayscaleBackground, self).__init__(parent, "Grayscale Background", 
                                              "Gray out the background to highlight the subject", 
                                              "images/GrayscaleBackground.jpg", 
-                                             self.onRun, toolInput, onCompleted)
+                                             self.onRun, toolInput, onCompleted, self)
 
         self.parent = parent
         self.output = None

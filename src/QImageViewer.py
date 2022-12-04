@@ -606,7 +606,7 @@ class QtImageViewer(QGraphicsView):
             path = filepath
             self._current_filename = path
 
-        self.getCurrentLayerLatestPixmap().save(path, None, 100)
+        self.pixmap().save(path, None, 100)
 
     def updateViewer(self):
         """ Show current zoom (if showing entire image, apply current aspect ratio mode).

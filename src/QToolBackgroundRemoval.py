@@ -5,7 +5,7 @@ class QToolBackgroundRemoval(QTool):
     def __init__(self, parent=None, toolInput=None, onCompleted=None):
         super(QToolBackgroundRemoval, self).__init__(parent, "Background Removal", 
                                              "Remove Background from images\nhttps://github.com/nadermx/backgroundremover", 
-                                             "images/BackgroundRemoval.jpg", 
+                                             "images/BackgroundRemoval_06.jpg", 
                                              self.onRun, toolInput, onCompleted)
 
         self.parent = parent

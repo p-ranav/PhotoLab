@@ -16,6 +16,10 @@
 | -------------------------|
 | <img width="1100" src="https://user-images.githubusercontent.com/8450091/205467129-64a3fad4-c4c6-4578-ba07-16e79dd94bd3.jpg"> |
 
+| Instagram Filters | Bezier Curve Path Selection |
+| ------------------| ----------------------------|
+| <img width="500" src="https://user-images.githubusercontent.com/8450091/205467832-fd167e86-6b26-4d61-9fc8-bfd3ae5851cf.png"> | <img width="500" src="https://user-images.githubusercontent.com/8450091/205467881-2352519a-80a3-4277-9a83-9e2f2f312813.png"> |
+
 ### Quick Start
 
 Install dependencies using pip. If you have a CUDA-enabled device, install the appropriate version of [CUDA](https://developer.nvidia.com/cuda-downloads) and [PyTorch](https://pytorch.org/).

@@ -1907,11 +1907,9 @@ class Gui(QtWidgets.QMainWindow):
         dialog.setDefaultSuffix("png")
         extension_filter = "Default (*.png);;BMP (*.bmp);;Icon (*.ico);;JPEG (*.jpeg *.jpg);;PBM (*.pbm);;PGM (*.pgm);;PNG (*.png);;PPM (*.ppm);;TIF (*.tif *.tiff);;WBMP (*.wbmp);;XBM (*.xbm);;XPM (*.xpm)"
         name = dialog.getSaveFileName(self, 'Save File', name + ".png", extension_filter)
-        # self.image_viewer.OriginalImage = self.image_viewer.pixmap()
         self.image_viewer.save(name[0])
         filename = self.image_viewer._current_filename
         filename = os.path.basename(filename)
-        self.setWindowTitle(filename)
 
     def OnUndo(self):
         self.image_viewer.undoCurrentLayerLatestChange()

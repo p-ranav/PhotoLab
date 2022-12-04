@@ -1221,6 +1221,20 @@ class QtImageViewer(QGraphicsView):
         self.pathItem = None
         self.pathPointItem = None
 
+    def getSelectedRegionAsPixmap(self):
+        self.path.quadTo(self.selectPoints[-1], self.selectPoints[-1])
+        self.pathSelected.quadTo(self.selectPoints[-1], self.selectPoints[-1])
+
+        currentImage = self.getCurrentLayerLatestPixmap()
+        output = QImage(currentImage.toImage().size(), QImage.Format.Format_ARGB32)
+        output.fill(Qt.GlobalColor.transparent)
+        painter = QPainter(output)
+        painter.setClipPath(self.pathSelected)
+        painter.drawImage(QPoint(), currentImage.toImage())
+        painter.end()
+        
+        return QPixmap.fromImage(output)
+
     def performCrop(self):
         try:
             if self._isSelectingRect and self._isSelectingRectStarted:

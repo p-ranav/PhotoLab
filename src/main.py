@@ -961,6 +961,16 @@ class Gui(QtWidgets.QMainWindow):
         self.timer_id = -1
 
         Pixmap = self.image_viewer.getCurrentLayerLatestPixmap()
+        OriginalPixmap = Pixmap.copy()
+
+        # TODO: If a selection is active
+        # Only apply changes to the selected region
+        if self.image_viewer._isSelectingRect:
+            print(self.image_viewer._selectRect)
+            Pixmap = Pixmap.copy(self.image_viewer._selectRect.toRect())
+        elif self.image_viewer._isSelectingPath:
+            Pixmap = self.image_viewer.getSelectedRegionAsPixmap()
+
         if Pixmap:
             if self.RedFactor != 100:
                 Pixmap = self.UpdateReds(Pixmap, float(self.RedFactor / 100))
@@ -995,6 +1005,19 @@ class Gui(QtWidgets.QMainWindow):
                 Pixmap = self.EnhanceImage(Pixmap, ImageEnhance.Sharpness, self.Sharpness)
             if self.GaussianBlurRadius > 0:
                 Pixmap = self.ApplyGaussianBlur(Pixmap, float(self.GaussianBlurRadius / 100))
+
+            if self.image_viewer._isSelectingRect:
+                painter = QtGui.QPainter(OriginalPixmap)
+                selectRect = self.image_viewer._selectRect
+                point = QtCore.QPoint(int(selectRect.x()), int(selectRect.y()))
+                painter.drawPixmap(point, Pixmap)
+                painter.end()
+                Pixmap = OriginalPixmap
+            elif self.image_viewer._isSelectingPath:
+                painter = QtGui.QPainter(OriginalPixmap)
+                painter.drawPixmap(QtCore.QPoint(), Pixmap)
+                painter.end()
+                Pixmap = OriginalPixmap
 
             self.sliderChangedPixmap = Pixmap
             self.sliderExplanationOfChange = self.sliderExplanationOfChange

@@ -18,9 +18,9 @@
 | -------------------------|
 | <img width="1100" src="https://user-images.githubusercontent.com/8450091/205467129-64a3fad4-c4c6-4578-ba07-16e79dd94bd3.jpg"> |
 
-| Instagram Filters | Bezier Curve Path Selection |
-| ------------------| ----------------------------|
-| <img width="500" src="https://user-images.githubusercontent.com/8450091/205467832-fd167e86-6b26-4d61-9fc8-bfd3ae5851cf.png"> | <img width="500" src="https://user-images.githubusercontent.com/8450091/205467881-2352519a-80a3-4277-9a83-9e2f2f312813.png"> |
+| Instagram Filters | Bezier Curves and Selective Editing |
+| ------------------| ------------------------------------|
+| <img width="500" src="https://user-images.githubusercontent.com/8450091/205467832-fd167e86-6b26-4d61-9fc8-bfd3ae5851cf.png"> | <img width="500" src="https://user-images.githubusercontent.com/8450091/205506806-c99a64d5-c34b-470d-adbf-11de2f6790a5.png"> |
 
 | Spot Removal | Exposure Adjustment |
 | -------------| --------------------|

@@ -1861,6 +1861,8 @@ class Gui(QtWidgets.QMainWindow):
         }
         self.image_viewer.open()
         if self.image_viewer._current_filename != None:
+            self.InitTool()
+            self.DisableAllTools()
             filename = self.image_viewer._current_filename
             filename = os.path.basename(filename)
             # self.image_viewer.OriginalImage = self.image_viewer.pixmap()

@@ -246,6 +246,13 @@ class QtImageViewer(QGraphicsView):
             return self._image.pixmap()
         return None
 
+    def currentPixmapSize(self):
+        pixmap = self.pixmap()
+        if pixmap:
+            return pixmap.size()
+        else:
+            return None
+
     def image(self):
         """ Returns the scene's current image pixmap as a QImage, or else None if no image exists.
         :rtype: QImage | None

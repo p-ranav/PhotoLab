@@ -9,6 +9,7 @@ from PyQt6.QtWidgets import (
     QToolBar,
     QToolButton,
     QFileDialog,
+    QStatusBar
 )
 from PyQt6.QtGui import QPixmap
 import sys
@@ -54,6 +55,9 @@ class Gui(QtWidgets.QMainWindow):
         super(Gui, self).__init__(parent)
         self.setWindowTitle('PhotoLab')
         self.setMinimumHeight(850)
+
+        self.statusBar = QStatusBar()
+        self.setStatusBar(self.statusBar)
 
         ##############################################################################################
         ##############################################################################################
@@ -1861,6 +1865,10 @@ class Gui(QtWidgets.QMainWindow):
         }
         self.image_viewer.open()
         if self.image_viewer._current_filename != None:
+            size = self.image_viewer.currentPixmapSize()
+            if size:
+                w, h = size.width(), size.height()
+                self.statusBar.showMessage(str(w) + "x" + str(h))
             self.InitTool()
             self.DisableAllTools()
             filename = self.image_viewer._current_filename

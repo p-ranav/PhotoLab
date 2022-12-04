@@ -591,10 +591,14 @@ class Gui(QtWidgets.QMainWindow):
         self.ToolButtons = [
             self.CursorToolButton, self.ColorPickerToolButton, self.PaintToolButton, self.EraserToolButton, 
             self.FillToolButton, self.RectSelectToolButton, self.PathSelectToolButton, self.CropToolButton, 
+            self.SlidersToolButton, self.HistogramToolButton, self.CurveEditorToolButton, 
+            self.SpotRemovalToolButton, self.BlurToolButton,
+
             self.RotateLeftToolButton, self.RotateRightToolButton,
-            self.HStackToolButton, self.VStackToolButton, self.LandscapePanoramaToolButton,
+            self.HStackToolButton, self.VStackToolButton, 
             self.FlipLeftRightToolButton, self.FlipTopBottomToolButton,
-            self.SpotRemovalToolButton, self.BlurToolButton, self.CurveEditorToolButton, self.SlidersToolButton, self.HistogramToolButton, 
+            self.LandscapePanoramaToolButton,
+
             self.InstagramFiltersToolButton,
             self.WhiteBalanceToolButton, self.BackgroundRemovalToolButton, self.HumanSegmentationToolButton, self.GrayscaleBackgroundToolButton,
             self.PortraitModeBackgroundBlurToolButton, 

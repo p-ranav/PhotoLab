@@ -54,6 +54,7 @@ foo:bar$ python src/main.py
 | <img width="500" src="https://user-images.githubusercontent.com/8450091/205547688-d10ec660-9380-4cc5-a03a-4d7dd8028ed1.jpeg"> | <img width="500" src="https://user-images.githubusercontent.com/8450091/205547696-856e3b94-06d8-4136-8190-4ca709d5cd72.jpeg"> |
 | <img width="500" src="https://user-images.githubusercontent.com/8450091/205549002-9ac4f0a5-1fa0-4efc-a1c1-284b22e89bd2.jpeg"> | <img width="500" src="https://user-images.githubusercontent.com/8450091/205549012-d695b367-8718-47ff-8259-6642b8d59059.jpeg"> |
 | <img width="500" src="https://user-images.githubusercontent.com/8450091/205550155-6f49ae8b-b434-4f98-9fbf-91b812646b1e.jpeg"> | <img width="500" src="https://user-images.githubusercontent.com/8450091/205550304-9282d222-6ff1-41d5-b69b-9ccbfcbba608.jpeg"> |
+| <img width="500" src="https://user-images.githubusercontent.com/8450091/205551316-8dcc6117-6d90-4dee-8c3d-e0783f3764d1.jpg"> | <img width="500" src="https://user-images.githubusercontent.com/8450091/205551332-7459d85e-da3c-4c70-8c90-7e9eb5c4df29.jpeg"> |
 
 ## Notes on PyTorch CUDA Support
 

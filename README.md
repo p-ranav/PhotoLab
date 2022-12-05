@@ -59,7 +59,7 @@ If using a CUDA compatible device, make sure to install a version of CUDA that i
 On my laptop with a mobile GTX 1070, I installed CUDA 9.2. Then, I installed PyTorch 1.13.0:
 
 ```console
-foo:bar$ pip install torch==1.13.0+cu117 -f https://download.pytorch.org/whl/torch_stable.html
+foo:bar$ pip install torch==1.11.0+cu113 -f https://download.pytorch.org/whl/torch_stable.html
 ```
 
 Confirm CUDA support by running:

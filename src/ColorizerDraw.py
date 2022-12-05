@@ -256,6 +256,8 @@ class GUIDraw(QWidget):
         ab = rearrange(ab, 'b (h w) (p1 p2 c) -> b (h p1) (w p2) c', 
                         h=self.load_size//self.model.patch_size, w=self.load_size//self.model.patch_size,
                         p1=self.model.patch_size, p2=self.model.patch_size)[0]
+        if torch.cuda.is_available():
+            ab = ab.cpu()
         ab = ab.detach().numpy()
 
         ab_win = cv2.resize(ab, (self.win_w, self.win_h), interpolation=cv2.INTER_CUBIC)

@@ -26,17 +26,13 @@
 | -------------| --------------------|
 | <img width="500" src="https://user-images.githubusercontent.com/8450091/205468098-5fadd963-6c4e-4b1c-b430-4e989dab6fff.jpeg"> | <img width="500" src="https://user-images.githubusercontent.com/8450091/205470366-d85543ce-8d4a-4f02-926d-df1df0c4c07f.png"> |
 
-## Performance (PyTorch 1.11.0)
+## Example Results
 
-### Demo #1 - Rhaenyra
+### Rhaenyra Screencap
 
-Here's an example video showing what can be done in `1 minute`. 
-
-The original image is `980x654`. The final result after crop is `2796x2492`.
+Here's an example showing what can be done in `1 minute`. The original image is `980x654`. The final result after crop is `2796x2492`.
 
 ![0852HOTDS01-ab006fe BEFORE_AFTER](https://user-images.githubusercontent.com/8450091/205529030-01bf2340-25f1-4a26-bd45-7a21cd3983b1.jpeg)
-
-https://user-images.githubusercontent.com/8450091/205528863-e9b21858-958e-4fe1-8344-a194fc928d27.mp4
 
 ## Quick Start
 

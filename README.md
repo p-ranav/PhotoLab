@@ -28,6 +28,8 @@
 
 ## Performance (PyTorch 1.11.0)
 
+### Demo #1 - Rhaenyra
+
 Here's an example video showing what can be done in `1 minute`. 
 
 The original image is `980x654`. The final result after crop is `2796x2492`.

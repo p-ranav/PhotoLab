@@ -28,11 +28,10 @@
 
 ## Example Results
 
-### Rhaenyra Screencap
-
-Here's an example showing what can be done in `1 minute`. The original image is `980x654`. The final result after crop is `2796x2492`.
-
-![0852HOTDS01-ab006fe BEFORE_AFTER](https://user-images.githubusercontent.com/8450091/205529030-01bf2340-25f1-4a26-bd45-7a21cd3983b1.jpeg)
+| Before | After |
+|--------|-------|
+| <img width="500" src="https://user-images.githubusercontent.com/8450091/205533870-db6586ce-4d9c-4a5e-9a0c-99bcf5d99a93.jpeg"> | <img width="500" src="https://user-images.githubusercontent.com/8450091/205533557-cf381bff-e2f7-453a-8da2-ecd63153824a.jpeg"> |
+| <img width="500" src="https://user-images.githubusercontent.com/8450091/205533877-588ed525-b44f-4569-999d-e50c8cad8a40.jpeg"> | <img width="500" src="https://user-images.githubusercontent.com/8450091/205533660-16956642-23ef-416b-9635-7e29cbb5b4a9.jpeg"> |
 
 ## Quick Start
 

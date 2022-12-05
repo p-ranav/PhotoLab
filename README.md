@@ -54,17 +54,12 @@ foo:bar$ python src/main.py
 
 ## Notes on PyTorch CUDA Support
 
-If using a CUDA compatible device, make sure to install a version of CUDA that is compatible with the GPU that is available. Then install pytorch.
-
-For CUDA 9.2, install `torch==1.11.0+cu113 torchvision-0.12.0+cu113`
+This project has been testing with `torch==1.11.0+cu113 torchvision-0.12.0+cu113`
 
 ```console
 foo:bar$ pip install torch==1.11.0+cu113 torchvision==0.12.0+cu113 -f https://download.pytorch.org/whl/torch_stable.html
-```
 
-Confirm CUDA support by running:
-
-```console
+foo:bar$ python
 Python 3.10.8 (tags/v3.10.8:aaaf517, Oct 11 2022, 16:50:30) [MSC v.1933 64 bit (AMD64)] on win32
 Type "help", "copyright", "credits" or "license" for more information.
 >>> import torch

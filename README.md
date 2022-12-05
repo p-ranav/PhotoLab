@@ -81,7 +81,7 @@ foo:bar$ python src/main.py
 | <img width="500" src="https://user-images.githubusercontent.com/8450091/205549002-9ac4f0a5-1fa0-4efc-a1c1-284b22e89bd2.jpeg"> | <img width="500" src="https://user-images.githubusercontent.com/8450091/205549012-d695b367-8718-47ff-8259-6642b8d59059.jpeg"> |
 | <img width="500" src="https://user-images.githubusercontent.com/8450091/205550155-6f49ae8b-b434-4f98-9fbf-91b812646b1e.jpeg"> | <img width="500" src="https://user-images.githubusercontent.com/8450091/205550304-9282d222-6ff1-41d5-b69b-9ccbfcbba608.jpeg"> |
 | <img width="500" src="https://user-images.githubusercontent.com/8450091/205551316-8dcc6117-6d90-4dee-8c3d-e0783f3764d1.jpg"> | <img width="500" src="https://user-images.githubusercontent.com/8450091/205551332-7459d85e-da3c-4c70-8c90-7e9eb5c4df29.jpeg"> |
-| <img width="500" src="https://user-images.githubusercontent.com/8450091/205553256-4b77da4f-1643-480e-880e-a11b923f0d51.jpeg"> | <img width="500" src="https://user-images.githubusercontent.com/8450091/205553268-811fcb65-8bad-4903-b2ed-6a2028ea5bba.jpeg"> |
+| <img width="500" src="https://user-images.githubusercontent.com/8450091/205553256-4b77da4f-1643-480e-880e-a11b923f0d51.jpeg"> | <img width="500" src="https://user-images.githubusercontent.com/8450091/205553960-a33959de-85ac-4078-82d9-6c81cb91940a.jpeg"> |
 
 ## Notes on PyTorch CUDA Support
 

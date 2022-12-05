@@ -56,10 +56,10 @@ pipreqs --force --encoding=utf-8-sig .
 
 If using a CUDA compatible device, make sure to install a version of CUDA that is compatible with the GPU that is available. Then install pytorch.
 
-For CUDA 9.2, install `torch-1.11.0+cu113 torchvision-0.12.0+cu115`
+For CUDA 9.2, install `torch==1.11.0+cu113 torchvision-0.12.0+cu113`
 
 ```console
-foo:bar$ pip install torch==1.11.0+cu113 torchvision -f https://download.pytorch.org/whl/torch_stable.html
+foo:bar$ pip install torch==1.11.0+cu113 torchvision==0.12.0+cu113 -f https://download.pytorch.org/whl/torch_stable.html
 ```
 
 Confirm CUDA support by running:

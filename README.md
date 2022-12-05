@@ -26,7 +26,13 @@
 | -------------| --------------------|
 | <img width="500" src="https://user-images.githubusercontent.com/8450091/205468098-5fadd963-6c4e-4b1c-b430-4e989dab6fff.jpeg"> | <img width="500" src="https://user-images.githubusercontent.com/8450091/205470366-d85543ce-8d4a-4f02-926d-df1df0c4c07f.png"> |
 
-### Quick Start
+## Performance (PyTorch 1.11.0)
+
+Here's an example video showing what can be done in `~30s`
+
+https://user-images.githubusercontent.com/8450091/205525666-ed34bd47-d1fc-4bd1-bdb0-661d61c7464b.mp4
+
+## Quick Start
 
 Install dependencies using pip. If you have a CUDA-enabled device, install the appropriate version of [CUDA](https://developer.nvidia.com/cuda-downloads) and [PyTorch](https://pytorch.org/).
 
@@ -46,13 +52,13 @@ Start the editor by running:
 foo:bar$ python src/main.py
 ```
 
-### Generate requirements.txt
+## Generate requirements.txt
 
 ```
 pipreqs --force --encoding=utf-8-sig .
 ```
 
-### Notes on PyTorch CUDA Support
+## Notes on PyTorch CUDA Support
 
 If using a CUDA compatible device, make sure to install a version of CUDA that is compatible with the GPU that is available. Then install pytorch.
 

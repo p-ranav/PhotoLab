@@ -28,9 +28,13 @@
 
 ## Performance (PyTorch 1.11.0)
 
-Here's an example video showing what can be done in `~30s`
+Here's an example video showing what can be done in `1 minute`. 
 
-https://user-images.githubusercontent.com/8450091/205525666-ed34bd47-d1fc-4bd1-bdb0-661d61c7464b.mp4
+The original image is `980x654`. The final result after crop is `2796x2492`.
+
+![0852HOTDS01-ab006fe BEFORE_AFTER](https://user-images.githubusercontent.com/8450091/205529030-01bf2340-25f1-4a26-bd45-7a21cd3983b1.jpeg)
+
+https://user-images.githubusercontent.com/8450091/205528863-e9b21858-958e-4fe1-8344-a194fc928d27.mp4
 
 ## Quick Start
 

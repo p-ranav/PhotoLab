@@ -44,9 +44,10 @@ class QTool(QtWidgets.QWidget):
         self.toolImageLabel = QtWidgets.QLabel()
         image = QtGui.QImage()
         image.load(demoImagePath)
-        image = image.scaled(400, 400, QtCore.Qt.AspectRatioMode.KeepAspectRatioByExpanding)
+        image = image.scaled(200, 200, QtCore.Qt.AspectRatioMode.KeepAspectRatioByExpanding)
         pixmap = QtGui.QPixmap.fromImage(image)
         self.toolImageLabel.setPixmap(pixmap)
+        self.toolImageLabel.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
 
         # self.progressBarLayout = QtWidgets.QVBoxLayout()
         self.progressBar = QtWidgets.QProgressBar()
@@ -82,7 +83,7 @@ class QTool(QtWidgets.QWidget):
         ''')
 
         self.progressWidgetLayout.addWidget(self.titleLabel, QtCore.Qt.AlignmentFlag.AlignCenter)
-        self.progressWidgetLayout.addWidget(self.subTitleLabel)
+        # self.progressWidgetLayout.addWidget(self.subTitleLabel)
         self.progressWidgetLayout.addWidget(self.toolImageLabel)
         self.progressWidgetLayout.addWidget(self.controlButtons, QtCore.Qt.AlignmentFlag.AlignRight)
 

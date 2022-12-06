@@ -83,6 +83,7 @@ foo:bar$ python src/main.py
 | <img width="500" src="https://user-images.githubusercontent.com/8450091/205549002-9ac4f0a5-1fa0-4efc-a1c1-284b22e89bd2.jpeg"> | <img width="500" src="https://user-images.githubusercontent.com/8450091/205549012-d695b367-8718-47ff-8259-6642b8d59059.jpeg"> |
 | <img width="500" src="https://user-images.githubusercontent.com/8450091/205550155-6f49ae8b-b434-4f98-9fbf-91b812646b1e.jpeg"> | <img width="500" src="https://user-images.githubusercontent.com/8450091/205550304-9282d222-6ff1-41d5-b69b-9ccbfcbba608.jpeg"> |
 | <img width="500" src="https://user-images.githubusercontent.com/8450091/205562505-eefa35a6-d628-463d-8e6e-06da7ab45727.jpeg"> | <img width="500" src="https://user-images.githubusercontent.com/8450091/205562513-51c54e32-6458-4ff9-9852-52322309be31.jpeg"> |
+| <img width="500" src="https://user-images.githubusercontent.com/8450091/205777410-379c2094-7335-408f-b709-790bccd20727.jpeg"> | <img width="500" src="https://user-images.githubusercontent.com/8450091/205777422-dd64bc79-24ec-4eeb-8359-2de904ec0115.jpeg"> |
 
 ## Notes on PyTorch CUDA Support
 

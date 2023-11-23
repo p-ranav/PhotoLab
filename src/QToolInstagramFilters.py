@@ -88,7 +88,7 @@ class QToolInstagramFilters(QScrollArea):
 
         noFilterButton = QToolButton()
         unfilteredPixmap = self.parent.ImageToQPixmap(image)
-        unfilteredPixmap = unfilteredPixmap.scaled(buttonIconSize, QtCore.Qt.AspectRatioMode.KeepAspectRatio)
+        unfilteredPixmap = unfilteredPixmap.scaled(buttonIconSize, QtCore.Qt.AspectRatioMode.KeepAspectRatio, QtCore.Qt.TransformationMode.SmoothTransformation)
         icon = QIcon(unfilteredPixmap)
         noFilterButton.setIcon(icon)
         noFilterButton.setIconSize(buttonIconSize)
@@ -102,7 +102,7 @@ class QToolInstagramFilters(QScrollArea):
             filterButton = QToolButton()
             filtered = f(image).convert("RGBA")
             filteredPixmap = self.parent.ImageToQPixmap(filtered)
-            filteredPixmap = filteredPixmap.scaled(buttonIconSize, QtCore.Qt.AspectRatioMode.KeepAspectRatio)
+            filteredPixmap = filteredPixmap.scaled(buttonIconSize, QtCore.Qt.AspectRatioMode.KeepAspectRatio, QtCore.Qt.TransformationMode.SmoothTransformation)
 
             icon = QIcon(filteredPixmap)
             filterButton.setIcon(icon)

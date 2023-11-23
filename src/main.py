@@ -622,7 +622,7 @@ class Gui(QtWidgets.QMainWindow):
 
         self.addDockWidget(QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.ToolbarDockWidget)
         self.ToolbarDockWidget.setFloating(True)
-        self.ToolbarDockWidget.setGeometry(QtCore.QRect(20, 20, 75, 450))
+        self.ToolbarDockWidget.setGeometry(QtCore.QRect(20, 20, 90, 600))
 
         ##############################################################################################
         ##############################################################################################

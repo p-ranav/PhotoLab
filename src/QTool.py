@@ -44,7 +44,7 @@ class QTool(QtWidgets.QWidget):
         self.toolImageLabel = QtWidgets.QLabel()
         image = QtGui.QImage()
         image.load(demoImagePath)
-        image = image.scaled(200, 200, QtCore.Qt.AspectRatioMode.KeepAspectRatioByExpanding)
+        image = image.scaled(200, 200, QtCore.Qt.AspectRatioMode.KeepAspectRatioByExpanding, QtCore.Qt.TransformationMode.SmoothTransformation)
         pixmap = QtGui.QPixmap.fromImage(image)
         self.toolImageLabel.setPixmap(pixmap)
         self.toolImageLabel.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
